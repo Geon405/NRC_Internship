@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "XKjP3YtxZfo=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\martinchan\\source\\repos\\Geon405\\CRR_Internship\\PanelizedANDModular\\PanelizedANDModular\\PanelizedANDModular.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\martinchan\\.nuget\\packages\\graphx\\3.0.0\\graphx.3.0.0.nupkg.sha512",
+    "C:\\Users\\martinchan\\.nuget\\packages\\quickgraphcore\\1.0.0\\quickgraphcore.1.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

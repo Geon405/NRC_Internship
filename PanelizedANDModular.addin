@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <AddIn Type="Command">
+    <Text>Command PanelizedANDModular</Text>
+    <Description>Some description for PanelizedANDModular</Description>
+    <Assembly>PanelizedANDModular.dll</Assembly>
+    <FullClassName>PanelizedANDModular.Command</FullClassName>
+    <ClientId>89a3058b-29c9-4a1a-b0d9-f1d7f1d92a6c</ClientId>
+    <VendorId>com.typepad.thebuildingcoder</VendorId>
+    <VendorDescription>The Building Coder, http://thebuildingcoder.typepad.com</VendorDescription>
+  </AddIn>
+  <AddIn Type="Application">
+    <Name>Application PanelizedANDModular</Name>
+    <Assembly>PanelizedANDModular.dll</Assembly>
+    <FullClassName>PanelizedANDModular.App</FullClassName>
+    <ClientId>edfcefa4-cb06-4c6c-a60a-bde495f6406d</ClientId>
+    <VendorId>com.typepad.thebuildingcoder</VendorId>
+    <VendorDescription>The Building Coder, http://thebuildingcoder.typepad.com</VendorDescription>
+  </AddIn>
+</RevitAddIns>
