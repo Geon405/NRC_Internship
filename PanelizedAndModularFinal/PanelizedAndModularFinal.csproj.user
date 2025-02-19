@@ -8,24 +8,12 @@
     <Compile Update="RoomInstancesWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="ConnectivityMatrixWindow.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="EdgeWeightsWindow.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Page Update="RoomInputWindow.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="RoomInstancesWindow.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Update="ConnectivityMatrixWindow.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Update="EdgeWeightsWindow.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
