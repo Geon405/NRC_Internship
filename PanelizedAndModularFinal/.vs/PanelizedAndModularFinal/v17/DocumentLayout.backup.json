@@ -1,38 +1,69 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\martinchan\\source\\repos\\CRR_Internship\\PanelizedAndModularFinal\\",
+  "WorkspaceRootPath": "C:\\CRR_Internship\\PanelizedAndModularFinal\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\users\\martinchan\\source\\repos\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\command.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|solutionrelative:panelizedandmodularfinal\\command.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\users\\martinchan\\source\\repos\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\edgeweightswindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\edgeweightswindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|solutionrelative:panelizedandmodularfinal\\edgeweightswindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\users\\martinchan\\source\\repos\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\edgeweightswindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\edgeweightswindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|solutionrelative:panelizedandmodularfinal\\edgeweightswindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\users\\martinchan\\source\\repos\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\connectivitymatrixwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\command.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|solutionrelative:panelizedandmodularfinal\\command.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\connectivitymatrixwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|solutionrelative:panelizedandmodularfinal\\connectivitymatrixwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\users\\martinchan\\source\\repos\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\roomtyperow.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|solutionrelative:panelizedandmodularfinal\\roomtyperow.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\roominputwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|solutionrelative:panelizedandmodularfinal\\roominputwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\users\\martinchan\\source\\repos\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\roominstanceswindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\roominputwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|solutionrelative:panelizedandmodularfinal\\roominputwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\roominstancerow.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|solutionrelative:panelizedandmodularfinal\\roominstancerow.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\roominstanceswindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|solutionrelative:panelizedandmodularfinal\\roominstanceswindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\roominstanceswindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|solutionrelative:panelizedandmodularfinal\\roominstanceswindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\users\\martinchan\\source\\repos\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\connectivitymatrixwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|solutionrelative:panelizedandmodularfinal\\connectivitymatrixwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\roomtyperow.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|solutionrelative:panelizedandmodularfinal\\roomtyperow.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\users\\martinchan\\source\\repos\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\spacenode.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\spacenode.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|solutionrelative:panelizedandmodularfinal\\spacenode.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\panelizedandmodularfinal.addin||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
+      "RelativeMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|solutionrelative:panelizedandmodularfinal\\panelizedandmodularfinal.addin||{FA3CD31E-987B-443A-9B81-186104E8DAC1}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\panelizedandmodularfinal.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|solutionrelative:panelizedandmodularfinal\\panelizedandmodularfinal.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\app.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|solutionrelative:panelizedandmodularfinal\\app.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|c:\\crr_internship\\panelizedandmodularfinal\\panelizedandmodularfinal\\panelizedandmodularfinal.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|",
+      "RelativeMoniker": "D:0:0:{D295FB98-A826-4915-88DF-2472754ECF0B}|PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj|solutionrelative:panelizedandmodularfinal\\panelizedandmodularfinal.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
     }
   ],
   "DocumentGroupContainers": [
@@ -42,105 +73,205 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "ConnectivityMatrixWindow.xaml",
-              "DocumentMoniker": "C:\\Users\\martinchan\\source\\repos\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\ConnectivityMatrixWindow.xaml",
-              "RelativeDocumentMoniker": "PanelizedAndModularFinal\\ConnectivityMatrixWindow.xaml",
-              "ToolTip": "C:\\Users\\martinchan\\source\\repos\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\ConnectivityMatrixWindow.xaml",
-              "RelativeToolTip": "PanelizedAndModularFinal\\ConnectivityMatrixWindow.xaml",
+              "DocumentIndex": 1,
+              "Title": "EdgeWeightsWindow.xaml",
+              "DocumentMoniker": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\EdgeWeightsWindow.xaml",
+              "RelativeDocumentMoniker": "PanelizedAndModularFinal\\EdgeWeightsWindow.xaml",
+              "ToolTip": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\EdgeWeightsWindow.xaml",
+              "RelativeToolTip": "PanelizedAndModularFinal\\EdgeWeightsWindow.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-02-19T04:04:15.264Z",
+              "WhenOpened": "2025-02-19T22:15:42.348Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "EdgeWeightsWindow.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\martinchan\\source\\repos\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\EdgeWeightsWindow.xaml.cs",
-              "RelativeDocumentMoniker": "PanelizedAndModularFinal\\EdgeWeightsWindow.xaml.cs",
-              "ToolTip": "C:\\Users\\martinchan\\source\\repos\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\EdgeWeightsWindow.xaml.cs",
-              "RelativeToolTip": "PanelizedAndModularFinal\\EdgeWeightsWindow.xaml.cs",
-              "ViewState": "AgIAABsAAADAMjMzM3MuwCEAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-19T03:13:32.137Z",
+              "DocumentIndex": 4,
+              "Title": "RoomInputWindow.xaml",
+              "DocumentMoniker": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\RoomInputWindow.xaml",
+              "RelativeDocumentMoniker": "PanelizedAndModularFinal\\RoomInputWindow.xaml",
+              "ToolTip": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\RoomInputWindow.xaml",
+              "RelativeToolTip": "PanelizedAndModularFinal\\RoomInputWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-02-18T20:16:14.652Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "EdgeWeightsWindow.xaml",
-              "DocumentMoniker": "C:\\Users\\martinchan\\source\\repos\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\EdgeWeightsWindow.xaml",
-              "RelativeDocumentMoniker": "PanelizedAndModularFinal\\EdgeWeightsWindow.xaml",
-              "ToolTip": "C:\\Users\\martinchan\\source\\repos\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\EdgeWeightsWindow.xaml",
-              "RelativeToolTip": "PanelizedAndModularFinal\\EdgeWeightsWindow.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-02-19T03:12:41.787Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
               "Title": "Command.cs",
-              "DocumentMoniker": "C:\\Users\\martinchan\\source\\repos\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\Command.cs",
+              "DocumentMoniker": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\Command.cs",
               "RelativeDocumentMoniker": "PanelizedAndModularFinal\\Command.cs",
-              "ToolTip": "C:\\Users\\martinchan\\source\\repos\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\Command.cs",
+              "ToolTip": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\Command.cs",
               "RelativeToolTip": "PanelizedAndModularFinal\\Command.cs",
-              "ViewState": "AgIAAIcAAAAAAQAAAAAmwKUAAABNAAAAAAAAAA==",
+              "ViewState": "AgIAAEgAAAAAAAAAAAAIwFsAAAAkAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-02-18T21:14:21.55Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "SpaceNode.cs",
-              "DocumentMoniker": "C:\\Users\\martinchan\\source\\repos\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\SpaceNode.cs",
-              "RelativeDocumentMoniker": "PanelizedAndModularFinal\\SpaceNode.cs",
-              "ToolTip": "C:\\Users\\martinchan\\source\\repos\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\SpaceNode.cs",
-              "RelativeToolTip": "PanelizedAndModularFinal\\SpaceNode.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAEAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-19T00:20:37.853Z"
+              "DocumentIndex": 3,
+              "Title": "ConnectivityMatrixWindow.xaml",
+              "DocumentMoniker": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\ConnectivityMatrixWindow.xaml",
+              "RelativeDocumentMoniker": "PanelizedAndModularFinal\\ConnectivityMatrixWindow.xaml",
+              "ToolTip": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\ConnectivityMatrixWindow.xaml",
+              "RelativeToolTip": "PanelizedAndModularFinal\\ConnectivityMatrixWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-02-19T22:15:56.302Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "ConnectivityMatrixWindow.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\martinchan\\source\\repos\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\ConnectivityMatrixWindow.xaml.cs",
-              "RelativeDocumentMoniker": "PanelizedAndModularFinal\\ConnectivityMatrixWindow.xaml.cs",
-              "ToolTip": "C:\\Users\\martinchan\\source\\repos\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\ConnectivityMatrixWindow.xaml.cs",
-              "RelativeToolTip": "PanelizedAndModularFinal\\ConnectivityMatrixWindow.xaml.cs",
-              "ViewState": "AgIAAFwAAAAAZmZmZmYPwHsAAAAwAAAAAAAAAA==",
+              "DocumentIndex": 0,
+              "Title": "EdgeWeightsWindow.xaml.cs",
+              "DocumentMoniker": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\EdgeWeightsWindow.xaml.cs",
+              "RelativeDocumentMoniker": "PanelizedAndModularFinal\\EdgeWeightsWindow.xaml.cs",
+              "ToolTip": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\EdgeWeightsWindow.xaml.cs",
+              "RelativeToolTip": "PanelizedAndModularFinal\\EdgeWeightsWindow.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAcAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-19T00:15:48.807Z"
+              "WhenOpened": "2025-02-19T22:34:30.356Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 5,
-              "Title": "RoomInstancesWindow.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\martinchan\\source\\repos\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\RoomInstancesWindow.xaml.cs",
-              "RelativeDocumentMoniker": "PanelizedAndModularFinal\\RoomInstancesWindow.xaml.cs",
-              "ToolTip": "C:\\Users\\martinchan\\source\\repos\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\RoomInstancesWindow.xaml.cs",
-              "RelativeToolTip": "PanelizedAndModularFinal\\RoomInstancesWindow.xaml.cs",
-              "ViewState": "AgIAAAAAAAAMAAAAAIAwwCIAAAAxAAAAAAAAAA==",
+              "Title": "RoomInputWindow.xaml.cs",
+              "DocumentMoniker": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\RoomInputWindow.xaml.cs",
+              "RelativeDocumentMoniker": "PanelizedAndModularFinal\\RoomInputWindow.xaml.cs",
+              "ToolTip": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\RoomInputWindow.xaml.cs",
+              "RelativeToolTip": "PanelizedAndModularFinal\\RoomInputWindow.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-18T20:29:18.955Z"
+              "WhenOpened": "2025-02-18T20:16:57.145Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "RoomTypeRow.cs",
-              "DocumentMoniker": "C:\\Users\\martinchan\\source\\repos\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\RoomTypeRow.cs",
-              "RelativeDocumentMoniker": "PanelizedAndModularFinal\\RoomTypeRow.cs",
-              "ToolTip": "C:\\Users\\martinchan\\source\\repos\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\RoomTypeRow.cs",
-              "RelativeToolTip": "PanelizedAndModularFinal\\RoomTypeRow.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAiAAAAAAAAAA==",
+              "DocumentIndex": 7,
+              "Title": "RoomInstancesWindow.xaml",
+              "DocumentMoniker": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\RoomInstancesWindow.xaml",
+              "RelativeDocumentMoniker": "PanelizedAndModularFinal\\RoomInstancesWindow.xaml",
+              "ToolTip": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\RoomInstancesWindow.xaml",
+              "RelativeToolTip": "PanelizedAndModularFinal\\RoomInstancesWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-02-18T20:28:59.935Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "RoomInstancesWindow.xaml.cs",
+              "DocumentMoniker": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\RoomInstancesWindow.xaml.cs",
+              "RelativeDocumentMoniker": "PanelizedAndModularFinal\\RoomInstancesWindow.xaml.cs",
+              "ToolTip": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\RoomInstancesWindow.xaml.cs",
+              "RelativeToolTip": "PanelizedAndModularFinal\\RoomInstancesWindow.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-02-18T20:15:32.794Z"
+              "WhenOpened": "2025-02-18T20:29:18.955Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "RoomInstanceRow.cs",
+              "DocumentMoniker": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\RoomInstanceRow.cs",
+              "RelativeDocumentMoniker": "PanelizedAndModularFinal\\RoomInstanceRow.cs",
+              "ToolTip": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\RoomInstanceRow.cs",
+              "RelativeToolTip": "PanelizedAndModularFinal\\RoomInstanceRow.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAeAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-18T20:17:51.063Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "RoomTypeRow.cs",
+              "DocumentMoniker": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\RoomTypeRow.cs",
+              "RelativeDocumentMoniker": "PanelizedAndModularFinal\\RoomTypeRow.cs",
+              "ToolTip": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\RoomTypeRow.cs",
+              "RelativeToolTip": "PanelizedAndModularFinal\\RoomTypeRow.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-18T20:15:32.794Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "SpaceNode.cs",
+              "DocumentMoniker": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\SpaceNode.cs",
+              "RelativeDocumentMoniker": "PanelizedAndModularFinal\\SpaceNode.cs",
+              "ToolTip": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\SpaceNode.cs",
+              "RelativeToolTip": "PanelizedAndModularFinal\\SpaceNode.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAoAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-19T22:13:19.849Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "Microsoft.Common.CurrentVersion.targets",
+              "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets",
+              "RelativeDocumentMoniker": "..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets",
+              "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets",
+              "RelativeToolTip": "..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets",
+              "ViewState": "AgIAAP0IAAAAAAAAAAAuwGwJAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003801|",
+              "WhenOpened": "2025-02-18T21:11:05.566Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "PanelizedAndModularFinal.addin",
+              "DocumentMoniker": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\PanelizedAndModularFinal.addin",
+              "RelativeDocumentMoniker": "PanelizedAndModularFinal\\PanelizedAndModularFinal.addin",
+              "ToolTip": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\PanelizedAndModularFinal.addin",
+              "RelativeToolTip": "PanelizedAndModularFinal\\PanelizedAndModularFinal.addin",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000072|",
+              "WhenOpened": "2025-02-18T20:25:03.912Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "PanelizedAndModularFinal.csproj",
+              "DocumentMoniker": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj",
+              "RelativeDocumentMoniker": "PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj",
+              "ToolTip": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj",
+              "RelativeToolTip": "PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-02-18T20:15:19.301Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "App.cs",
+              "DocumentMoniker": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\App.cs",
+              "RelativeDocumentMoniker": "PanelizedAndModularFinal\\App.cs",
+              "ToolTip": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\App.cs",
+              "RelativeToolTip": "PanelizedAndModularFinal\\App.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-18T20:13:34.2Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "PanelizedAndModularFinal",
+              "DocumentMoniker": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj",
+              "RelativeDocumentMoniker": "PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj",
+              "ToolTip": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj",
+              "RelativeToolTip": "PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-02-18T20:13:33.542Z"
             }
           ]
         }

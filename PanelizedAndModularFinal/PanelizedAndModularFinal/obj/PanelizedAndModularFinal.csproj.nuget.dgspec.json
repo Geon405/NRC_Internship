@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\martinchan\\source\\repos\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj": {}
+    "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj": {}
   },
   "projects": {
-    "C:\\Users\\martinchan\\source\\repos\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj": {
+    "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\martinchan\\source\\repos\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj",
+        "projectUniqueName": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj",
         "projectName": "PanelizedAndModularFinal",
-        "projectPath": "C:\\Users\\martinchan\\source\\repos\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj",
-        "packagesPath": "C:\\Users\\martinchan\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\martinchan\\source\\repos\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\obj\\",
+        "projectPath": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj",
+        "packagesPath": "C:\\Users\\Geon\\.nuget\\packages\\",
+        "outputPath": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\martinchan\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Geon\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
