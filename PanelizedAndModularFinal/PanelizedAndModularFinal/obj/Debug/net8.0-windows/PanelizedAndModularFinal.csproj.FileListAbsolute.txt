@@ -1,0 +1,351 @@
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.csproj.AssemblyReference.cache
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\RoomInputWindow.baml
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\RoomInputWindow.g.cs
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\RoomInstancesWindow.g.cs
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal_MarkupCompile.cache
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal_MarkupCompile.lref
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\PanelizedAndModularFinal.deps.json
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\PanelizedAndModularFinal.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\PanelizedAndModularFinal.pdb
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitAPIUI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\AdpSDKCSharpWrapper.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\AdskRcManaged.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Microsoft.Extensions.DependencyInjection.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitAPIFoundation.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitDBCoreAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\PersistenceDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\UtilityAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\APIDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\GraphicsAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\ElementGroupDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\EssentialsDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\GeomUtilAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\FamilyDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\DetailDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CurtainGridFamilyDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\ArrayElemsDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\EnergyAnalysisDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\BuildingSystemsDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\HostObjDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RoomAreaPlanDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\SiteDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\SculptingDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\StructuralDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\InterfaceAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\InterfaceUtilAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RebarDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\StructuralAnalysisDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\MassingDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\AssemblyDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\DPartDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\NumberingDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\PointCloudAccessAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\StairRampDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\AnalysisAppsDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\MaterialDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\IntfATFAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\TextEngineAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\InfrastructureDBAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\ATFRevitCoreAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\DBManagedServices.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\AdWindows.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\PackageContentsParser.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitAddInUtility.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\APIInterop.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\UIFramework.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\AddInManager.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitUIAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\BuildingSystemsUIAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\DesktopMFCAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\APIUIAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitMFCAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\EssentialsUIAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\DetailUIAPI.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\UIFrameworkServices.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Newtonsoft.Json.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\SSONET.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Autodesk.UI.Windows.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Autodesk.UI.Themes.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Xceed.Wpf.AvalonDock.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.Wpf.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CompositionServices.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Autodesk.Weave.Wpf.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.Core.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Autodesk.UI.Windows.WebOnDesktop.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\System.ComponentModel.Composition.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.Core.Runtime.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.Wpf.HwndHost.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitAPI.xml
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitAPIUI.xml
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitAddInUtility.xml
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.Wpf.xml
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.xml
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.Core.xml
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.Wpf.HwndHost.xml
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\cs-CZ\AdWindows.resources.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\de-DE\AdWindows.resources.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\en-GB\AdWindows.resources.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\en-US\AdWindows.resources.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\es-ES\AdWindows.resources.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\fr-FR\AdWindows.resources.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\it-IT\AdWindows.resources.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\ja-JP\AdWindows.resources.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\ko-KR\AdWindows.resources.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\pl-PL\AdWindows.resources.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\pt-BR\AdWindows.resources.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\ru-RU\AdWindows.resources.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\zh-CN\AdWindows.resources.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\zh-TW\AdWindows.resources.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\RoomInstancesWindow.baml
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.g.resources
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.GeneratedMSBuildEditorConfig.editorconfig
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.AssemblyInfoInputs.cache
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.AssemblyInfo.cs
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.csproj.CoreCompileInputs.cache
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\Panelize.002708CC.Up2Date
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\refint\PanelizedAndModularFinal.dll
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.pdb
+C:\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\ref\PanelizedAndModularFinal.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\PanelizedAndModularFinal.deps.json
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\PanelizedAndModularFinal.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\PanelizedAndModularFinal.pdb
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitAPIUI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\AdpSDKCSharpWrapper.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\AdskRcManaged.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Microsoft.Extensions.DependencyInjection.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitAPIFoundation.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitDBCoreAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\PersistenceDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\UtilityAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\APIDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\GraphicsAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\ElementGroupDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\EssentialsDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\GeomUtilAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\FamilyDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\DetailDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CurtainGridFamilyDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\ArrayElemsDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\EnergyAnalysisDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\BuildingSystemsDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\HostObjDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RoomAreaPlanDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\SiteDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\SculptingDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\StructuralDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\InterfaceAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\InterfaceUtilAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RebarDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\StructuralAnalysisDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\MassingDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\AssemblyDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\DPartDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\NumberingDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\PointCloudAccessAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\StairRampDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\AnalysisAppsDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\MaterialDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\IntfATFAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\TextEngineAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\InfrastructureDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\ATFRevitCoreAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\DBManagedServices.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\AdWindows.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\PackageContentsParser.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitAddInUtility.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\APIInterop.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\UIFramework.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\AddInManager.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitUIAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\BuildingSystemsUIAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\DesktopMFCAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\APIUIAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitMFCAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\EssentialsUIAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\DetailUIAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\UIFrameworkServices.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Newtonsoft.Json.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\SSONET.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Autodesk.UI.Windows.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Autodesk.UI.Themes.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Xceed.Wpf.AvalonDock.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.Wpf.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CompositionServices.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Autodesk.Weave.Wpf.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.Core.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Autodesk.UI.Windows.WebOnDesktop.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\System.ComponentModel.Composition.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.Core.Runtime.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.Wpf.HwndHost.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitAPI.xml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitAPIUI.xml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitAddInUtility.xml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.Wpf.xml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.xml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.Core.xml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.Wpf.HwndHost.xml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\cs-CZ\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\de-DE\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\en-GB\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\en-US\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\es-ES\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\fr-FR\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\it-IT\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\ja-JP\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\ko-KR\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\pl-PL\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\pt-BR\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\ru-RU\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\zh-CN\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\bin\Debug\net8.0-windows\zh-TW\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.csproj.AssemblyReference.cache
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\RoomInputWindow.baml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\RoomInputWindow.g.cs
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\RoomInstancesWindow.g.cs
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal_MarkupCompile.cache
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal_MarkupCompile.lref
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\RoomInstancesWindow.baml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.g.resources
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.AssemblyInfoInputs.cache
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.AssemblyInfo.cs
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.csproj.CoreCompileInputs.cache
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.sourcelink.json
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\Panelize.002708CC.Up2Date
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\refint\PanelizedAndModularFinal.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.pdb
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\ref\PanelizedAndModularFinal.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\ConnectivityMatrixWindow.baml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\ConnectivityMatrixWindow.g.cs
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\EdgeWeightsWindow.baml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Debug\net8.0-windows\EdgeWeightsWindow.g.cs
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\PanelizedAndModularFinal.deps.json
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\PanelizedAndModularFinal.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\PanelizedAndModularFinal.pdb
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitAPIUI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\AdpSDKCSharpWrapper.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\AdskRcManaged.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Microsoft.Extensions.DependencyInjection.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitAPIFoundation.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitDBCoreAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\PersistenceDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\UtilityAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\APIDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\GraphicsAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\ElementGroupDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\EssentialsDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\GeomUtilAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\FamilyDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\DetailDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CurtainGridFamilyDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\ArrayElemsDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\EnergyAnalysisDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\BuildingSystemsDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\HostObjDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RoomAreaPlanDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\SiteDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\SculptingDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\StructuralDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\InterfaceAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\InterfaceUtilAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RebarDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\StructuralAnalysisDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\MassingDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\AssemblyDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\DPartDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\NumberingDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\PointCloudAccessAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\StairRampDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\AnalysisAppsDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\MaterialDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\IntfATFAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\TextEngineAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\InfrastructureDBAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\ATFRevitCoreAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\DBManagedServices.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\AdWindows.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\PackageContentsParser.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitAddInUtility.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\APIInterop.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\UIFramework.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\AddInManager.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitUIAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\BuildingSystemsUIAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\DesktopMFCAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\APIUIAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitMFCAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\EssentialsUIAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\DetailUIAPI.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\UIFrameworkServices.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Newtonsoft.Json.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\SSONET.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Autodesk.UI.Windows.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Autodesk.UI.Themes.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Xceed.Wpf.AvalonDock.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.Wpf.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CompositionServices.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Autodesk.Weave.Wpf.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.Core.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\Autodesk.UI.Windows.WebOnDesktop.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\System.ComponentModel.Composition.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.Core.Runtime.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.Wpf.HwndHost.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitAPI.xml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitAPIUI.xml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\RevitAddInUtility.xml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.Wpf.xml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.xml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.Core.xml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\CefSharp.Wpf.HwndHost.xml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\cs-CZ\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\de-DE\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\en-GB\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\en-US\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\es-ES\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\fr-FR\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\it-IT\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\ja-JP\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\ko-KR\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\pl-PL\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\pt-BR\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\ru-RU\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\zh-CN\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\zh-TW\AdWindows.resources.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.csproj.AssemblyReference.cache
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\ConnectivityMatrixWindow.baml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\EdgeWeightsWindow.baml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\RoomInputWindow.baml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\ConnectivityMatrixWindow.g.cs
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\EdgeWeightsWindow.g.cs
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\RoomInputWindow.g.cs
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\RoomInstancesWindow.g.cs
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal_MarkupCompile.cache
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal_MarkupCompile.lref
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\RoomInstancesWindow.baml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.g.resources
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.AssemblyInfoInputs.cache
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.AssemblyInfo.cs
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.csproj.CoreCompileInputs.cache
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.sourcelink.json
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\Panelize.002708CC.Up2Date
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\refint\PanelizedAndModularFinal.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PanelizedAndModularFinal.pdb
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\ref\PanelizedAndModularFinal.dll
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PreferredAdjacencyWindow.baml
+C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\PreferredAdjacencyWindow.g.cs
