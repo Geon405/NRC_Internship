@@ -8,7 +8,7 @@ using Autodesk.Revit.UI;
 
 #endregion
 
-namespace PanelizedANDModular
+namespace PanelizedAndModularFinal
 {
     internal class App : IExternalApplication
     {
