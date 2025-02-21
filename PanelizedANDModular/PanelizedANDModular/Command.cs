@@ -508,10 +508,13 @@ namespace PanelizedAndModularFinal
                     break;
                 }
 
+                // Ensure that all nodes stay within the defined crop region (layout boundaries)
                 // Adjust positions to resolve any overlaps between nodes.
+                
                 ResolveCollisions(spaces);
-                // Ensure that all nodes stay within the defined crop region (layout boundaries).
                 ClampNodesToCropRegion(spaces, viewBox);
+                ResolveCollisions(spaces);
+
             }
         }
 
@@ -524,38 +527,41 @@ namespace PanelizedAndModularFinal
         // - spaces: The list of room nodes.
         private void ResolveCollisions(List<SpaceNode> spaces)
         {
-            // Loop through each pair of nodes.
-            for (int i = 0; i < spaces.Count; i++)
+            bool hasOverlap;
+
+            do
             {
-                for (int j = i + 1; j < spaces.Count; j++)
+                hasOverlap = false; // Assume no overlaps initially
+
+                for (int i = 0; i < spaces.Count; i++)
                 {
-                    // Retrieve the positions of the two nodes.
-                    XYZ posI = spaces[i].Position;
-                    XYZ posJ = spaces[j].Position;
-                    // Calculate the radius for each node based on its area.
-                    double radiusI = GetCircleRadius(spaces[i].Area);
-                    double radiusJ = GetCircleRadius(spaces[j].Area);
-
-                    // Compute the vector and distance between the two nodes.
-                    XYZ delta = posJ - posI;
-                    double distance = delta.GetLength();
-                    // Minimum distance needed to avoid overlap is the sum of the two radii.
-                    double minDist = radiusI + radiusJ;
-
-                    // If the current distance is less than the minimum, the nodes are overlapping.
-                    if (distance < minDist)
+                    for (int j = i + 1; j < spaces.Count; j++)
                     {
-                        // Calculate the overlap amount and add a small extra value to ensure separation.
-                        double overlap = minDist - distance + 0.001;
-                        // Get the direction to push the nodes apart.
-                        XYZ pushDir = delta.Normalize();
-                        // Move both nodes away from each other by half the overlap distance.
-                        spaces[i].Position -= 0.5 * overlap * pushDir;
-                        spaces[j].Position += 0.5 * overlap * pushDir;
+                        XYZ posI = spaces[i].Position;
+                        XYZ posJ = spaces[j].Position;
+
+                        double radiusI = GetCircleRadius(spaces[i].Area);
+                        double radiusJ = GetCircleRadius(spaces[j].Area);
+
+                        XYZ delta = posJ - posI;
+                        double distance = delta.GetLength();
+                        double minDist = radiusI + radiusJ;
+
+                        if (distance < minDist)
+                        {
+                            hasOverlap = true; // Mark that at least one overlap was found
+
+                            double overlap = minDist - distance + 0.001;
+                            XYZ pushDir = delta.Normalize();
+
+                            spaces[i].Position -= 0.5 * overlap * pushDir;
+                            spaces[j].Position += 0.5 * overlap * pushDir;
+                        }
                     }
                 }
-            }
+            } while (hasOverlap); // Continue until no overlaps remain
         }
+
 
         ////////////////////////////////////////////////////////////////////////////////
         // Method: GetCircleRadius
