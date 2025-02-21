@@ -104,7 +104,24 @@ namespace PanelizedAndModularFinal
                     // Ensure that the room area is not below 10 square meters.
                     double area = inst.Area < 10.0 ? 10.0 : inst.Area;
                     // Randomly generate a position for the room within a 100x100 area.
-                    XYZ position = new XYZ(random.NextDouble() * 100, random.NextDouble() * 100, 0);
+                    View activeView1 = doc.ActiveView;
+                    // Declare a variable to hold the bounding box (the area limits) of the view.
+                    BoundingBoxXYZ viewBox1 = null;
+                    // If the view has a crop box active (user-defined boundary), use it.
+                    if (activeView1.CropBoxActive && activeView1.CropBox != null)
+                        viewBox1 = activeView1.CropBox;
+                    else
+                        // Otherwise, get the overall bounding box of the view.
+                        viewBox1 = activeView1.get_BoundingBox(null);
+
+
+
+                    double layoutWidth1 = viewBox1.Max.X - viewBox1.Min.X;
+                    double layoutHeight1 = viewBox1.Max.Y - viewBox1.Min.Y;
+                    // Calculate the total available area in the view.
+                 
+                   
+                    XYZ position = new XYZ(viewBox1.Min.X + random.NextDouble() * layoutWidth1,viewBox1.Min.Y + random.NextDouble() * layoutHeight1,0);
 
                     // Create a new SpaceNode object that holds all details about this room.
                     var node = new SpaceNode(inst.Name, inst.RoomType, area, position, inst.WpfColor);
@@ -369,8 +386,8 @@ namespace PanelizedAndModularFinal
         // Below are constant values used in the force-directed layout algorithm.
         // They control how the rooms (nodes) interact with each other when arranging the layout.
         private const int ITERATIONS = 100;                // How many iterations (updates) the algorithm will run.
-        private const double PREFERRED_ADJ_FACTOR = 2.0;     // Amplifies the attractive force if rooms are preferred to be adjacent.
-        private const double SPRING_CONSTANT = 0.01;         // Controls the strength of attraction between connected rooms.
+        private const double PREFERRED_ADJ_FACTOR = 5.0;     // Amplifies the attractive force if rooms are preferred to be adjacent.
+        private const double SPRING_CONSTANT = 0.05;         // Controls the strength of attraction between connected rooms.
         private const double REPULSION_CONSTANT = 100.0;     // Controls how strongly rooms repel each other.
         private const double DAMPING = 0.85;                 // Reduces the movement speed of rooms to help the layout settle.
 
