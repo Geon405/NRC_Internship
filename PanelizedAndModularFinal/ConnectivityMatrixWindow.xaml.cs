@@ -1,38 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using Autodesk.Revit.DB;
 
 namespace PanelizedAndModularFinal
 {
     public partial class ConnectivityMatrixWindow : Window
     {
-        // 2D adjacency matrix: 0 or 1
-
-
+        // 2D connectivity matrix: 0 (no connection) or 1 (connected)
         public int[,] ConnectivityMatrix { get; private set; }
-
         private List<SpaceNode> _spaces;
 
         public ConnectivityMatrixWindow(List<SpaceNode> spaces)
         {
             InitializeComponent();
             _spaces = spaces;
-
             int count = _spaces.Count;
             ConnectivityMatrix = new int[count, count];
 
-            // Initialize all to 0
+            // Initialize all values to 0
             for (int i = 0; i < count; i++)
                 for (int j = 0; j < count; j++)
                     ConnectivityMatrix[i, j] = 0;
@@ -44,71 +31,89 @@ namespace PanelizedAndModularFinal
         {
             int n = _spaces.Count;
 
-
-
-            // Create columns: first column for room name, then one column per space for 0/1
+            // Create first column for room names (read-only)
             DataGridTextColumn nameColumn = new DataGridTextColumn
             {
                 Header = "Room",
-                Binding = new System.Windows.Data.Binding("RoomName"),
+                Binding = new Binding("RoomName"),
                 IsReadOnly = true
             };
             MatrixGrid.Columns.Add(nameColumn);
 
+            // Create connectivity selection columns
             for (int col = 0; col < n; col++)
             {
-                // Create a column that binds to an index in row data
-                DataGridTemplateColumn colTemplate = new DataGridTemplateColumn
+                DataGridComboBoxColumn comboColumn = new DataGridComboBoxColumn
                 {
-                    Header = _spaces[col].Name
-                };
-
-                // Cell editing template
-                FrameworkElementFactory comboFactory = new FrameworkElementFactory(typeof(ComboBox));
-                comboFactory.SetValue(ComboBox.ItemsSourceProperty, new int[] { 0, 1 });
-                // Bind selected value to a property "Values[col]"
-                comboFactory.SetBinding(ComboBox.SelectedValueProperty,
-                    new System.Windows.Data.Binding($"Values[{col}]")
+                    Header = _spaces[col].Name,
+                    ItemsSource = new int[] { 0, 1 }, // Ensure 0 and 1 are selectable
+                    SelectedItemBinding = new Binding($"Values[{col}]")
                     {
-                        Mode = System.Windows.Data.BindingMode.TwoWay,
-                        UpdateSourceTrigger = System.Windows.Data.UpdateSourceTrigger.PropertyChanged
-                    });
-
-                DataTemplate editingTemplate = new DataTemplate();
-                editingTemplate.VisualTree = comboFactory;
-                colTemplate.CellEditingTemplate = editingTemplate;
-
-                // For display, just show the integer
-                DataGridTextColumn textDisplay = new DataGridTextColumn
-                {
-                    Binding = new System.Windows.Data.Binding($"Values[{col}]")
+                        Mode = BindingMode.TwoWay,
+                        UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
+                    }
                 };
-                colTemplate.CellTemplate = new DataTemplate() { VisualTree = new FrameworkElementFactory(typeof(TextBlock)) };
-                colTemplate.CellTemplate.VisualTree.SetBinding(TextBlock.TextProperty, new System.Windows.Data.Binding($"Values[{col}]"));
 
-                MatrixGrid.Columns.Add(colTemplate);
+                MatrixGrid.Columns.Add(comboColumn);
             }
 
-            // Create row data
+            // Create row data for each space node with default 0 values
             List<RowData> rows = new List<RowData>();
             for (int row = 0; row < n; row++)
             {
                 rows.Add(new RowData
                 {
                     RoomName = _spaces[row].Name,
-                    Values = new int[n] // all zero by default
+                    Values = new int[n] // Initialize all to 0
                 });
             }
 
             MatrixGrid.ItemsSource = rows;
+
+            // Attach event handler to ensure symmetry and commit changes
+            MatrixGrid.CellEditEnding += MatrixGrid_CellEditEnding;
         }
 
+        private void MatrixGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        {
+            if (e.EditingElement is ComboBox comboBox && e.Row.DataContext is RowData row)
+            {
+                int selectedIndex = MatrixGrid.Items.IndexOf(row);
+                int columnIndex = e.Column.DisplayIndex - 1; // Adjust for Room Name column
 
+                if (columnIndex >= 0 && selectedIndex >= 0)
+                {
+                    // Get selected value from ComboBox
+                    if (comboBox.SelectedItem is int selectedValue)
+                    {
+                        var rows = (List<RowData>)MatrixGrid.ItemsSource;
 
+                        // Check if the value actually changed
+                        if (rows[selectedIndex].Values[columnIndex] != selectedValue ||
+                            rows[columnIndex].Values[selectedIndex] != selectedValue)
+                        {
+                            // Update values in the connectivity matrix
+                            rows[selectedIndex].Values[columnIndex] = selectedValue;
+                            rows[columnIndex].Values[selectedIndex] = selectedValue; // Mirror update
+
+                            ConnectivityMatrix[selectedIndex, columnIndex] = selectedValue;
+                            ConnectivityMatrix[columnIndex, selectedIndex] = selectedValue;
+
+                            // Ensure UI updates correctly without causing recursion
+                            Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                            {
+                                MatrixGrid.ItemsSource = null; // Reset binding
+                                MatrixGrid.ItemsSource = rows; // Rebind with updated data
+                            }), System.Windows.Threading.DispatcherPriority.Background);
+                        }
+                    }
+                }
+            }
+        }
 
         private void OK_Click(object sender, RoutedEventArgs e)
         {
-            // Force any pending cell edits to commit
+            // Ensure all pending edits are committed
             MatrixGrid.CommitEdit(DataGridEditingUnit.Row, true);
             MatrixGrid.CommitEdit();
 
@@ -118,18 +123,16 @@ namespace PanelizedAndModularFinal
                 for (int j = 0; j < rows[i].Values.Length; j++)
                 {
                     ConnectivityMatrix[i, j] = rows[i].Values[j];
-
                 }
             }
-            this.DialogResult = true;
+
+            DialogResult = true;
             Close();
         }
 
-
-
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
-            this.DialogResult = false;
+            DialogResult = false;
             Close();
         }
 
@@ -141,5 +144,3 @@ namespace PanelizedAndModularFinal
         }
     }
 }
-
-
