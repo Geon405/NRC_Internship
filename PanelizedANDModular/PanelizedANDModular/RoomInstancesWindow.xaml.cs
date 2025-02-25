@@ -12,38 +12,69 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
+using System;
+using System.Collections.Generic;
+
 namespace PanelizedAndModularFinal
 {
-    /// <summary>
-    /// Interaction logic for RoomInstancesWindow.xaml
-    /// This partial class is linked with the XAML file defining the window's UI.
-    /// </summary>
     public partial class RoomInstancesWindow : Window
     {
-        // This property holds a list of room instance rows; each row represents an instance of a room.
         public List<RoomInstanceRow> Instances { get; set; }
+        private const double MIN_AREA = 10.0; // Minimum allowed area per room
 
-        // Constructor for the RoomInstancesWindow.
-        // It accepts a list of RoomInstanceRow objects to be displayed in the DataGrid.
         public RoomInstancesWindow(List<RoomInstanceRow> instances)
         {
-            InitializeComponent(); // Initializes the components defined in the XAML file.
-            Instances = instances; // Assigns the passed-in list to the Instances property.
-            InstancesDataGrid.ItemsSource = Instances; // Binds the Instances list to the DataGrid for display.
+            InitializeComponent();
+            Instances = instances;
+            InstancesDataGrid.ItemsSource = Instances;
         }
-
-        // Event handler for the OK button click.
-        // When the OK button is clicked, this sets the DialogResult to true.
         private void OkButton_Click(object sender, RoutedEventArgs e)
         {
-            this.DialogResult = true; // Indicates that the user accepted/confirmed the action.
+            // Dictionary containing minimum area (ft²) for each space type
+            Dictionary<string, double> minAreaRequirements = new Dictionary<string, double>()
+    {
+        { "Living combined with dining", 145 },
+        { "Only Living", 118 },
+        { "Dining", 75 },
+        { "Dining room (as part of kitchen)", 35 },
+        { "Master Bedroom", 105 },
+        { "Second bedroom", 75 },
+        { "Bedroom spaces in combination (if there is more than 2 bedrooms)", 45 },
+        { "Kitchen", 45 },
+        { "Bathroom & water closet room", 34 }
+    };
+
+            List<string> errorMessages = new List<string>();
+
+            // Validate each room's area
+            foreach (var instance in Instances)
+            {
+                if (minAreaRequirements.ContainsKey(instance.RoomType))
+                {
+                    double minRequired = minAreaRequirements[instance.RoomType]; // Get min required area
+                    if (instance.Area < minRequired)
+                    {
+                        errorMessages.Add($"- {instance.Name}: {instance.Area} ft² (Minimum required: {minRequired} ft²)");
+                    }
+                }
+            }
+
+            // If errors exist, show all at once
+            if (errorMessages.Count > 0)
+            {
+                MessageBox.Show($"Error: The following rooms have an area below the minimum required size:\n\n" +
+                                string.Join("\n", errorMessages),
+                                "Invalid Area", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return; // Prevent closing
+            }
+
+            this.DialogResult = true; // Proceed if validation passes
         }
 
-        // Event handler for the Cancel button click.
-        // When the Cancel button is clicked, this sets the DialogResult to false.
+
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-            this.DialogResult = false; // Indicates that the user canceled/declined the action.
+            this.DialogResult = false;
         }
     }
 }

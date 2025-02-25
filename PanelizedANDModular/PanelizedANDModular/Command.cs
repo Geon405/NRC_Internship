@@ -208,6 +208,16 @@ namespace PanelizedAndModularFinal
                 // This simulates physical forces (like attraction and repulsion) so that rooms are well-spaced
                 // and the final layout respects user-defined connections and adjacencies.
                 ApplyForceDirectedLayout(spaces, preferredAdjacency, weightedAdjMatrix, viewBox);
+               
+                
+                
+                SnapConnectedCircles(spaces, adjacencyMatrix);
+
+                CenterLayout(spaces, viewBox);
+                ResolveCollisions(spaces);
+
+
+
 
                 // Now create the connection lines (edges) between rooms using the new positions.
                 // Step 6: Create Room Connections with Weights
@@ -386,9 +396,9 @@ namespace PanelizedAndModularFinal
         // Below are constant values used in the force-directed layout algorithm.
         // They control how the rooms (nodes) interact with each other when arranging the layout.
         private const int ITERATIONS = 100;                // How many iterations (updates) the algorithm will run.
-        private const double PREFERRED_ADJ_FACTOR = 5.0;     // Amplifies the attractive force if rooms are preferred to be adjacent.
-        private const double SPRING_CONSTANT = 0.05;         // Controls the strength of attraction between connected rooms.
-        private const double REPULSION_CONSTANT = 100.0;     // Controls how strongly rooms repel each other.
+        private const double PREFERRED_ADJ_FACTOR = 10.0;     // Amplifies the attractive force if rooms are preferred to be adjacent.
+        private const double SPRING_CONSTANT = 0.5;         // Controls the strength of attraction between connected rooms.
+        private const double REPULSION_CONSTANT = 10.0;     // Controls how strongly rooms repel each other.
         private const double DAMPING = 0.85;                 // Reduces the movement speed of rooms to help the layout settle.
 
         // Constants for early stopping and adaptive damping.
@@ -410,128 +420,110 @@ namespace PanelizedAndModularFinal
         // - weightedAdjMatrix: Matrix defining the strength of connections between rooms.
         // - viewBox: The bounding box representing the visible layout area.
         private void ApplyForceDirectedLayout(List<SpaceNode> spaces,
-                                              int[,] preferredAdjMatrix,
-                                              double?[,] weightedAdjMatrix,
-                                              BoundingBoxXYZ viewBox)
+                                      int[,] preferredAdjMatrix,
+                                      double?[,] weightedAdjMatrix,
+                                      BoundingBoxXYZ viewBox)
         {
             for (int iter = 0; iter < ITERATIONS; iter++)
             {
-                // If adaptive damping is enabled, adjust the damping factor over iterations.
+                // Adaptive damping adjustment.
                 double currentDamping = DAMPING;
                 if (ENABLE_ADAPTIVE_DAMPING)
                 {
-                    // Example: Linearly reduce damping by up to 50% over all iterations.
                     currentDamping = DAMPING - (DAMPING / 2.0) * (iter / (double)ITERATIONS);
                 }
 
-                // Initialize an array to store the force vector for each room node.
+                // Initialize force vectors.
                 XYZ[] forces = new XYZ[spaces.Count];
                 for (int i = 0; i < forces.Length; i++)
                     forces[i] = XYZ.Zero;
 
-                // Loop over each pair of room nodes to calculate forces.
+                // Calculate forces between each pair of nodes.
                 for (int i = 0; i < spaces.Count; i++)
                 {
                     for (int j = i + 1; j < spaces.Count; j++)
                     {
-                        // Get the positions of the two nodes.
                         XYZ posI = spaces[i].Position;
                         XYZ posJ = spaces[j].Position;
-                        // Compute the vector from node i to node j.
                         XYZ delta = posJ - posI;
-                        // Calculate the distance between the two nodes.
                         double distance = delta.GetLength();
                         if (distance < 1e-6) distance = 1e-6; // Prevent division by zero.
 
-                        // Calculate the repulsion force (inverse-square law).
+                        // Repulsion force (inverse-square law).
                         double repForce = REPULSION_CONSTANT / (distance * distance);
                         XYZ repulsion = repForce * delta.Normalize();
 
-                        // Determine the connection weight between the two nodes.
+                        // Determine connection weight.
                         double weight = 0.0;
                         if (weightedAdjMatrix[i, j].HasValue && weightedAdjMatrix[i, j].Value > 0)
                         {
                             weight = weightedAdjMatrix[i, j].Value;
                         }
-                        // Increase weight if these nodes are preferred to be adjacent.
                         if (preferredAdjMatrix[i, j] == 1)
                         {
-                            if (weight == 0.0)
-                            {
-                                weight = 1.0;
-                            }
-                            else
-                            {
-                                weight *= PREFERRED_ADJ_FACTOR;
-                            }
+                            // Ensure there is a weight even if none was defined.
+                            weight = (weight == 0.0) ? 1.0 : weight * PREFERRED_ADJ_FACTOR;
                         }
 
-                        // Calculate the attractive (spring) force if there is a connection.
+                        // Determine desired distance.
+                        // For preferred adjacencies, the rest length is the sum of the node radii so that the circles touch.
+                        double desiredDistance = 1.0;
+                        if (preferredAdjMatrix[i, j] == 1)
+                        {
+                            desiredDistance = spaces[i].Radius + spaces[j].Radius;
+                        }
+
+                        // Compute attractive (spring) force based on the difference from the desired distance.
                         double attrForce = 0.0;
                         if (weight > 0)
                         {
-                            // The force is proportional to the difference from a rest length (here taken as 1.0).
-                            attrForce = SPRING_CONSTANT * weight * (distance - 1.0);
+                            attrForce = SPRING_CONSTANT * weight * (distance - desiredDistance);
                         }
-                        // Attraction force acts in the opposite direction to pull nodes together.
                         XYZ attraction = -attrForce * delta.Normalize();
 
-                        // The net force is the sum of repulsion and attraction.
+                        // Net force for this pair.
                         XYZ forceIJ = repulsion + attraction;
-                        // Apply the net force in opposite directions to both nodes.
                         forces[i] -= forceIJ;
                         forces[j] += forceIJ;
                     }
                 }
 
-                // Update the positions of the nodes based on the computed forces and the damping factor.
-                double totalMovement = 0.0;  // To measure how far all nodes move in this iteration.
+                // Update positions based on forces.
+                double totalMovement = 0.0;
                 for (int i = 0; i < spaces.Count; i++)
                 {
-                    // Calculate the velocity vector as force scaled by damping.
                     XYZ velocity = forces[i] * currentDamping;
-                    // Limit the maximum displacement to avoid too large jumps.
                     double maxDisplacement = 5.0;
                     if (velocity.GetLength() > maxDisplacement)
                         velocity = velocity.Normalize() * maxDisplacement;
 
-                    // Update the node's position.
                     spaces[i].Position += velocity;
-                    // Accumulate the movement for early stopping check.
                     totalMovement += velocity.GetLength();
                 }
 
-                // Early stopping: If the average movement is below the threshold, exit the loop.
+                // Early stopping if movement is minimal.
                 double averageMovement = totalMovement / spaces.Count;
                 if (averageMovement < MOVEMENT_THRESHOLD)
                 {
                     break;
                 }
 
-                // Ensure that all nodes stay within the defined crop region (layout boundaries)
-                // Adjust positions to resolve any overlaps between nodes.
-                
+                // Collision 
                 ResolveCollisions(spaces);
-                ClampNodesToCropRegion(spaces, viewBox);
-                ResolveCollisions(spaces);
-
+          
+     
             }
         }
 
-        ////////////////////////////////////////////////////////////////////////////////
-        // Method: ResolveCollisions
-        ////////////////////////////////////////////////////////////////////////////////
-        // This method checks if any two room nodes (represented as circles) overlap.
-        // If they do, it pushes them apart so they no longer collide.
-        // Parameter:
-        // - spaces: The list of room nodes.
+
         private void ResolveCollisions(List<SpaceNode> spaces)
         {
+            const double epsilon = 0.001;
             bool hasOverlap;
 
             do
             {
-                hasOverlap = false; // Assume no overlaps initially
+                hasOverlap = false;
 
                 for (int i = 0; i < spaces.Count; i++)
                 {
@@ -549,18 +541,19 @@ namespace PanelizedAndModularFinal
 
                         if (distance < minDist)
                         {
-                            hasOverlap = true; // Mark that at least one overlap was found
-
-                            double overlap = minDist - distance + 0.001;
-                            XYZ pushDir = delta.Normalize();
+                            hasOverlap = true;
+                            double overlap = (minDist - distance) + epsilon;
+                            XYZ pushDir = (distance == 0) ? new XYZ(1, 0, 0) : delta.Normalize();
 
                             spaces[i].Position -= 0.5 * overlap * pushDir;
                             spaces[j].Position += 0.5 * overlap * pushDir;
                         }
                     }
                 }
-            } while (hasOverlap); // Continue until no overlaps remain
+            } while (hasOverlap);
         }
+
+
 
 
         ////////////////////////////////////////////////////////////////////////////////
@@ -586,35 +579,127 @@ namespace PanelizedAndModularFinal
         // Parameters:
         // - spaces: The list of room nodes.
         // - bb: The bounding box defining the allowed layout area.
-        private void ClampNodesToCropRegion(List<SpaceNode> spaces, BoundingBoxXYZ bb)
+        //private void ClampNodesToCropRegion(List<SpaceNode> spaces, BoundingBoxXYZ bb)
+        //{
+        //    if (bb == null) return; // If there is no bounding box, exit the method.
+
+        //    // Retrieve the minimum and maximum points of the bounding box.
+        //    XYZ min = bb.Min;
+        //    XYZ max = bb.Max;
+        //    foreach (var space in spaces)
+        //    {
+        //        // Calculate the radius for the current node.
+        //        double r = GetCircleRadius(space.Area);
+        //        // Get the current position of the node.
+        //        XYZ pos = space.Position;
+
+        //        double x = pos.X;
+        //        double y = pos.Y;
+        //        double z = pos.Z;
+
+        //        // Clamp the X coordinate so the circle stays within the left and right boundaries.
+        //        x = Math.Max(x, min.X + r);
+        //        x = Math.Min(x, max.X - r);
+
+        //        // Clamp the Y coordinate similarly for the top and bottom boundaries.
+        //        y = Math.Max(y, min.Y + r);
+        //        y = Math.Min(y, max.Y - r);
+
+        //        // The Z coordinate typically remains unchanged in a 2D layout.
+        //        space.Position = new XYZ(x, y, z);
+        //    }
+        //}
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////////////
+        // Method: SnapConnectedCircles
+        ////////////////////////////////////////////////////////////////////////////////
+        // This method iterates through all pairs of connected circles (nodes) as
+        // defined by the connectivity matrix. If two connected circles are further
+        // apart than the sum of their radii, it moves them closer until they are just
+        // touching (within a small tolerance), ensuring they do not overlap.
+        private void SnapConnectedCircles(List<SpaceNode> spaces, int[,] connectivityMatrix)
         {
-            if (bb == null) return; // If there is no bounding box, exit the method.
+            const double tolerance = 0.001;
+            bool adjusted = true;
+            int iterations = 0;
+            int maxIterations = 10; // Prevents an endless loop in edge cases
 
-            // Retrieve the minimum and maximum points of the bounding box.
-            XYZ min = bb.Min;
-            XYZ max = bb.Max;
-            foreach (var space in spaces)
+            while (adjusted && iterations < maxIterations)
             {
-                // Calculate the radius for the current node.
-                double r = GetCircleRadius(space.Area);
-                // Get the current position of the node.
-                XYZ pos = space.Position;
+                adjusted = false;
+                for (int i = 0; i < spaces.Count; i++)
+                {
+                    for (int j = i + 1; j < spaces.Count; j++)
+                    {
+                        // Check if these two circles are connected.
+                        if (connectivityMatrix[i, j] == 1)
+                        {
+                            double radiusI = GetCircleRadius(spaces[i].Area);
+                            double radiusJ = GetCircleRadius(spaces[j].Area);
+                            double desiredDistance = radiusI + radiusJ;
 
-                double x = pos.X;
-                double y = pos.Y;
-                double z = pos.Z;
+                            XYZ delta = spaces[j].Position - spaces[i].Position;
+                            double currentDistance = delta.GetLength();
 
-                // Clamp the X coordinate so the circle stays within the left and right boundaries.
-                x = Math.Max(x, min.X + r);
-                x = Math.Min(x, max.X - r);
-
-                // Clamp the Y coordinate similarly for the top and bottom boundaries.
-                y = Math.Max(y, min.Y + r);
-                y = Math.Min(y, max.Y - r);
-
-                // The Z coordinate typically remains unchanged in a 2D layout.
-                space.Position = new XYZ(x, y, z);
+                            // If they're further apart than desired, move them closer.
+                            if (currentDistance > desiredDistance + tolerance)
+                            {
+                                double moveAmount = (currentDistance - desiredDistance) / 2;
+                                XYZ moveVector = delta.Normalize() * moveAmount;
+                                spaces[i].Position += moveVector;
+                                spaces[j].Position -= moveVector;
+                                adjusted = true;
+                            }
+                        }
+                    }
+                }
+                iterations++;
             }
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        private void CenterLayout(List<SpaceNode> spaces, BoundingBoxXYZ viewBox)
+        {
+            // Compute the bounding box of all nodes (including each circle's radius)
+            XYZ layoutMin = new XYZ(double.MaxValue, double.MaxValue, 0);
+            XYZ layoutMax = new XYZ(double.MinValue, double.MinValue, 0);
+            foreach (var node in spaces)
+            {
+                double r = GetCircleRadius(node.Area);
+                layoutMin = new XYZ(Math.Min(layoutMin.X, node.Position.X - r),
+                                    Math.Min(layoutMin.Y, node.Position.Y - r), 0);
+                layoutMax = new XYZ(Math.Max(layoutMax.X, node.Position.X + r),
+                                    Math.Max(layoutMax.Y, node.Position.Y + r), 0);
+            }
+
+            // Calculate the center of the layout and the view
+            XYZ layoutCenter = new XYZ((layoutMin.X + layoutMax.X) / 2.0, (layoutMin.Y + layoutMax.Y) / 2.0, 0);
+            XYZ viewCenter = new XYZ((viewBox.Min.X + viewBox.Max.X) / 2.0, (viewBox.Min.Y + viewBox.Max.Y) / 2.0, 0);
+
+            // Calculate the offset needed to center the layout
+            XYZ offset = viewCenter - layoutCenter;
+
+            // Apply the offset to all nodes
+            foreach (var node in spaces)
+            {
+                node.Position += offset;
+            }
+        }
+
     }
 }

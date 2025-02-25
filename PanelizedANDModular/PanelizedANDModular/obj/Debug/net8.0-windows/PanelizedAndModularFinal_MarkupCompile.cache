@@ -8,12 +8,12 @@ C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedA
 PanelizedAndModularFinal
 none
 false
-TRACE;RELEASE;NET;NET8_0;NETCOREAPP
+TRACE;DEBUG;NET;NET8_0;NETCOREAPP
 
 5-1117571302
 
-161410148254
-398452604566
+11533237275
+200805319329
 ConnectivityMatrixWindow.xaml;EdgeWeightsWindow.xaml;PreferredAdjacencyWindow.xaml;RoomInputWindow.xaml;RoomInstancesWindow.xaml;
 
 False
