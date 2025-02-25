@@ -19,7 +19,7 @@ namespace PanelizedAndModularFinal
     {
         // 2D adjacency matrix: 0 or 1
 
-       
+
         public int[,] ConnectivityMatrix { get; private set; }
 
         private List<SpaceNode> _spaces;
@@ -43,8 +43,8 @@ namespace PanelizedAndModularFinal
         private void SetupMatrixGrid()
         {
             int n = _spaces.Count;
-           
-          
+
+
 
             // Create columns: first column for room name, then one column per space for 0/1
             DataGridTextColumn nameColumn = new DataGridTextColumn
@@ -103,36 +103,28 @@ namespace PanelizedAndModularFinal
             MatrixGrid.ItemsSource = rows;
         }
 
-        //private void OK_Click(object sender, RoutedEventArgs e)
-        //{
-        //    // On OK, read the grid back into ConnectivityMatrix
-        //    var rows = (List<RowData>)MatrixGrid.ItemsSource;
-        //    for (int i = 0; i < rows.Count; i++)
-        //    {
-        //        for (int j = 0; j < rows[i].Values.Length; j++)
-        //        {
-        //            ConnectivityMatrix[i, j] = rows[i].Values[j];
-        //        }
-        //    }
-        //    this.DialogResult = true;
-        //    Close();
-        //}
+
+
 
         private void OK_Click(object sender, RoutedEventArgs e)
         {
+            // Force any pending cell edits to commit
+            MatrixGrid.CommitEdit(DataGridEditingUnit.Row, true);
+            MatrixGrid.CommitEdit();
+
             var rows = (List<RowData>)MatrixGrid.ItemsSource;
             for (int i = 0; i < rows.Count; i++)
             {
                 for (int j = 0; j < rows[i].Values.Length; j++)
                 {
                     ConnectivityMatrix[i, j] = rows[i].Values[j];
-                    // Force symmetry for an undirected connection
-                    ConnectivityMatrix[j, i] = rows[i].Values[j];
+
                 }
             }
             this.DialogResult = true;
             Close();
         }
+
 
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
@@ -149,3 +141,5 @@ namespace PanelizedAndModularFinal
         }
     }
 }
+
+

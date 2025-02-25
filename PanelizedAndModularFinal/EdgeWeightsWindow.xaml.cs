@@ -37,22 +37,30 @@ namespace PanelizedAndModularFinal
 
             // Prepare rows for display: each connected pair (i < j) with adjacency=1
             List<EdgeWeightRow> rows = new List<EdgeWeightRow>();
+
             for (int i = 0; i < n; i++)
             {
                 for (int j = i + 1; j < n; j++)
                 {
-                    if (_adjacency[i, j] == 1)
+                    // Check either side if undirected
+                    if (_adjacency[i, j] == 1 || _adjacency[j, i] == 1)
                     {
                         rows.Add(new EdgeWeightRow
                         {
                             EdgeDescription = $"{_spaces[i].Name} - {_spaces[j].Name}",
                             I = i,
                             J = j,
-                            Weight = 1.0 // Default or empty
+                            Weight = 1.0
                         });
                     }
                 }
             }
+
+
+
+
+
+
 
             EdgeWeightsGrid.ItemsSource = rows;
         }
@@ -64,11 +72,15 @@ namespace PanelizedAndModularFinal
             foreach (var row in rows)
             {
                 WeightedAdjacencyMatrix[row.I, row.J] = row.Weight;
-                WeightedAdjacencyMatrix[row.J, row.I] = row.Weight; // Symmetric
+
             }
             DialogResult = true;
             Close();
         }
+
+
+
+
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;

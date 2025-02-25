@@ -1,14 +1,27 @@
 ﻿<Window x:Class="PanelizedAndModularFinal.ConnectivityMatrixWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Connectivity Matrix" Height="400" Width="600">
-    <StackPanel Margin="10">
-        <DataGrid x:Name="MatrixGrid" AutoGenerateColumns="False" CanUserAddRows="False"
-                  CanUserDeleteRows="False" HeadersVisibility="All" />
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+        Title="Select Connectivity for Room Space" Height="400" Width="600">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Scrollable DataGrid in first row -->
+        <DataGrid x:Name="MatrixGrid"
+                  Grid.Row="0"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  HeadersVisibility="All"
+                  HorizontalScrollBarVisibility="Auto"
+                  VerticalScrollBarVisibility="Auto" />
+
+        <!-- Buttons in second row -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
             <Button Content="OK" Width="60" Margin="5" Click="OK_Click"/>
             <Button Content="Cancel" Width="60" Margin="5" Click="Cancel_Click"/>
         </StackPanel>
-    </StackPanel>
+    </Grid>
 </Window>
-

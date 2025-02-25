@@ -7,7 +7,7 @@ using Autodesk.Revit.DB;
 
 namespace PanelizedAndModularFinal
 {
-    
+
     public class SpaceNode
     {
         // Name of the room.
@@ -21,6 +21,9 @@ namespace PanelizedAndModularFinal
         // Color used for displaying the room (WPF color).
         public System.Windows.Media.Color WpfColor { get; set; }
 
+
+        public double Radius { get; set; }
+
         // Constructor to initialize the space node with provided values.
         public SpaceNode(string name, string function, double area, XYZ position, System.Windows.Media.Color wpfColor)
         {
@@ -29,6 +32,7 @@ namespace PanelizedAndModularFinal
             Area = area;
             Position = position;
             WpfColor = wpfColor;
+            Radius = 0.0;
         }
     }
 }

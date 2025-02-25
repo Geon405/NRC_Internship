@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PanelizedAndModularFinal"
         mc:Ignorable="d"
-        Title="RoomInstancesWindow" Height="450" Width="800">
+        Title="Insert the area for each room" Height="450" Width="800">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
@@ -41,7 +41,7 @@
                 </DataGridTemplateColumn>
 
                 <!-- Area in m², editable by the user -->
-                <DataGridTextColumn Header="Area (m²)" 
+                <DataGridTextColumn Header="Area (ft²)" 
                                     Binding="{Binding Area}" />
             </DataGrid.Columns>
         </DataGrid>
