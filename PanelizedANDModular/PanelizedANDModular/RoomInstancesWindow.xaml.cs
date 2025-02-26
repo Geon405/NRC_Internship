@@ -6,21 +6,23 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-using System;
-using System.Collections.Generic;
-
 namespace PanelizedAndModularFinal
 {
     public partial class RoomInstancesWindow : Window
     {
         public List<RoomInstanceRow> Instances { get; set; }
-        private const double MIN_AREA = 10.0; // Minimum allowed area per room
+
+
 
         public RoomInstancesWindow(List<RoomInstanceRow> instances)
         {
@@ -30,47 +32,70 @@ namespace PanelizedAndModularFinal
         }
         private void OkButton_Click(object sender, RoutedEventArgs e)
         {
-            // Dictionary containing minimum area (ft²) for each space type
-            Dictionary<string, double> minAreaRequirements = new Dictionary<string, double>()
-    {
-        { "Living combined with dining", 145 },
-        { "Only Living", 118 },
-        { "Dining", 75 },
-        { "Dining room (as part of kitchen)", 35 },
-        { "Master Bedroom", 105 },
-        { "Second bedroom", 75 },
-        { "Bedroom spaces in combination (if there is more than 2 bedrooms)", 45 },
-        { "Kitchen", 45 },
-        { "Bathroom & water closet room", 34 }
-    };
-
             List<string> errorMessages = new List<string>();
 
-            // Validate each room's area
+            // Refresh DataGrid bindings to ensure latest user inputs are captured
+            InstancesDataGrid.CommitEdit(DataGridEditingUnit.Row, true);
+            InstancesDataGrid.CommitEdit();
+
+            // Count the number of bedrooms to apply the correct rule
+            int bedroomCount = Instances.Count(r => r.RoomType == "Bedroom");
+
             foreach (var instance in Instances)
             {
-                if (minAreaRequirements.ContainsKey(instance.RoomType))
+                double minAreaFt2 = 0.0; // Default: no minimum constraint
+
+                // Define minimum area requirements in ft²
+                switch (instance.RoomType)
                 {
-                    double minRequired = minAreaRequirements[instance.RoomType]; // Get min required area
-                    if (instance.Area < minRequired)
-                    {
-                        errorMessages.Add($"- {instance.Name}: {instance.Area} ft² (Minimum required: {minRequired} ft²)");
-                    }
+                    case "Living Room":
+                        minAreaFt2 = 118.0;
+                        break;
+                    case "Dining Room":
+                        minAreaFt2 = 75.0;
+                        break;
+                    case "Kitchen":
+                        minAreaFt2 = 45.0;
+                        break;
+                    case "Washroom":
+                        minAreaFt2 = 34.0;
+                        break;
+                    case "Bedroom":
+                        if (bedroomCount == 1)
+                            minAreaFt2 = 105.0;
+                        else if (bedroomCount == 2)
+                            minAreaFt2 = 75.0;
+                        else if (bedroomCount > 2)
+                            minAreaFt2 = 45.0;
+                        break;
+                    default:
+                        minAreaFt2 = 0.0; // Office, Library, Den, TV Room, Game Room, Storage have no minimum
+                        break;
+                }
+
+                // Ensure area values are in ft² (if they are mistakenly stored in m²)
+                double areaFt2 = instance.Area; // Assume values are already in ft²
+
+                // Validate minimum area
+                if (minAreaFt2 > 0 && areaFt2 < minAreaFt2)
+                {
+                    errorMessages.Add($"- {instance.Name}: {areaFt2:F2} ft² (Minimum required: {minAreaFt2} ft²)");
                 }
             }
 
-            // If errors exist, show all at once
+            // If validation fails, show error message and prevent closing
             if (errorMessages.Count > 0)
             {
                 MessageBox.Show($"Error: The following rooms have an area below the minimum required size:\n\n" +
                                 string.Join("\n", errorMessages),
                                 "Invalid Area", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return; // Prevent closing
+                return; // Prevents the dialog from closing
             }
 
-            this.DialogResult = true; // Proceed if validation passes
+            // If validation passes, allow closing
+            this.DialogResult = true;
+            Close();
         }
-
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {

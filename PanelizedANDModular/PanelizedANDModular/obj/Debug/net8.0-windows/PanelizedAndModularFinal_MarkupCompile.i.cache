@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP
 
-5-1117571302
+7588951928
 
-13165298615
+15-1255110732
 200805319329
-ConnectivityMatrixWindow.xaml;EdgeWeightsWindow.xaml;PreferredAdjacencyWindow.xaml;RoomInputWindow.xaml;RoomInstancesWindow.xaml;
+ConnectivityMatrixWindow.xaml;EdgeWeightsWindow.xaml;ModuleInputWindow.xaml;ModuleTypesWindow.xaml;PreferredAdjacencyWindow.xaml;RoomInputWindow.xaml;RoomInstancesWindow.xaml;
 
 False
 

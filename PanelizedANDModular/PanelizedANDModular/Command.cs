@@ -34,6 +34,10 @@ namespace PanelizedAndModularFinal
 
             try
             {
+
+
+         
+
                 // Step 1: Get Room Inputs from User
                 // Open a window to ask the user what types of rooms they want.
                 RoomInputWindow firstWindow = new RoomInputWindow();
@@ -68,7 +72,7 @@ namespace PanelizedAndModularFinal
                             RoomType = row.Name,
                             Name = instanceName,
                             WpfColor = row.Color,
-                            Area = 20.0 // Default area in square meters.
+                            Area = 20.0 // Default area
                         };
                         // Add the created instance to our list.
                         instanceRows.Add(instance);
@@ -102,6 +106,8 @@ namespace PanelizedAndModularFinal
                 foreach (var inst in secondWindow.Instances)
                 {
                     // Ensure that the room area is not below 10 square meters.
+
+
                     double area = inst.Area < 10.0 ? 10.0 : inst.Area;
                     // Randomly generate a position for the room within a 100x100 area.
                     View activeView1 = doc.ActiveView;
@@ -264,7 +270,40 @@ namespace PanelizedAndModularFinal
 
                 // Inform the user that the rooms and their connections have been successfully created.
                 TaskDialog.Show("Revit", $"Created {spaces.Count} room(s) with connections.");
+
+
+
+
+
+
+
+
+
+                ModuleInputWindow inputWindow = new ModuleInputWindow();
+                bool? inputResult = inputWindow.ShowDialog();
+                if (inputResult != true)
+                {
+                    TaskDialog.Show("Canceled", "User canceled the module input.");
+                    return Result.Cancelled;
+                }
+
+                // Retrieve the stored user input values.
+                double minWidth = inputWindow.MinWidth;
+                double maxHeight = inputWindow.MaxHeight;
+
+                // Now open the Module Types Window with the input values.
+                ModuleTypesWindow typesWindow = new ModuleTypesWindow(minWidth, maxHeight);
+                typesWindow.ShowDialog();
+
+
+
+
+
+
                 return Result.Succeeded;
+
+
+
             }
             catch (Exception ex)
             {
@@ -273,6 +312,17 @@ namespace PanelizedAndModularFinal
                 TaskDialog.Show("Error", ex.Message);
                 return Result.Failed;
             }
+
+
+
+
+
+
+
+
+
+
+
         }
 
         ////////////////////////////////////////////////////////////////////////////////

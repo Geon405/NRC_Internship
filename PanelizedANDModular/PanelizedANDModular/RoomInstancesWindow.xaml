@@ -41,7 +41,7 @@
                 </DataGridTemplateColumn>
 
                 <!-- Area in m², editable by the user -->
-                <DataGridTextColumn Header="Area (m²)" 
+                <DataGridTextColumn Header="Area (ft²)" 
                                     Binding="{Binding Area}" />
             </DataGrid.Columns>
         </DataGrid>
