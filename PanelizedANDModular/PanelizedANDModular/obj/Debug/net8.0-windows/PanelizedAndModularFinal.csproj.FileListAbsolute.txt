@@ -593,3 +593,5 @@ C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedA
 C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\ModuleTypesWindow.baml
 C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\ModuleInputWindow.g.cs
 C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\ModuleTypesWindow.g.cs
+C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\ModuleCombinationsWindow.baml
+C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\ModuleCombinationsWindow.g.cs

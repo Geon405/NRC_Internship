@@ -36,8 +36,12 @@ namespace PanelizedAndModularFinal
             ModuleTypesWindow typesWindow = new ModuleTypesWindow(minWidth, maxHeight);
             typesWindow.ShowDialog();
 
+
+         
+
             DialogResult = true;
             Close();
+
         }
 
         private void btnCancel_Click(object sender, RoutedEventArgs e)
