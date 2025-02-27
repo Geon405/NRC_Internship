@@ -17,6 +17,15 @@
     <Compile Update="PreferredAdjacencyWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="ModuleInputWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="ModuleTypesWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="ModuleCombinationsWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Page Update="RoomInputWindow.xaml">
@@ -32,6 +41,15 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="PreferredAdjacencyWindow.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="ModuleInputWindow.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="ModuleTypesWindow.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="ModuleCombinationsWindow.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>

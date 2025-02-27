@@ -10,10 +10,16 @@ using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using System.Windows.Media;
-using System.Windows.Controls;
-using System.Windows;
 #endregion
 
+
+public static class GlobalData
+{
+    public static double TotalRoomArea { get; set; }
+    public static double LandArea { get; set; }
+}
+
+// The namespace groups related classes together. Here, "PanelizedAndModularFinal" is the container for our code.
 namespace PanelizedAndModularFinal
 {
     // The Transaction attribute tells Revit that this command will make changes to the model,
@@ -54,6 +60,8 @@ namespace PanelizedAndModularFinal
 
                 // Step 2: Generate Room Instances
                 // Loop through each room type selected by the user.
+
+                double totalArea = 0;
                 foreach (var row in userSelections)
                 {
                     // If the requested quantity is 0 or negative, skip this room type.
@@ -69,13 +77,20 @@ namespace PanelizedAndModularFinal
                             RoomType = row.Name,
                             Name = instanceName,
                             WpfColor = row.Color,
-                            Area = 20.0 // Default area in square meters.
+                            Area = 20.0 // Default area
                         };
                         // Add the created instance to our list.
+
+                        // Accumulate the area.
+                        totalArea += instance.Area;
+
+                   
+
                         instanceRows.Add(instance);
                     }
                 }
 
+   
                 // If no room instances were created, inform the user and cancel the command.
                 if (instanceRows.Count == 0)
                 {
@@ -94,6 +109,21 @@ namespace PanelizedAndModularFinal
                     return Result.Cancelled;
                 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                 // Create a list to hold our room "nodes". Each node represents a room with its properties.
                 List<SpaceNode> spaces = new List<SpaceNode>();
                 // Create a Random object for generating random positions.
@@ -102,10 +132,29 @@ namespace PanelizedAndModularFinal
                 // Process each room instance as adjusted by the user in the second window.
                 foreach (var inst in secondWindow.Instances)
                 {
-                    // Ensure that the room area is not below 10 square meters.
+                    // Ensure that the room area is not below 10 ft^2
+
+
                     double area = inst.Area < 10.0 ? 10.0 : inst.Area;
-                    // Randomly generate a position for the room within a 100x100 area.
-                    XYZ position = new XYZ(random.NextDouble() * 100, random.NextDouble() * 100, 0);
+                   
+                    View activeView1 = doc.ActiveView;
+                    // Declare a variable to hold the bounding box (the area limits) of the view.
+                    BoundingBoxXYZ viewBox1 = null;
+                    // If the view has a crop box active (user-defined boundary), use it.
+                    if (activeView1.CropBoxActive && activeView1.CropBox != null)
+                        viewBox1 = activeView1.CropBox;
+                    else
+                        // Otherwise, get the overall bounding box of the view.
+                        viewBox1 = activeView1.get_BoundingBox(null);
+
+
+
+                    double layoutWidth1 = viewBox1.Max.X - viewBox1.Min.X;
+                    double layoutHeight1 = viewBox1.Max.Y - viewBox1.Min.Y;
+                    // Calculate the total available area in the view.
+
+
+                    XYZ position = new XYZ(viewBox1.Min.X + random.NextDouble() * layoutWidth1, viewBox1.Min.Y + random.NextDouble() * layoutHeight1, 0);
 
                     // Create a new SpaceNode object that holds all details about this room.
                     var node = new SpaceNode(inst.Name, inst.RoomType, area, position, inst.WpfColor);
@@ -125,19 +174,22 @@ namespace PanelizedAndModularFinal
                     viewBox = activeView.get_BoundingBox(null);
 
                 // NEW: Verify total room area fits within the available layout space
-                // Calculate the total area of all rooms in square meters.
+                // Calculate the total area of all rooms in square feet.
                 double totalRoomArea = 0.0;
                 foreach (var space in spaces)
                 {
                     totalRoomArea += space.Area; // Each room's area is added.
                 }
-                // Convert the total area from m² to ft² (since layout space might be defined in feet).
-                double totalRoomAreaFt2 = totalRoomArea * 10.7639;
+               
+                double totalRoomAreaFt2 = totalRoomArea;
+                GlobalData.TotalRoomArea = totalRoomArea;
                 // Determine the dimensions (width and height) of the layout area using the view's bounding box.
                 double layoutWidth = viewBox.Max.X - viewBox.Min.X;
                 double layoutHeight = viewBox.Max.Y - viewBox.Min.Y;
                 // Calculate the total available area in the view.
                 double availableLayoutArea = layoutWidth * layoutHeight;
+
+                GlobalData.LandArea = availableLayoutArea;
 
                 // Check if the total area of the rooms exceeds the available layout area.
                 if (totalRoomAreaFt2 > availableLayoutArea)
@@ -146,99 +198,174 @@ namespace PanelizedAndModularFinal
                     return Result.Failed;
                 }
 
-                //  Make Adjacency Matrix
-                // Open a window that allows the user to specify which rooms should be adjacent.
-                PreferredAdjacencyWindow adjacencyWindow = new PreferredAdjacencyWindow(spaces);
-                bool? result = adjacencyWindow.ShowDialog();
-                if (result != true)
+                ////  Make Adjacency Matrix
+                //// Open a window that allows the user to specify which rooms should be adjacent.
+                //PreferredAdjacencyWindow adjacencyWindow = new PreferredAdjacencyWindow(spaces);
+                //bool? result = adjacencyWindow.ShowDialog();
+                //if (result != true)
+                //{
+                //    // If the user cancels, notify and exit.
+                //    TaskDialog.Show("Canceled", "User canceled at the preferred adjacency matrix window.");
+                //    return Result.Cancelled;
+                //}
+
+                //// Retrieve the preferred adjacency matrix from the window.
+                //int[,] preferredAdjacency = adjacencyWindow.PreferredAdjacency;
+
+                //// Step 4: Get Connectivity Matrix
+                //// Open a window where the user can define which rooms should be connected.
+                //ConnectivityMatrixWindow connectivityWindow = new ConnectivityMatrixWindow(spaces);
+                //bool? connectivityResult = connectivityWindow.ShowDialog();
+                //if (connectivityResult != true)
+                //{
+                //    // If the user cancels, show a message and exit.
+                //    TaskDialog.Show("Canceled", "User canceled at the connectivity matrix window.");
+                //    return Result.Cancelled;
+                //}
+
+                //// Retrieve the connectivity matrix from the window.
+                //int[,] adjacencyMatrix = connectivityWindow.ConnectivityMatrix;
+
+                //// Step 5: Open Edge Weights Window
+                //// This window allows the user to assign weights (importance) to each connection between rooms.
+                //EdgeWeightsWindow weightsWindow = new EdgeWeightsWindow(spaces, adjacencyMatrix);
+                //bool? weightResult = weightsWindow.ShowDialog();
+                //if (weightResult != true)
+                //{
+                //    // If the user cancels, notify and exit.
+                //    TaskDialog.Show("Canceled", "User canceled the edge weights window.");
+                //    return Result.Cancelled;
+                //}
+
+                //// Retrieve the weighted adjacency matrix which contains the connection strengths.
+                //double?[,] weightedAdjMatrix = weightsWindow.WeightedAdjacencyMatrix;
+
+                //// Apply a force-directed layout algorithm to adjust room positions.
+                //// This simulates physical forces (like attraction and repulsion) so that rooms are well-spaced
+                //// and the final layout respects user-defined connections and adjacencies.
+                //ApplyForceDirectedLayout(spaces, preferredAdjacency, weightedAdjMatrix, viewBox);
+
+
+
+                //SnapConnectedCircles(spaces, adjacencyMatrix);
+
+                //CenterLayout(spaces, viewBox);
+                //ResolveCollisions(spaces);
+
+
+
+
+                //// Now create the connection lines (edges) between rooms using the new positions.
+                //// Step 6: Create Room Connections with Weights
+                //using (Transaction tx = new Transaction(doc, "Connect Rooms"))
+                //{
+                //    // Begin a new transaction so changes can be grouped.
+                //    tx.Start();
+                //    // Loop through each pair of rooms to check for a connection.
+                //    for (int i = 0; i < spaces.Count; i++)
+                //    {
+                //        for (int j = i + 1; j < spaces.Count; j++)
+                //        {
+                //            // If a connection exists (i.e. a weight has been assigned) between room i and room j...
+                //            if (weightedAdjMatrix[i, j].HasValue)
+                //            {
+                //                // Create a line (edge) between the two room positions.
+                //                Line connectionLine = Line.CreateBound(spaces[i].Position, spaces[j].Position);
+                //                // Define a plane using one room's position to know where to draw the line.
+                //                Plane plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, spaces[i].Position);
+                //                SketchPlane sketchPlane = SketchPlane.Create(doc, plane);
+                //                // Draw the connection line as a model curve in Revit.
+                //                ModelCurve curve = doc.Create.NewModelCurve(connectionLine, sketchPlane);
+                //            }
+                //        }
+                //    }
+                //    // Commit the transaction to save the connection lines.
+                //    tx.Commit();
+                //}
+
+                //// Step 7: Create Circular Rooms
+                //// For each room, create a circular shape (with an outer square and a label).
+                //using (Transaction tx = new Transaction(doc, "Create Rooms"))
+                //{
+                //    tx.Start();
+                //    foreach (var space in spaces)
+                //    {
+                //        // Call the method to create the room's geometry.
+                //        // Parameters include the room's position, area, color, name, and the active view's ID (for labeling).
+                //        CreateCircleNode(doc, space.Position, space.Area, space.WpfColor, space.Name, uidoc.ActiveView.Id);
+                //    }
+                //    // Commit the transaction to save the room geometry.
+                //    tx.Commit();
+                //}
+
+                //// Inform the user that the rooms and their connections have been successfully created.
+                //TaskDialog.Show("Revit", $"Created {spaces.Count} room(s) with connections.");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                //STEP 2 // STEP 2 // STEP 2 // STEP 2 // STEP 2 // STEP 2//
+                ///////////////////////////////////////////////////////////
+                ModuleInputWindow inputWindow = new ModuleInputWindow();
+                bool? inputResult = inputWindow.ShowDialog();
+                if (inputResult != true)
                 {
-                    // If the user cancels, notify and exit.
-                    TaskDialog.Show("Canceled", "User canceled at the preferred adjacency matrix window.");
+                    TaskDialog.Show("Canceled", "User canceled the module input.");
                     return Result.Cancelled;
                 }
 
-                // Retrieve the preferred adjacency matrix from the window.
-                int[,] preferredAdjacency = adjacencyWindow.PreferredAdjacency;
+                // Retrieve the stored user input values.
+                double minWidth = inputWindow.MinWidth;
+                double maxHeight = inputWindow.MaxHeight;
 
-                // Step 4: Get Connectivity Matrix
-                // Open a window where the user can define which rooms should be connected.
-                ConnectivityMatrixWindow connectivityWindow = new ConnectivityMatrixWindow(spaces);
-                bool? connectivityResult = connectivityWindow.ShowDialog();
-                if (connectivityResult != true)
+                // Now open the Module Types Window with the input values.
+                // Now open the Module Types Window with the input values.
+                ModuleTypesWindow typesWindow = new ModuleTypesWindow(minWidth, maxHeight);
+  
+
+                // Retrieve the list of ModuleType objects from ModuleTypesWindow.
+                // (Ensure you’ve added a public property in ModuleTypesWindow, e.g., 
+                //  public List<ModuleType> ModuleTypeList { get; private set; }.)
+                List<ModuleType> moduleTypes = typesWindow.ModuleTypes;
+
+                // STEP: Open the Module Combinations Window
+                ModuleCombinationsWindow combWindow = new ModuleCombinationsWindow(moduleTypes, minWidth);
+                bool? combResult = combWindow.ShowDialog();
+                if (combResult != true)
                 {
-                    // If the user cancels, show a message and exit.
-                    TaskDialog.Show("Canceled", "User canceled at the connectivity matrix window.");
+                    TaskDialog.Show("Canceled", "User canceled the module combination selection.");
                     return Result.Cancelled;
                 }
 
-                // Retrieve the connectivity matrix from the window.
-                int[,] adjacencyMatrix = connectivityWindow.ConnectivityMatrix;
+                // Retrieve the user's selected combination (e.g., a string describing the modules).
+                string selectedCombination = combWindow.SelectedCombination;
+                TaskDialog.Show("Selected Combination", selectedCombination);
 
-                // Step 5: Open Edge Weights Window
-                // This window allows the user to assign weights (importance) to each connection between rooms.
-                EdgeWeightsWindow weightsWindow = new EdgeWeightsWindow(spaces, adjacencyMatrix);
-                bool? weightResult = weightsWindow.ShowDialog();
-                if (weightResult != true)
-                {
-                    // If the user cancels, notify and exit.
-                    TaskDialog.Show("Canceled", "User canceled the edge weights window.");
-                    return Result.Cancelled;
-                }
+                // Suppose we already have 'selectedCombination' from the window
+                // and we have 'moduleTypes' from the earlier steps.
 
-                // Retrieve the weighted adjacency matrix which contains the connection strengths.
-                double?[,] weightedAdjMatrix = weightsWindow.WeightedAdjacencyMatrix;
+                ModuleGeometryCreator.CreateRectanglesForCombination(doc, selectedCombination, moduleTypes);
 
-                // Apply a force-directed layout algorithm to adjust room positions.
-                // This simulates physical forces (like attraction and repulsion) so that rooms are well-spaced
-                // and the final layout respects user-defined connections and adjacencies.
-                ApplyForceDirectedLayout(spaces, preferredAdjacency, weightedAdjMatrix, viewBox);
 
-                // Now create the connection lines (edges) between rooms using the new positions.
-                // Step 6: Create Room Connections with Weights
-                using (Transaction tx = new Transaction(doc, "Connect Rooms"))
-                {
-                    // Begin a new transaction so changes can be grouped.
-                    tx.Start();
-                    // Loop through each pair of rooms to check for a connection.
-                    for (int i = 0; i < spaces.Count; i++)
-                    {
-                        for (int j = i + 1; j < spaces.Count; j++)
-                        {
-                            // If a connection exists (i.e. a weight has been assigned) between room i and room j...
-                            if (weightedAdjMatrix[i, j].HasValue)
-                            {
-                                // Create a line (edge) between the two room positions.
-                                Line connectionLine = Line.CreateBound(spaces[i].Position, spaces[j].Position);
-                                // Define a plane using one room's position to know where to draw the line.
-                                Plane plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, spaces[i].Position);
-                                SketchPlane sketchPlane = SketchPlane.Create(doc, plane);
-                                // Draw the connection line as a model curve in Revit.
-                                ModelCurve curve = doc.Create.NewModelCurve(connectionLine, sketchPlane);
-                            }
-                        }
-                    }
-                    // Commit the transaction to save the connection lines.
-                    tx.Commit();
-                }
-
-                // Step 7: Create Circular Rooms
-                // For each room, create a circular shape (with an outer square and a label).
-                using (Transaction tx = new Transaction(doc, "Create Rooms"))
-                {
-                    tx.Start();
-                    foreach (var space in spaces)
-                    {
-                        // Call the method to create the room's geometry.
-                        // Parameters include the room's position, area, color, name, and the active view's ID (for labeling).
-                        CreateCircleNode(doc, space.Position, space.Area, space.WpfColor, space.Name, uidoc.ActiveView.Id);
-                    }
-                    // Commit the transaction to save the room geometry.
-                    tx.Commit();
-                }
-
-                // Inform the user that the rooms and their connections have been successfully created.
-                TaskDialog.Show("Revit", $"Created {spaces.Count} room(s) with connections.");
                 return Result.Succeeded;
+
+
+
             }
             catch (Exception ex)
             {
@@ -248,6 +375,37 @@ namespace PanelizedAndModularFinal
                 return Result.Failed;
             }
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        //////////////////////////////////////////////////////////////////////////////////////////
+        //---------------------------------------------------------------------------------------//
+        //---------------------------------------------------------------------------------------//
+        //----------------------------------METHOD METHOD METHOD METHODS BELOW-------------------//
+        //---------------------------------------------------------------------------------------//
+        //---------------------------------------------------------------------------------------//
+        //////////////////////////////////////////////////////////////////////////////////////////
+
+
+
 
         ////////////////////////////////////////////////////////////////////////////////
         // Method: CreateCircleNode
@@ -370,9 +528,9 @@ namespace PanelizedAndModularFinal
         // Below are constant values used in the force-directed layout algorithm.
         // They control how the rooms (nodes) interact with each other when arranging the layout.
         private const int ITERATIONS = 100;                // How many iterations (updates) the algorithm will run.
-        private const double PREFERRED_ADJ_FACTOR = 2.0;     // Amplifies the attractive force if rooms are preferred to be adjacent.
-        private const double SPRING_CONSTANT = 0.01;         // Controls the strength of attraction between connected rooms.
-        private const double REPULSION_CONSTANT = 100.0;     // Controls how strongly rooms repel each other.
+        private const double PREFERRED_ADJ_FACTOR = 10.0;     // Amplifies the attractive force if rooms are preferred to be adjacent.
+        private const double SPRING_CONSTANT = 0.5;         // Controls the strength of attraction between connected rooms.
+        private const double REPULSION_CONSTANT = 10.0;     // Controls how strongly rooms repel each other.
         private const double DAMPING = 0.85;                 // Reduces the movement speed of rooms to help the layout settle.
 
         // Constants for early stopping and adaptive damping.
@@ -394,152 +552,141 @@ namespace PanelizedAndModularFinal
         // - weightedAdjMatrix: Matrix defining the strength of connections between rooms.
         // - viewBox: The bounding box representing the visible layout area.
         private void ApplyForceDirectedLayout(List<SpaceNode> spaces,
-                                              int[,] preferredAdjMatrix,
-                                              double?[,] weightedAdjMatrix,
-                                              BoundingBoxXYZ viewBox)
+                                      int[,] preferredAdjMatrix,
+                                      double?[,] weightedAdjMatrix,
+                                      BoundingBoxXYZ viewBox)
         {
             for (int iter = 0; iter < ITERATIONS; iter++)
             {
-                // If adaptive damping is enabled, adjust the damping factor over iterations.
+                // Adaptive damping adjustment.
                 double currentDamping = DAMPING;
                 if (ENABLE_ADAPTIVE_DAMPING)
                 {
-                    // Example: Linearly reduce damping by up to 50% over all iterations.
                     currentDamping = DAMPING - (DAMPING / 2.0) * (iter / (double)ITERATIONS);
                 }
 
-                // Initialize an array to store the force vector for each room node.
+                // Initialize force vectors.
                 XYZ[] forces = new XYZ[spaces.Count];
                 for (int i = 0; i < forces.Length; i++)
                     forces[i] = XYZ.Zero;
 
-                // Loop over each pair of room nodes to calculate forces.
+                // Calculate forces between each pair of nodes.
                 for (int i = 0; i < spaces.Count; i++)
                 {
                     for (int j = i + 1; j < spaces.Count; j++)
                     {
-                        // Get the positions of the two nodes.
                         XYZ posI = spaces[i].Position;
                         XYZ posJ = spaces[j].Position;
-                        // Compute the vector from node i to node j.
                         XYZ delta = posJ - posI;
-                        // Calculate the distance between the two nodes.
                         double distance = delta.GetLength();
                         if (distance < 1e-6) distance = 1e-6; // Prevent division by zero.
 
-                        // Calculate the repulsion force (inverse-square law).
+                        // Repulsion force (inverse-square law).
                         double repForce = REPULSION_CONSTANT / (distance * distance);
                         XYZ repulsion = repForce * delta.Normalize();
 
-                        // Determine the connection weight between the two nodes.
+                        // Determine connection weight.
                         double weight = 0.0;
                         if (weightedAdjMatrix[i, j].HasValue && weightedAdjMatrix[i, j].Value > 0)
                         {
                             weight = weightedAdjMatrix[i, j].Value;
                         }
-                        // Increase weight if these nodes are preferred to be adjacent.
                         if (preferredAdjMatrix[i, j] == 1)
                         {
-                            if (weight == 0.0)
-                            {
-                                weight = 1.0;
-                            }
-                            else
-                            {
-                                weight *= PREFERRED_ADJ_FACTOR;
-                            }
+                            // Ensure there is a weight even if none was defined.
+                            weight = (weight == 0.0) ? 1.0 : weight * PREFERRED_ADJ_FACTOR;
                         }
 
-                        // Calculate the attractive (spring) force if there is a connection.
+                        // Determine desired distance.
+                        // For preferred adjacencies, the rest length is the sum of the node radii so that the circles touch.
+                        double desiredDistance = 1.0;
+                        if (preferredAdjMatrix[i, j] == 1)
+                        {
+                            desiredDistance = spaces[i].Radius + spaces[j].Radius;
+                        }
+
+                        // Compute attractive (spring) force based on the difference from the desired distance.
                         double attrForce = 0.0;
                         if (weight > 0)
                         {
-                            // The force is proportional to the difference from a rest length (here taken as 1.0).
-                            attrForce = SPRING_CONSTANT * weight * (distance - 1.0);
+                            attrForce = SPRING_CONSTANT * weight * (distance - desiredDistance);
                         }
-                        // Attraction force acts in the opposite direction to pull nodes together.
                         XYZ attraction = -attrForce * delta.Normalize();
 
-                        // The net force is the sum of repulsion and attraction.
+                        // Net force for this pair.
                         XYZ forceIJ = repulsion + attraction;
-                        // Apply the net force in opposite directions to both nodes.
                         forces[i] -= forceIJ;
                         forces[j] += forceIJ;
                     }
                 }
 
-                // Update the positions of the nodes based on the computed forces and the damping factor.
-                double totalMovement = 0.0;  // To measure how far all nodes move in this iteration.
+                // Update positions based on forces.
+                double totalMovement = 0.0;
                 for (int i = 0; i < spaces.Count; i++)
                 {
-                    // Calculate the velocity vector as force scaled by damping.
                     XYZ velocity = forces[i] * currentDamping;
-                    // Limit the maximum displacement to avoid too large jumps.
                     double maxDisplacement = 5.0;
                     if (velocity.GetLength() > maxDisplacement)
                         velocity = velocity.Normalize() * maxDisplacement;
 
-                    // Update the node's position.
                     spaces[i].Position += velocity;
-                    // Accumulate the movement for early stopping check.
                     totalMovement += velocity.GetLength();
                 }
 
-                // Early stopping: If the average movement is below the threshold, exit the loop.
+                // Early stopping if movement is minimal.
                 double averageMovement = totalMovement / spaces.Count;
                 if (averageMovement < MOVEMENT_THRESHOLD)
                 {
                     break;
                 }
 
-                // Adjust positions to resolve any overlaps between nodes.
+                // Collision 
                 ResolveCollisions(spaces);
-                // Ensure that all nodes stay within the defined crop region (layout boundaries).
-                ClampNodesToCropRegion(spaces, viewBox);
+          
+     
             }
         }
 
-        ////////////////////////////////////////////////////////////////////////////////
-        // Method: ResolveCollisions
-        ////////////////////////////////////////////////////////////////////////////////
-        // This method checks if any two room nodes (represented as circles) overlap.
-        // If they do, it pushes them apart so they no longer collide.
-        // Parameter:
-        // - spaces: The list of room nodes.
+
         private void ResolveCollisions(List<SpaceNode> spaces)
         {
-            // Loop through each pair of nodes.
-            for (int i = 0; i < spaces.Count; i++)
+            const double epsilon = 0.001;
+            bool hasOverlap;
+
+            do
             {
-                for (int j = i + 1; j < spaces.Count; j++)
+                hasOverlap = false;
+
+                for (int i = 0; i < spaces.Count; i++)
                 {
-                    // Retrieve the positions of the two nodes.
-                    XYZ posI = spaces[i].Position;
-                    XYZ posJ = spaces[j].Position;
-                    // Calculate the radius for each node based on its area.
-                    double radiusI = GetCircleRadius(spaces[i].Area);
-                    double radiusJ = GetCircleRadius(spaces[j].Area);
-
-                    // Compute the vector and distance between the two nodes.
-                    XYZ delta = posJ - posI;
-                    double distance = delta.GetLength();
-                    // Minimum distance needed to avoid overlap is the sum of the two radii.
-                    double minDist = radiusI + radiusJ;
-
-                    // If the current distance is less than the minimum, the nodes are overlapping.
-                    if (distance < minDist)
+                    for (int j = i + 1; j < spaces.Count; j++)
                     {
-                        // Calculate the overlap amount and add a small extra value to ensure separation.
-                        double overlap = minDist - distance + 0.001;
-                        // Get the direction to push the nodes apart.
-                        XYZ pushDir = delta.Normalize();
-                        // Move both nodes away from each other by half the overlap distance.
-                        spaces[i].Position -= 0.5 * overlap * pushDir;
-                        spaces[j].Position += 0.5 * overlap * pushDir;
+                        XYZ posI = spaces[i].Position;
+                        XYZ posJ = spaces[j].Position;
+
+                        double radiusI = GetCircleRadius(spaces[i].Area);
+                        double radiusJ = GetCircleRadius(spaces[j].Area);
+
+                        XYZ delta = posJ - posI;
+                        double distance = delta.GetLength();
+                        double minDist = radiusI + radiusJ;
+
+                        if (distance < minDist)
+                        {
+                            hasOverlap = true;
+                            double overlap = (minDist - distance) + epsilon;
+                            XYZ pushDir = (distance == 0) ? new XYZ(1, 0, 0) : delta.Normalize();
+
+                            spaces[i].Position -= 0.5 * overlap * pushDir;
+                            spaces[j].Position += 0.5 * overlap * pushDir;
+                        }
                     }
                 }
-            }
+            } while (hasOverlap);
         }
+
+
+
 
         ////////////////////////////////////////////////////////////////////////////////
         // Method: GetCircleRadius
@@ -564,35 +711,127 @@ namespace PanelizedAndModularFinal
         // Parameters:
         // - spaces: The list of room nodes.
         // - bb: The bounding box defining the allowed layout area.
-        private void ClampNodesToCropRegion(List<SpaceNode> spaces, BoundingBoxXYZ bb)
+        //private void ClampNodesToCropRegion(List<SpaceNode> spaces, BoundingBoxXYZ bb)
+        //{
+        //    if (bb == null) return; // If there is no bounding box, exit the method.
+
+        //    // Retrieve the minimum and maximum points of the bounding box.
+        //    XYZ min = bb.Min;
+        //    XYZ max = bb.Max;
+        //    foreach (var space in spaces)
+        //    {
+        //        // Calculate the radius for the current node.
+        //        double r = GetCircleRadius(space.Area);
+        //        // Get the current position of the node.
+        //        XYZ pos = space.Position;
+
+        //        double x = pos.X;
+        //        double y = pos.Y;
+        //        double z = pos.Z;
+
+        //        // Clamp the X coordinate so the circle stays within the left and right boundaries.
+        //        x = Math.Max(x, min.X + r);
+        //        x = Math.Min(x, max.X - r);
+
+        //        // Clamp the Y coordinate similarly for the top and bottom boundaries.
+        //        y = Math.Max(y, min.Y + r);
+        //        y = Math.Min(y, max.Y - r);
+
+        //        // The Z coordinate typically remains unchanged in a 2D layout.
+        //        space.Position = new XYZ(x, y, z);
+        //    }
+        //}
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////////////
+        // Method: SnapConnectedCircles
+        ////////////////////////////////////////////////////////////////////////////////
+        // This method iterates through all pairs of connected circles (nodes) as
+        // defined by the connectivity matrix. If two connected circles are further
+        // apart than the sum of their radii, it moves them closer until they are just
+        // touching (within a small tolerance), ensuring they do not overlap.
+        private void SnapConnectedCircles(List<SpaceNode> spaces, int[,] connectivityMatrix)
         {
-            if (bb == null) return; // If there is no bounding box, exit the method.
+            const double tolerance = 0.001;
+            bool adjusted = true;
+            int iterations = 0;
+            int maxIterations = 10; // Prevents an endless loop in edge cases
 
-            // Retrieve the minimum and maximum points of the bounding box.
-            XYZ min = bb.Min;
-            XYZ max = bb.Max;
-            foreach (var space in spaces)
+            while (adjusted && iterations < maxIterations)
             {
-                // Calculate the radius for the current node.
-                double r = GetCircleRadius(space.Area);
-                // Get the current position of the node.
-                XYZ pos = space.Position;
+                adjusted = false;
+                for (int i = 0; i < spaces.Count; i++)
+                {
+                    for (int j = i + 1; j < spaces.Count; j++)
+                    {
+                        // Check if these two circles are connected.
+                        if (connectivityMatrix[i, j] == 1)
+                        {
+                            double radiusI = GetCircleRadius(spaces[i].Area);
+                            double radiusJ = GetCircleRadius(spaces[j].Area);
+                            double desiredDistance = radiusI + radiusJ;
 
-                double x = pos.X;
-                double y = pos.Y;
-                double z = pos.Z;
+                            XYZ delta = spaces[j].Position - spaces[i].Position;
+                            double currentDistance = delta.GetLength();
 
-                // Clamp the X coordinate so the circle stays within the left and right boundaries.
-                x = Math.Max(x, min.X + r);
-                x = Math.Min(x, max.X - r);
-
-                // Clamp the Y coordinate similarly for the top and bottom boundaries.
-                y = Math.Max(y, min.Y + r);
-                y = Math.Min(y, max.Y - r);
-
-                // The Z coordinate typically remains unchanged in a 2D layout.
-                space.Position = new XYZ(x, y, z);
+                            // If they're further apart than desired, move them closer.
+                            if (currentDistance > desiredDistance + tolerance)
+                            {
+                                double moveAmount = (currentDistance - desiredDistance) / 2;
+                                XYZ moveVector = delta.Normalize() * moveAmount;
+                                spaces[i].Position += moveVector;
+                                spaces[j].Position -= moveVector;
+                                adjusted = true;
+                            }
+                        }
+                    }
+                }
+                iterations++;
             }
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        private void CenterLayout(List<SpaceNode> spaces, BoundingBoxXYZ viewBox)
+        {
+            // Compute the bounding box of all nodes (including each circle's radius)
+            XYZ layoutMin = new XYZ(double.MaxValue, double.MaxValue, 0);
+            XYZ layoutMax = new XYZ(double.MinValue, double.MinValue, 0);
+            foreach (var node in spaces)
+            {
+                double r = GetCircleRadius(node.Area);
+                layoutMin = new XYZ(Math.Min(layoutMin.X, node.Position.X - r),
+                                    Math.Min(layoutMin.Y, node.Position.Y - r), 0);
+                layoutMax = new XYZ(Math.Max(layoutMax.X, node.Position.X + r),
+                                    Math.Max(layoutMax.Y, node.Position.Y + r), 0);
+            }
+
+            // Calculate the center of the layout and the view
+            XYZ layoutCenter = new XYZ((layoutMin.X + layoutMax.X) / 2.0, (layoutMin.Y + layoutMax.Y) / 2.0, 0);
+            XYZ viewCenter = new XYZ((viewBox.Min.X + viewBox.Max.X) / 2.0, (viewBox.Min.Y + viewBox.Max.Y) / 2.0, 0);
+
+            // Calculate the offset needed to center the layout
+            XYZ offset = viewCenter - layoutCenter;
+
+            // Apply the offset to all nodes
+            foreach (var node in spaces)
+            {
+                node.Position += offset;
+            }
+        }
+
     }
 }
