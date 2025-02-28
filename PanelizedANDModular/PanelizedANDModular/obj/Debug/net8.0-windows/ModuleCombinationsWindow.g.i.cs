@@ -68,7 +68,7 @@ namespace PanelizedAndModularFinal {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/PanelizedAndModularFinal;component/modulecombinationswindow.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/PanelizedAndModularFinal;V1.0.0.0;component/modulecombinationswindow.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\ModuleCombinationsWindow.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

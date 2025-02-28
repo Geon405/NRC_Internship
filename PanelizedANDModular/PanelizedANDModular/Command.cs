@@ -360,6 +360,17 @@ namespace PanelizedAndModularFinal
 
 
 
+
+
+
+
+
+
+                ModuleArrangement arranger = new ModuleArrangement();
+                arranger.CreateSquareLikeArrangement(doc, selectedCombination, moduleTypes);
+
+
+
                 return Result.Succeeded;
 
 
