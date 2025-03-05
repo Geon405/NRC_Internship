@@ -60,7 +60,7 @@ namespace PanelizedAndModularFinal {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/PanelizedAndModularFinal;component/edgeweightswindow.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/PanelizedAndModularFinal;V1.0.0.0;component/edgeweightswindow.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\EdgeWeightsWindow.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

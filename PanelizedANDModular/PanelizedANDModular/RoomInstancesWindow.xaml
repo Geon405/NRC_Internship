@@ -22,7 +22,7 @@
                                     Binding="{Binding RoomType}" 
                                     IsReadOnly="True" />
 
-                <!-- The specific name (like "Bedroom 1", "Kitchen 2", etc.) -->
+                <!-- The specific name (will show Bedroom 1 (Master Bedroom), etc.) -->
                 <DataGridTextColumn Header="Name"
                                     Binding="{Binding Name}"
                                     IsReadOnly="True" />
@@ -40,7 +40,7 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <!-- Area in m², editable by the user -->
+                <!-- Area in ft², editable by the user -->
                 <DataGridTextColumn Header="Area (ft²)" 
                                     Binding="{Binding Area}" />
             </DataGrid.Columns>

@@ -10,6 +10,10 @@ using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using System.Windows.Media;
+using System.Collections.ObjectModel;
+using System.Windows.Media.Imaging;
+using System.Windows.Controls;
+using System.Windows;
 #endregion
 
 
@@ -17,6 +21,9 @@ public static class GlobalData
 {
     public static double TotalRoomArea { get; set; }
     public static double LandArea { get; set; }
+    public static HashSet<string> UniqueRoomTypesDisplayed = new HashSet<string>();
+    public static int TextNoteUniqueCounter = 0;
+
 }
 
 // The namespace groups related classes together. Here, "PanelizedAndModularFinal" is the container for our code.
@@ -41,6 +48,61 @@ namespace PanelizedAndModularFinal
 
             try
             {
+
+              
+
+                
+                // --- Step: Get Land Area Input from the User ---
+                LandInputWindow landWindow = new LandInputWindow();
+                bool? landResult = landWindow.ShowDialog();
+                if (landResult != true)
+                {
+                    TaskDialog.Show("Canceled", "User canceled land area input.");
+                    return Result.Cancelled;
+                }
+                double userArea = landWindow.LandArea; // User input area (in sq ft)
+
+                // --- Update the Active View's Crop Region Based on the User's Input ---
+                // Calculate the side length of a square with the given area.
+                double sideLength = Math.Sqrt(userArea);
+
+                // Retrieve the active view and its current crop box.
+                View activeView = doc.ActiveView;
+                BoundingBoxXYZ cropBox = activeView.CropBox;
+
+                // Calculate the center of the current crop box.
+                XYZ center = new XYZ(
+                    (cropBox.Min.X + cropBox.Max.X) / 2.0,
+                    (cropBox.Min.Y + cropBox.Max.Y) / 2.0,
+                    cropBox.Min.Z);
+
+                // Calculate new min and max points.
+                double halfSide = sideLength / 2.0;
+                XYZ newMin = new XYZ(center.X - halfSide, center.Y - halfSide, cropBox.Min.Z);
+                XYZ newMax = new XYZ(center.X + halfSide, center.Y + halfSide, cropBox.Max.Z);
+
+                // Update the crop region inside a transaction.
+                using (Transaction trans = new Transaction(doc, "Update Crop Region"))
+                {
+                    trans.Start();
+                    activeView.CropBoxActive = true;
+                    // Get the current crop box, modify its boundaries, and assign it back.
+                    BoundingBoxXYZ newCropBox = activeView.CropBox;
+                    newCropBox.Min = newMin;
+                    newCropBox.Max = newMax;
+                    activeView.CropBox = newCropBox;
+                    trans.Commit();
+                }
+
+                // Now update the available layout area to match the new crop region.
+                double availableLayoutArea = sideLength * sideLength;
+                GlobalData.LandArea = availableLayoutArea;
+               
+
+
+
+
+
                 // Step 1: Get Room Inputs from User
                 // Open a window to ask the user what types of rooms they want.
                 RoomInputWindow firstWindow = new RoomInputWindow();
@@ -61,7 +123,7 @@ namespace PanelizedAndModularFinal
                 // Step 2: Generate Room Instances
                 // Loop through each room type selected by the user.
 
-                double totalArea = 0;
+              
                 foreach (var row in userSelections)
                 {
                     // If the requested quantity is 0 or negative, skip this room type.
@@ -77,15 +139,11 @@ namespace PanelizedAndModularFinal
                             RoomType = row.Name,
                             Name = instanceName,
                             WpfColor = row.Color,
-                            Area = 20.0 // Default area
+                            Area = 0.0 // Default area
                         };
                         // Add the created instance to our list.
 
-                        // Accumulate the area.
-                        totalArea += instance.Area;
-
-                   
-
+             
                         instanceRows.Add(instance);
                     }
                 }
@@ -108,17 +166,6 @@ namespace PanelizedAndModularFinal
                     TaskDialog.Show("Canceled", "User canceled at the second window.");
                     return Result.Cancelled;
                 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -163,7 +210,7 @@ namespace PanelizedAndModularFinal
                 }
 
                 // Retrieve the current view that is active in Revit.
-                View activeView = doc.ActiveView;
+              activeView = doc.ActiveView;
                 // Declare a variable to hold the bounding box (the area limits) of the view.
                 BoundingBoxXYZ viewBox = null;
                 // If the view has a crop box active (user-defined boundary), use it.
@@ -183,178 +230,177 @@ namespace PanelizedAndModularFinal
                
                 double totalRoomAreaFt2 = totalRoomArea;
                 GlobalData.TotalRoomArea = totalRoomArea;
-                // Determine the dimensions (width and height) of the layout area using the view's bounding box.
-                double layoutWidth = viewBox.Max.X - viewBox.Min.X;
-                double layoutHeight = viewBox.Max.Y - viewBox.Min.Y;
-                // Calculate the total available area in the view.
-                double availableLayoutArea = layoutWidth * layoutHeight;
 
-                GlobalData.LandArea = availableLayoutArea;
 
-                // Check if the total area of the rooms exceeds the available layout area.
-                if (totalRoomAreaFt2 > availableLayoutArea)
+
+
+
+
+
+
+
+                //  Make Adjacency Matrix
+                // Open a window that allows the user to specify which rooms should be adjacent.
+                PreferredAdjacencyWindow adjacencyWindow = new PreferredAdjacencyWindow(spaces);
+                bool? result = adjacencyWindow.ShowDialog();
+                if (result != true)
                 {
-                    TaskDialog.Show("Error", "The sum of room areas exceeds the available layout space.");
-                    return Result.Failed;
-                }
-
-                ////  Make Adjacency Matrix
-                //// Open a window that allows the user to specify which rooms should be adjacent.
-                //PreferredAdjacencyWindow adjacencyWindow = new PreferredAdjacencyWindow(spaces);
-                //bool? result = adjacencyWindow.ShowDialog();
-                //if (result != true)
-                //{
-                //    // If the user cancels, notify and exit.
-                //    TaskDialog.Show("Canceled", "User canceled at the preferred adjacency matrix window.");
-                //    return Result.Cancelled;
-                //}
-
-                //// Retrieve the preferred adjacency matrix from the window.
-                //int[,] preferredAdjacency = adjacencyWindow.PreferredAdjacency;
-
-                //// Step 4: Get Connectivity Matrix
-                //// Open a window where the user can define which rooms should be connected.
-                //ConnectivityMatrixWindow connectivityWindow = new ConnectivityMatrixWindow(spaces);
-                //bool? connectivityResult = connectivityWindow.ShowDialog();
-                //if (connectivityResult != true)
-                //{
-                //    // If the user cancels, show a message and exit.
-                //    TaskDialog.Show("Canceled", "User canceled at the connectivity matrix window.");
-                //    return Result.Cancelled;
-                //}
-
-                //// Retrieve the connectivity matrix from the window.
-                //int[,] adjacencyMatrix = connectivityWindow.ConnectivityMatrix;
-
-                //// Step 5: Open Edge Weights Window
-                //// This window allows the user to assign weights (importance) to each connection between rooms.
-                //EdgeWeightsWindow weightsWindow = new EdgeWeightsWindow(spaces, adjacencyMatrix);
-                //bool? weightResult = weightsWindow.ShowDialog();
-                //if (weightResult != true)
-                //{
-                //    // If the user cancels, notify and exit.
-                //    TaskDialog.Show("Canceled", "User canceled the edge weights window.");
-                //    return Result.Cancelled;
-                //}
-
-                //// Retrieve the weighted adjacency matrix which contains the connection strengths.
-                //double?[,] weightedAdjMatrix = weightsWindow.WeightedAdjacencyMatrix;
-
-                //// Apply a force-directed layout algorithm to adjust room positions.
-                //// This simulates physical forces (like attraction and repulsion) so that rooms are well-spaced
-                //// and the final layout respects user-defined connections and adjacencies.
-                //ApplyForceDirectedLayout(spaces, preferredAdjacency, weightedAdjMatrix, viewBox);
-
-
-
-                //SnapConnectedCircles(spaces, adjacencyMatrix);
-
-                //CenterLayout(spaces, viewBox);
-                //ResolveCollisions(spaces);
-
-
-
-
-                //// Now create the connection lines (edges) between rooms using the new positions.
-                //// Step 6: Create Room Connections with Weights
-                //using (Transaction tx = new Transaction(doc, "Connect Rooms"))
-                //{
-                //    // Begin a new transaction so changes can be grouped.
-                //    tx.Start();
-                //    // Loop through each pair of rooms to check for a connection.
-                //    for (int i = 0; i < spaces.Count; i++)
-                //    {
-                //        for (int j = i + 1; j < spaces.Count; j++)
-                //        {
-                //            // If a connection exists (i.e. a weight has been assigned) between room i and room j...
-                //            if (weightedAdjMatrix[i, j].HasValue)
-                //            {
-                //                // Create a line (edge) between the two room positions.
-                //                Line connectionLine = Line.CreateBound(spaces[i].Position, spaces[j].Position);
-                //                // Define a plane using one room's position to know where to draw the line.
-                //                Plane plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, spaces[i].Position);
-                //                SketchPlane sketchPlane = SketchPlane.Create(doc, plane);
-                //                // Draw the connection line as a model curve in Revit.
-                //                ModelCurve curve = doc.Create.NewModelCurve(connectionLine, sketchPlane);
-                //            }
-                //        }
-                //    }
-                //    // Commit the transaction to save the connection lines.
-                //    tx.Commit();
-                //}
-
-                //// Step 7: Create Circular Rooms
-                //// For each room, create a circular shape (with an outer square and a label).
-                //using (Transaction tx = new Transaction(doc, "Create Rooms"))
-                //{
-                //    tx.Start();
-                //    foreach (var space in spaces)
-                //    {
-                //        // Call the method to create the room's geometry.
-                //        // Parameters include the room's position, area, color, name, and the active view's ID (for labeling).
-                //        CreateCircleNode(doc, space.Position, space.Area, space.WpfColor, space.Name, uidoc.ActiveView.Id);
-                //    }
-                //    // Commit the transaction to save the room geometry.
-                //    tx.Commit();
-                //}
-
-                //// Inform the user that the rooms and their connections have been successfully created.
-                //TaskDialog.Show("Revit", $"Created {spaces.Count} room(s) with connections.");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                //STEP 2 // STEP 2 // STEP 2 // STEP 2 // STEP 2 // STEP 2//
-                ///////////////////////////////////////////////////////////
-                ModuleInputWindow inputWindow = new ModuleInputWindow();
-                bool? inputResult = inputWindow.ShowDialog();
-                if (inputResult != true)
-                {
-                    TaskDialog.Show("Canceled", "User canceled the module input.");
+                    // If the user cancels, notify and exit.
+                    TaskDialog.Show("Canceled", "User canceled at the preferred adjacency matrix window.");
                     return Result.Cancelled;
                 }
 
-                // Retrieve the stored user input values.
-                double minWidth = inputWindow.MinWidth;
-                double maxHeight = inputWindow.MaxHeight;
+                // Retrieve the preferred adjacency matrix from the window.
+                int[,] preferredAdjacency = adjacencyWindow.PreferredAdjacency;
 
-                // Now open the Module Types Window with the input values.
-                // Now open the Module Types Window with the input values.
-                ModuleTypesWindow typesWindow = new ModuleTypesWindow(minWidth, maxHeight);
-  
-
-                // Retrieve the list of ModuleType objects from ModuleTypesWindow.
-                // (Ensure you’ve added a public property in ModuleTypesWindow, e.g., 
-                //  public List<ModuleType> ModuleTypeList { get; private set; }.)
-                List<ModuleType> moduleTypes = typesWindow.ModuleTypes;
-
-                // STEP: Open the Module Combinations Window
-                ModuleCombinationsWindow combWindow = new ModuleCombinationsWindow(moduleTypes, minWidth);
-                bool? combResult = combWindow.ShowDialog();
-                if (combResult != true)
+                // Step 4: Get Connectivity Matrix
+                // Open a window where the user can define which rooms should be connected.
+                ConnectivityMatrixWindow connectivityWindow = new ConnectivityMatrixWindow(spaces);
+                bool? connectivityResult = connectivityWindow.ShowDialog();
+                if (connectivityResult != true)
                 {
-                    TaskDialog.Show("Canceled", "User canceled the module combination selection.");
+                    // If the user cancels, show a message and exit.
+                    TaskDialog.Show("Canceled", "User canceled at the connectivity matrix window.");
                     return Result.Cancelled;
                 }
 
-                // Retrieve the user's selected combination (e.g., a string describing the modules).
-                string selectedCombination = combWindow.SelectedCombination;
-                TaskDialog.Show("Selected Combination", selectedCombination);
+                // Retrieve the connectivity matrix from the window.
+                int[,] adjacencyMatrix = connectivityWindow.ConnectivityMatrix;
+
+                // Step 5: Open Edge Weights Window
+                // This window allows the user to assign weights (importance) to each connection between rooms.
+                EdgeWeightsWindow weightsWindow = new EdgeWeightsWindow(spaces, adjacencyMatrix);
+                bool? weightResult = weightsWindow.ShowDialog();
+                if (weightResult != true)
+                {
+                    // If the user cancels, notify and exit.
+                    TaskDialog.Show("Canceled", "User canceled the edge weights window.");
+                    return Result.Cancelled;
+                }
+
+                // Retrieve the weighted adjacency matrix which contains the connection strengths.
+                double?[,] weightedAdjMatrix = weightsWindow.WeightedAdjacencyMatrix;
+
+                // Apply a force-directed layout algorithm to adjust room positions.
+                // This simulates physical forces (like attraction and repulsion) so that rooms are well-spaced
+                // and the final layout respects user-defined connections and adjacencies.
+                
+                
+
+                //START FOR LOOP HERE FOR ALL THE COMBINATION POSSIBLE
+                ApplyForceDirectedLayout(spaces, preferredAdjacency, weightedAdjMatrix, viewBox);
+
+
+
+                SnapConnectedCircles(spaces, adjacencyMatrix);
+
+         
+                ResolveCollisions(spaces);
+                CenterLayout(spaces, viewBox);
+
+
+
+                // Now create the connection lines (edges) between rooms using the new positions.
+                // Step 6: Create Room Connections with Weights
+                using (Transaction tx = new Transaction(doc, "Connect Rooms"))
+                {
+                    // Begin a new transaction so changes can be grouped.
+                    tx.Start();
+                    // Loop through each pair of rooms to check for a connection.
+                    for (int i = 0; i < spaces.Count; i++)
+                    {
+                        for (int j = i + 1; j < spaces.Count; j++)
+                        {
+                            // If a connection exists (i.e. a weight has been assigned) between room i and room j...
+                            if (weightedAdjMatrix[i, j].HasValue)
+                            {
+                                // Create a line (edge) between the two room positions.
+                                Line connectionLine = Line.CreateBound(spaces[i].Position, spaces[j].Position);
+                                // Define a plane using one room's position to know where to draw the line.
+                                Plane plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, spaces[i].Position);
+                                SketchPlane sketchPlane = SketchPlane.Create(doc, plane);
+                                // Draw the connection line as a model curve in Revit.
+                                ModelCurve curve = doc.Create.NewModelCurve(connectionLine, sketchPlane);
+                            }
+                        }
+                    }
+                    // Commit the transaction to save the connection lines.
+                    tx.Commit();
+                }
+
+                // Step 7: Create Circular Rooms
+                // For each room, create a circular shape (with an outer square and a label).
+                using (Transaction tx = new Transaction(doc, "Create Rooms"))
+                {
+                    tx.Start();
+                    foreach (var space in spaces)
+                    {
+                        // Call the method to create the room's geometry.
+                        // Parameters include the room's position, area, color, name, and the active view's ID (for labeling).
+                        CreateCircleNode(doc, space.Position, space.Area, space.WpfColor, space.Name, uidoc.ActiveView.Id);
+                    }
+                    // Commit the transaction to save the room geometry.
+                    tx.Commit();
+                }
+
+                // Inform the user that the rooms and their connections have been successfully created.
+                TaskDialog.Show("Revit", $"Created {spaces.Count} room(s) with connections.");
+
+
+                //END OF STEP 1!!!!!!!!!
+                // END OF STEP 1!!!
+                // Assume 'spaces' is your original list of room nodes from Step 1.
+
+                var previews = new List<LayoutPreview>();
+                for (int i = 0; i < 15; i++)
+                {
+                    // Clone the original layout.
+                    List<SpaceNode> clonedSpaces = CloneSpaces(spaces);
+
+                    // Optionally add a slight offset to differentiate layouts.
+                    foreach (var node in clonedSpaces)
+                    {
+                        node.Position = new XYZ(
+                            node.Position.X + (i * 0.1),
+                            node.Position.Y + (i * 0.1),
+                            node.Position.Z);
+                    }
+
+                    // Generate the thumbnail from the layout.
+                    BitmapSource thumbnail = GenerateThumbnailFromLayout(clonedSpaces);
+
+                    var preview = new LayoutPreview
+                    {
+                        Title = $"Layout {i + 1}",
+                        Layout = clonedSpaces,
+                        Thumbnail = thumbnail
+                    };
+
+                    previews.Add(preview);
+                }
+
+                // Convert the list to an ObservableCollection for data binding.
+                var previewCollection = new ObservableCollection<LayoutPreview>(previews);
+
+                // Create and show the layout selection window.
+                var selectionWindow = new LayoutSelectionWindow(previewCollection);
+                bool? dialogResult = selectionWindow.ShowDialog();
+
+                if (dialogResult != true)
+                {
+                    TaskDialog.Show("Canceled", "User canceled layout selection.");
+                    return Result.Cancelled;
+                }
+
+                // The selected layout is now stored in:
+                LayoutPreview selectedLayout = selectionWindow.SelectedLayout;
+
+                // (You can now apply the selected layout's data to your Revit view or store it for later use.)
+
+
+
+
+                
 
 
 
@@ -366,8 +412,49 @@ namespace PanelizedAndModularFinal
 
 
 
-                ModuleArrangement arranger = new ModuleArrangement();
-                arranger.CreateSquareLikeArrangement(doc, selectedCombination, moduleTypes);
+
+
+                ////STEP 2 // STEP 2 // STEP 2 // STEP 2 // STEP 2 // STEP 2//
+                /////////////////////////////////////////////////////////////
+                //ModuleInputWindow inputWindow = new ModuleInputWindow();
+                //bool? inputResult = inputWindow.ShowDialog();
+                //if (inputResult != true)
+                //{
+                //    TaskDialog.Show("Canceled", "User canceled the module input.");
+                //    return Result.Cancelled;
+                //}
+
+                //// Retrieve the stored user input values.
+                //double minWidth = inputWindow.MinWidth;
+                //double maxHeight = inputWindow.MaxHeight;
+
+                //// Now open the Module Types Window with the input values.
+                //// Now open the Module Types Window with the input values.
+                //ModuleTypesWindow typesWindow = new ModuleTypesWindow(minWidth, maxHeight);
+
+
+                //// Retrieve the list of ModuleType objects from ModuleTypesWindow.
+                //// (Ensure you’ve added a public property in ModuleTypesWindow, e.g., 
+                ////  public List<ModuleType> ModuleTypeList { get; private set; }.)
+                //List<ModuleType> moduleTypes = typesWindow.ModuleTypes;
+
+                //// STEP: Open the Module Combinations Window
+                //ModuleCombinationsWindow combWindow = new ModuleCombinationsWindow(moduleTypes, minWidth);
+                //bool? combResult = combWindow.ShowDialog();
+                //if (combResult != true)
+                //{
+                //    TaskDialog.Show("Canceled", "User canceled the module combination selection.");
+                //    return Result.Cancelled;
+                //}
+
+                //// Retrieve the user's selected combination (e.g., a string describing the modules).
+                //string selectedCombination = combWindow.SelectedCombination;
+                //TaskDialog.Show("Selected Combination", selectedCombination);
+
+
+
+                //ModuleArrangement arranger = new ModuleArrangement();
+                //arranger.CreateSquareLikeArrangement(doc, selectedCombination, moduleTypes);
 
 
 
@@ -428,69 +515,89 @@ namespace PanelizedAndModularFinal
         // - wpfColor: The color for the room outline (from WPF).
         // - roomName: The name of the room (used for labeling).
         // - viewId: The ID of the active view where the label should appear.
+
+
+
+
         private void CreateCircleNode(Document doc, XYZ position, double area, System.Windows.Media.Color wpfColor, string roomName, ElementId viewId)
         {
-            // Convert the room area from square meters to square feet.
-            double areaFt2 = area * 10.7639;
-            // Calculate the circle's radius using the formula for area (Area = π * r²).
+            double areaFt2 = area;
+            // Calculate the circle's radius using the formula: Area = π * r².
             double radius = Math.Sqrt(areaFt2 / Math.PI);
-            // Define a plane (flat surface) at the room's position, facing upward (along the Z-axis).
+            // Define a plane at the room's position.
             Plane plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, position);
             SketchPlane sketchPlane = SketchPlane.Create(doc, plane);
 
-            // Create a full circle (an ellipse with equal radii) to represent the room's boundary.
+            // Create the circle.
             Curve fullCircle = Ellipse.CreateCurve(position, radius, radius, XYZ.BasisX, XYZ.BasisY, 0, 2 * Math.PI);
-            // Convert the provided WPF color to a Revit color type.
             Autodesk.Revit.DB.Color revitColor = new Autodesk.Revit.DB.Color(wpfColor.R, wpfColor.G, wpfColor.B);
-            // Retrieve or create a line style for drawing the room's circle.
             GraphicsStyle gs = GetOrCreateLineStyle(doc, $"RoomStyle_{wpfColor}", revitColor);
-            // Draw the circle in the Revit model as a model curve.
             ModelCurve modelCurve = doc.Create.NewModelCurve(fullCircle, sketchPlane);
-            // Set the line style of the circle.
             modelCurve.LineStyle = gs;
 
-            // Setup graphic overrides to enhance the visual appearance (e.g., thicker line weight).
+            // Enhance circle appearance.
             OverrideGraphicSettings ogs = new OverrideGraphicSettings();
             ogs.SetProjectionLineWeight(9);
             doc.ActiveView.SetElementOverrides(modelCurve.Id, ogs);
 
-            // Create a square that surrounds the circle.
-            // For a circle with radius r, the square will have sides of length 2r.
+            // Create a square surrounding the circle.
             double d = radius;
             XYZ pt1 = new XYZ(position.X + d, position.Y + d, position.Z);
             XYZ pt2 = new XYZ(position.X - d, position.Y + d, position.Z);
             XYZ pt3 = new XYZ(position.X - d, position.Y - d, position.Z);
             XYZ pt4 = new XYZ(position.X + d, position.Y - d, position.Z);
 
-            // Retrieve or create a thin black line style for drawing the square.
             GraphicsStyle squareStyle = GetOrCreateLineStyle(doc, "SquareThinBlack", new Autodesk.Revit.DB.Color(0, 0, 0));
-
-            // Create lines for each edge of the square.
-            Line squareEdge1 = Line.CreateBound(pt1, pt2);
-            Line squareEdge2 = Line.CreateBound(pt2, pt3);
-            Line squareEdge3 = Line.CreateBound(pt3, pt4);
-            Line squareEdge4 = Line.CreateBound(pt4, pt1);
-
-            // Draw the square's edges as model curves in the Revit document.
-            ModelCurve squareCurve1 = doc.Create.NewModelCurve(squareEdge1, sketchPlane);
+            ModelCurve squareCurve1 = doc.Create.NewModelCurve(Line.CreateBound(pt1, pt2), sketchPlane);
             squareCurve1.LineStyle = squareStyle;
-            ModelCurve squareCurve2 = doc.Create.NewModelCurve(squareEdge2, sketchPlane);
+            ModelCurve squareCurve2 = doc.Create.NewModelCurve(Line.CreateBound(pt2, pt3), sketchPlane);
             squareCurve2.LineStyle = squareStyle;
-            ModelCurve squareCurve3 = doc.Create.NewModelCurve(squareEdge3, sketchPlane);
+            ModelCurve squareCurve3 = doc.Create.NewModelCurve(Line.CreateBound(pt3, pt4), sketchPlane);
             squareCurve3.LineStyle = squareStyle;
-            ModelCurve squareCurve4 = doc.Create.NewModelCurve(squareEdge4, sketchPlane);
+            ModelCurve squareCurve4 = doc.Create.NewModelCurve(Line.CreateBound(pt4, pt1), sketchPlane);
             squareCurve4.LineStyle = squareStyle;
 
-            // Find a text note type to use for labeling the room.
-            FilteredElementCollector collector = new FilteredElementCollector(doc)
-                                                    .OfClass(typeof(TextNoteType));
-            TextNoteType textNoteType = collector.FirstElement() as TextNoteType;
-            if (textNoteType != null)
+            // Create one text note per room type.
+            // Extract the room type (assumes roomName like "Kitchen 1" -> "Kitchen").
+            string roomType = roomName.Split(' ')[0];
+
+            if (!GlobalData.UniqueRoomTypesDisplayed.Contains(roomType))
             {
-                // Create a text note at the room's position with the room's name.
-                TextNote.Create(doc, viewId, position, roomName, textNoteType.Id);
+                GlobalData.UniqueRoomTypesDisplayed.Add(roomType);
+
+                // Get the active view from the provided viewId.
+                View currentView = doc.GetElement(viewId) as View;
+                BoundingBoxXYZ cropBox = currentView.CropBox;
+
+                // Define an offset to the right of the crop box and vertical spacing.
+                double offsetX = 5.0;          // Horizontal offset (adjust as needed).
+                double noteHeightSpacing = 10.0; // Increased spacing to avoid overlap.!!!!!!!!!!!!!!!!!!!!!!!
+               
+                double noteX = cropBox.Max.X + offsetX;
+                double noteY = cropBox.Max.Y - (GlobalData.TextNoteUniqueCounter * noteHeightSpacing);
+                XYZ notePosition = new XYZ(noteX, noteY, cropBox.Min.Z);
+
+                // Create the text note using the room type.
+                FilteredElementCollector collector = new FilteredElementCollector(doc)
+                                                        .OfClass(typeof(TextNoteType));
+                TextNoteType textNoteType = collector.FirstElement() as TextNoteType;
+                if (textNoteType != null)
+                {
+                    TextNote textNote = TextNote.Create(doc, viewId, notePosition, roomType, textNoteType.Id);
+
+                    // Apply graphic override so the text note displays the designated room color.
+                    OverrideGraphicSettings textOgs = new OverrideGraphicSettings();
+                    textOgs.SetProjectionLineColor(revitColor);
+                    doc.ActiveView.SetElementOverrides(textNote.Id, textOgs);
+                }
+
+                GlobalData.TextNoteUniqueCounter++;
             }
         }
+
+
+
+
 
         ////////////////////////////////////////////////////////////////////////////////
         // Method: GetOrCreateLineStyle
@@ -539,7 +646,7 @@ namespace PanelizedAndModularFinal
         private const int ITERATIONS = 100;                // How many iterations (updates) the algorithm will run.
         private const double PREFERRED_ADJ_FACTOR = 10.0;     // Amplifies the attractive force if rooms are preferred to be adjacent.
         private const double SPRING_CONSTANT = 0.5;         // Controls the strength of attraction between connected rooms.
-        private const double REPULSION_CONSTANT = 10.0;     // Controls how strongly rooms repel each other.
+        private const double REPULSION_CONSTANT = 5.0;     // Controls how strongly rooms repel each other.
         private const double DAMPING = 0.85;                 // Reduces the movement speed of rooms to help the layout settle.
 
         // Constants for early stopping and adaptive damping.
@@ -706,10 +813,10 @@ namespace PanelizedAndModularFinal
         // - areaInM2: Area in square meters.
         // Returns:
         // - The computed radius of the circle.
-        private double GetCircleRadius(double areaInM2)
+        private double GetCircleRadius(double area)
         {
-            double areaFt2 = areaInM2 * 10.7639;
-            return Math.Sqrt(areaFt2 / Math.PI);
+            
+            return Math.Sqrt(area / Math.PI);
         }
 
         ////////////////////////////////////////////////////////////////////////////////
@@ -842,5 +949,58 @@ namespace PanelizedAndModularFinal
             }
         }
 
+        private List<SpaceNode> CloneSpaces(List<SpaceNode> originalSpaces)
+        {
+            var cloned = new List<SpaceNode>();
+            foreach (var node in originalSpaces)
+            {
+                // Create a new SpaceNode copying all properties. Ensure that any value type (like XYZ) is cloned.
+                var newNode = new SpaceNode(
+                    node.Name,
+                    node.Function,
+                    node.Area,
+                    new XYZ(node.Position.X, node.Position.Y, node.Position.Z),
+                    node.WpfColor)
+                {
+                    Radius = node.Radius
+                };
+                cloned.Add(newNode);
+            }
+            return cloned;
+        }
+
+
+        private BitmapSource GenerateThumbnailFromLayout(List<SpaceNode> layout)
+        {
+            // Create a canvas with fixed size.
+            Canvas canvas = new Canvas { Width = 300, Height = 300 };
+
+            // Draw each node as a small circle.
+            foreach (var node in layout)
+            {
+                System.Windows.Shapes.Ellipse ellipse = new System.Windows.Shapes.Ellipse
+                {
+                    Width = 10,
+                    Height = 10,
+                    Fill = Brushes.Blue
+                };
+
+
+                // Ensure the positions are doubles.
+                Canvas.SetLeft(ellipse, (double)node.Position.X);
+                Canvas.SetTop(ellipse, (double)node.Position.Y);
+                canvas.Children.Add(ellipse);
+            }
+
+            // Render the canvas to a bitmap.
+            RenderTargetBitmap rtb = new RenderTargetBitmap(
+                (int)canvas.Width, (int)canvas.Height,
+                96, 96, PixelFormats.Pbgra32);
+            canvas.Measure(new Size(canvas.Width, canvas.Height));
+            canvas.Arrange(new Rect(new Size(canvas.Width, canvas.Height)));
+            rtb.Render(canvas);
+
+            return rtb;
+        }
     }
 }

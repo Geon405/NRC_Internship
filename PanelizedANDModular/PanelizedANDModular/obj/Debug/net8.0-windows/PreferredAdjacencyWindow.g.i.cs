@@ -60,7 +60,7 @@ namespace PanelizedAndModularFinal {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/PanelizedAndModularFinal;component/preferredadjacencywindow.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/PanelizedAndModularFinal;V1.0.0.0;component/preferredadjacencywindow.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\PreferredAdjacencyWindow.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

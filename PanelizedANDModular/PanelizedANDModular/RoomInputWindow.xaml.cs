@@ -29,13 +29,12 @@ namespace PanelizedAndModularFinal
             RoomTypes = new List<RoomTypeRow>()
             {
                 new RoomTypeRow { Name = "Bedroom",      Color = System.Windows.Media.Colors.LightBlue,      Quantity = 0 },
-                new RoomTypeRow { Name = "Office",       Color = System.Windows.Media.Colors.LightGreen,     Quantity = 0 },
                 new RoomTypeRow { Name = "Library",      Color = System.Windows.Media.Colors.Wheat,          Quantity = 0 },
                 new RoomTypeRow { Name = "Den",          Color = System.Windows.Media.Colors.Lavender,       Quantity = 0 },
                 new RoomTypeRow { Name = "Living Room",  Color = System.Windows.Media.Colors.LightCoral,     Quantity = 0 },
                 new RoomTypeRow { Name = "Dining Room",  Color = System.Windows.Media.Colors.Plum,           Quantity = 0 },
-                new RoomTypeRow { Name = "TV Room",      Color = System.Windows.Media.Colors.Gold,           Quantity = 0 },
-                new RoomTypeRow { Name = "Game Room",    Color = System.Windows.Media.Colors.LightGray,      Quantity = 0 },
+                new RoomTypeRow { Name = "Dining",       Color = System.Windows.Media.Colors.Gold,           Quantity = 0 },
+                new RoomTypeRow { Name = "Half-Bathroom",Color = System.Windows.Media.Colors.LightGray,      Quantity = 0 },
                 new RoomTypeRow { Name = "Kitchen",      Color = System.Windows.Media.Colors.Orange,         Quantity = 0 },
                 new RoomTypeRow { Name = "Laundry Room", Color = System.Windows.Media.Colors.SkyBlue,        Quantity = 0 },
                 new RoomTypeRow { Name = "Washroom",     Color = System.Windows.Media.Colors.MediumAquamarine, Quantity = 0 },

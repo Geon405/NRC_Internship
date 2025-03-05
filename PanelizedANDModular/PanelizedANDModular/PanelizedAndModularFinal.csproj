@@ -25,7 +25,11 @@
 
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
 		<Exec Command="if exist &quot;$(AppData)\Autodesk\REVIT\Addins\2025&quot; copy &quot;$(ProjectDir)*.addin&quot; &quot;$(AppData)\Autodesk\REVIT\Addins\2025&quot;&#xD;&#xA;if exist &quot;$(AppData)\Autodesk\REVIT\Addins\2025&quot; copy &quot;$(ProjectDir)$(OutputPath)*.dll&quot; &quot;$(AppData)\Autodesk\REVIT\Addins\2025&quot;" />
-	</Target>	
+	</Target>
+
+	<ItemGroup>
+	  <None Remove="Resources\Solid_black.png" />
+	</ItemGroup>	
 
 	<ItemGroup>
 		<Reference Include="RevitAPI">
@@ -34,6 +38,10 @@
 		<Reference Include="RevitAPIUI">
 			<HintPath>$(ProgramW6432)\Autodesk\Revit 2025\RevitAPIUI.dll</HintPath>
 		</Reference>
+	</ItemGroup>	
+
+	<ItemGroup>
+	  <Resource Include="Resources\Solid_black.png" />
 	</ItemGroup>
 
 </Project>
