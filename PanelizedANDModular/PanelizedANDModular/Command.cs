@@ -25,7 +25,7 @@ public static class GlobalData
     public static int TextNoteUniqueCounter = 0;
     public static double landWidth { get; set; }
     public static double landHeight { get; set; }
-
+    
 }
 
 // The namespace groups related classes together. Here, "PanelizedAndModularFinal" is the container for our code.
@@ -425,6 +425,42 @@ namespace PanelizedAndModularFinal
 
                 ModuleArrangement arranger = new ModuleArrangement();
                 arranger.CreateSquareLikeArrangement(doc, selectedCombination, moduleTypes);
+
+
+
+        
+
+                // Retrieve the saved boundary ElementIds.
+                List<ElementId> savedBoundaryIds = arranger.SavedBoundaryElementIds;
+
+                // Use the savedBoundaryIds to discretize and display voxels.
+
+
+
+
+                // Assuming 'placedRectangles' is available and 'doc' is your Document.
+                using (Transaction trans = new Transaction(doc, "Discretize Boundary Grid"))
+                {
+                    trans.Start();
+
+                    // Create an instance of the discretizer.
+                    BoundaryGridDiscretizer gridDiscretizer = new BoundaryGridDiscretizer();
+
+                    // Use the minWidth value (e.g., 15ft) to compute cell size (15/3 = 5ft per cell).
+                    gridDiscretizer.CreateDiscretizedGrid(doc, savedBoundaryIds, minWidth);
+
+                    // Optionally, access the grid cell ElementIds:
+                    List<ElementId> gridCells = gridDiscretizer.SavedGridElementIds;
+
+                    trans.Commit();
+                }
+
+
+
+
+
+
+
 
 
 

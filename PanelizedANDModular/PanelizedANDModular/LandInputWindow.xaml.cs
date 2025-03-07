@@ -12,7 +12,7 @@ namespace PanelizedAndModularFinal
         // Public property to retrieve the computed land area.
         public double LandArea { get; private set; }
 
-        public LandInputWindow()
+        public LandInputWindow() 
         {
             InitializeComponent();
         }
