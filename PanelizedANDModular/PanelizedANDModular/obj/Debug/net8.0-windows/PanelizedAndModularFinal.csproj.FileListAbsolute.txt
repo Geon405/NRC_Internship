@@ -597,5 +597,3 @@ C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedA
 C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\ModuleCombinationsWindow.g.cs
 C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\LandInputWindow.baml
 C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\LandInputWindow.g.cs
-C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\LayoutSelectionWindow.baml
-C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\LayoutSelectionWindow.g.cs

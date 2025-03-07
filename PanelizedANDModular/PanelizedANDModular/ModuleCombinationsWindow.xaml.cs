@@ -15,18 +15,13 @@ namespace PanelizedAndModularFinal
         {
             InitializeComponent();
 
-            // Check that the required area does not exceed 60% of the land area.
-            if (GlobalData.TotalRoomArea > 0.6 * GlobalData.LandArea)
-            {
-                MessageBox.Show("Required area exceeds 60% of Land Area.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                Close();
-                return;
-            }
 
-            double requiredArea = GlobalData.TotalRoomArea;
-            double variance = minWidth * minWidth; // x*x
-            double lowerBound = requiredArea - variance;
-            double upperBound = requiredArea + variance;
+            double maxBuildingSize = 0.6 * GlobalData.LandArea;
+            double maxTotalSpaceSize = maxBuildingSize - (0.3 * maxBuildingSize);
+            double lowerBound = maxTotalSpaceSize;
+            double upperBound = maxBuildingSize;
+
+
 
             // Determine an upper bound for the number of modules (using the smallest module area).
             double smallestArea = moduleTypes.Min(mt => mt.Area);

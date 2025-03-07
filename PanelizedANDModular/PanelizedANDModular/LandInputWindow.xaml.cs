@@ -5,6 +5,10 @@ namespace PanelizedAndModularFinal
 {
     public partial class LandInputWindow : Window
     {
+        // Public read-only properties for width and height
+        public double InputWidth { get; private set; }
+        public double InputHeight { get; private set; }
+
         // Public property to retrieve the computed land area.
         public double LandArea { get; private set; }
 
@@ -19,7 +23,11 @@ namespace PanelizedAndModularFinal
                 double.TryParse(txtHeight.Text, out double height) &&
                 width > 0 && height > 0)
             {
-                LandArea = width * height; // Compute area in square feet.
+                // Set the properties so they can be accessed elsewhere
+                InputWidth = width;
+                InputHeight = height;
+                LandArea = width * height; // Compute area in square feet
+
                 DialogResult = true;
                 Close();
             }

@@ -84,7 +84,7 @@ namespace PanelizedAndModularFinal {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/PanelizedAndModularFinal;component/landinputwindow.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/PanelizedAndModularFinal;V1.0.0.0;component/landinputwindow.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\LandInputWindow.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);
