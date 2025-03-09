@@ -126,7 +126,7 @@ namespace PanelizedAndModularFinal
 
             // Calculate the maximum total space size based on the land area.
             double maxBuildingSize = 0.6 * GlobalData.LandArea;
-            double maxTotalSpaceSize = maxBuildingSize - (0.3 * maxBuildingSize);
+            double maxTotalSpaceSize = maxBuildingSize - (0.15 * maxBuildingSize);
 
             // Check if the total room area exceeds the maximum allowable space size.
             if (totalRoomArea > maxTotalSpaceSize)

@@ -72,7 +72,7 @@ namespace PanelizedAndModularFinal
             foreach (var row in rows)
             {
                 WeightedAdjacencyMatrix[row.I, row.J] = row.Weight;
-            
+
             }
             DialogResult = true;
             Close();

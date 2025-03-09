@@ -44,14 +44,10 @@ namespace PanelizedAndModularFinal
             {
                 SelectedLayout = selectedPreview.Layout;
 
-                // Debugging: Check the number of rooms in the selected layout
-                TaskDialog.Show("Debug", $"Selected Layout: {SelectedLayout.Count} rooms");
-
                 DialogResult = true;
                 Close();
             }
         }
-
 
         //private void SelectButton_Click(object sender, RoutedEventArgs e)
         //{

@@ -23,7 +23,8 @@ public static class GlobalData
     public static double LandArea { get; set; }
     public static HashSet<string> UniqueRoomTypesDisplayed = new HashSet<string>();
     public static int TextNoteUniqueCounter = 0;
-
+    public static double landWidth { get; set; }
+    public static double landHeight { get; set; }
 }
 
 // The namespace groups related classes together. Here, "PanelizedAndModularFinal" is the container for our code.
@@ -48,10 +49,6 @@ namespace PanelizedAndModularFinal
 
             try
             {
-
-              
-
-                
                 // --- Step: Get Land Area Input from the User ---
                 LandInputWindow landWindow = new LandInputWindow();
                 bool? landResult = landWindow.ShowDialog();
@@ -97,11 +94,6 @@ namespace PanelizedAndModularFinal
                 // Now update the available layout area to match the new crop region.
                 double availableLayoutArea = sideLength * sideLength;
                 GlobalData.LandArea = availableLayoutArea;
-               
-
-
-
-
 
                 // Step 1: Get Room Inputs from User
                 // Open a window to ask the user what types of rooms they want.
@@ -146,9 +138,7 @@ namespace PanelizedAndModularFinal
              
                         instanceRows.Add(instance);
                     }
-                }
-
-   
+                } 
                 // If no room instances were created, inform the user and cancel the command.
                 if (instanceRows.Count == 0)
                 {
@@ -167,10 +157,6 @@ namespace PanelizedAndModularFinal
                     return Result.Cancelled;
                 }
 
-
-
-
-
                 // Create a list to hold our room "nodes". Each node represents a room with its properties.
                 List<SpaceNode> spaces = new List<SpaceNode>();
                 // Create a Random object for generating random positions.
@@ -180,8 +166,6 @@ namespace PanelizedAndModularFinal
                 foreach (var inst in secondWindow.Instances)
                 {
                     // Ensure that the room area is not below 10 ft^2
-
-
                     double area = inst.Area < 10.0 ? 10.0 : inst.Area;
                    
                     View activeView1 = doc.ActiveView;
@@ -193,8 +177,6 @@ namespace PanelizedAndModularFinal
                     else
                         // Otherwise, get the overall bounding box of the view.
                         viewBox1 = activeView1.get_BoundingBox(null);
-
-
 
                     double layoutWidth1 = viewBox1.Max.X - viewBox1.Min.X;
                     double layoutHeight1 = viewBox1.Max.Y - viewBox1.Min.Y;
@@ -230,14 +212,6 @@ namespace PanelizedAndModularFinal
                
                 double totalRoomAreaFt2 = totalRoomArea;
                 GlobalData.TotalRoomArea = totalRoomArea;
-
-
-
-
-
-
-
-
 
                 //  Make Adjacency Matrix
                 // Open a window that allows the user to specify which rooms should be adjacent.
@@ -308,13 +282,11 @@ namespace PanelizedAndModularFinal
                         space.Position = new XYZ(space.Position.X + randomX, space.Position.Y + randomY, space.Position.Z);
                     }
 
-                    // Apply force-directed layout AFTER modifying initial positions
+                    // 🚨 MAKE SURE THIS IS NOT COMMENTED OUT
                     ApplyForceDirectedLayout(clonedSpaces, preferredAdjacency, weightedAdjMatrix, viewBox);
 
                     layoutOptions.Add(clonedSpaces);
                 }
-
-
 
 
                 // Show layout selection window
@@ -327,17 +299,8 @@ namespace PanelizedAndModularFinal
                     return Result.Cancelled;
                 }
 
-                // Use the selected layout
+                // ✅ Get the selected layout
                 List<SpaceNode> selectedLayout = selectionWindow.SelectedLayout;
-
-                // First, apply adjacency snapping
-                SnapConnectedCircles(selectedLayout, adjacencyMatrix);
-
-                // Then, center layout to align with view
-                CenterLayout(selectedLayout, viewBox);
-
-                // Finally, fix any collisions if needed
-                ResolveCollisions(selectedLayout);
 
                 CreateRoomConnections(doc, selectedLayout, adjacencyMatrix);
 
@@ -379,7 +342,6 @@ namespace PanelizedAndModularFinal
                     tx.Commit();
                 }
 
-                // Inform the user that the rooms and their connections have been successfully created.
                 // Inform the user that the rooms and their connections have been successfully created.
                 TaskDialog.Show("Revit", $"Created {spaces.Count} room(s) with connections.");
 
@@ -437,71 +399,67 @@ namespace PanelizedAndModularFinal
 
                 // (You can now apply the selected layout's data to your Revit view or store it for later use.)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                 ////STEP 2 // STEP 2 // STEP 2 // STEP 2 // STEP 2 // STEP 2//
                 /////////////////////////////////////////////////////////////
-                //ModuleInputWindow inputWindow = new ModuleInputWindow();
-                //bool? inputResult = inputWindow.ShowDialog();
-                //if (inputResult != true)
-                //{
-                //    TaskDialog.Show("Canceled", "User canceled the module input.");
-                //    return Result.Cancelled;
-                //}
+                ModuleInputWindow inputWindow = new ModuleInputWindow();
+                bool? inputResult = inputWindow.ShowDialog();
+                if (inputResult != true)
+                {
+                    TaskDialog.Show("Canceled", "User canceled the module input.");
+                    return Result.Cancelled;
+                }
 
-                //// Retrieve the stored user input values.
-                //double minWidth = inputWindow.MinWidth;
-                //double maxHeight = inputWindow.MaxHeight;
+                // Retrieve the stored user input values.
+                double minWidth = inputWindow.MinWidth;
+                double maxHeight = inputWindow.MaxHeight;
 
-                //// Now open the Module Types Window with the input values.
-                //// Now open the Module Types Window with the input values.
-                //ModuleTypesWindow typesWindow = new ModuleTypesWindow(minWidth, maxHeight);
-
-
-                //// Retrieve the list of ModuleType objects from ModuleTypesWindow.
-                //// (Ensure you’ve added a public property in ModuleTypesWindow, e.g., 
-                ////  public List<ModuleType> ModuleTypeList { get; private set; }.)
-                //List<ModuleType> moduleTypes = typesWindow.ModuleTypes;
-
-                //// STEP: Open the Module Combinations Window
-                //ModuleCombinationsWindow combWindow = new ModuleCombinationsWindow(moduleTypes, minWidth);
-                //bool? combResult = combWindow.ShowDialog();
-                //if (combResult != true)
-                //{
-                //    TaskDialog.Show("Canceled", "User canceled the module combination selection.");
-                //    return Result.Cancelled;
-                //}
-
-                //// Retrieve the user's selected combination (e.g., a string describing the modules).
-                //string selectedCombination = combWindow.SelectedCombination;
-                //TaskDialog.Show("Selected Combination", selectedCombination);
+                // Now open the Module Types Window with the input values.
+                // Now open the Module Types Window with the input values.
+                ModuleTypesWindow typesWindow = new ModuleTypesWindow(minWidth, maxHeight);
 
 
+                // Retrieve the list of ModuleType objects from ModuleTypesWindow.
+                // (Ensure you’ve added a public property in ModuleTypesWindow, e.g., 
+                //  public List<ModuleType> ModuleTypeList { get; private set; }.)
+                List<ModuleType> moduleTypes = typesWindow.ModuleTypes;
 
-                //ModuleArrangement arranger = new ModuleArrangement();
-                //arranger.CreateSquareLikeArrangement(doc, selectedCombination, moduleTypes);
+                // STEP: Open the Module Combinations Window
+                ModuleCombinationsWindow combWindow = new ModuleCombinationsWindow(moduleTypes, minWidth);
+                bool? combResult = combWindow.ShowDialog();
+                if (combResult != true)
+                {
+                    TaskDialog.Show("Canceled", "User canceled the module combination selection.");
+                    return Result.Cancelled;
+                }
 
+                // Retrieve the user's selected combination (e.g., a string describing the modules).
+                string selectedCombination = combWindow.SelectedCombination;
+                TaskDialog.Show("Selected Combination", selectedCombination);
 
+                ModuleArrangement arranger = new ModuleArrangement();
+                arranger.CreateSquareLikeArrangement(doc, selectedCombination, moduleTypes);
 
+                // Retrieve the saved boundary ElementIds.
+                List<ElementId> savedBoundaryIds = arranger.SavedBoundaryElementIds;
+
+                // Use the savedBoundaryIds to discretize and display voxels.
+                // Assuming 'placedRectangles' is available and 'doc' is your Document.
+                using (Transaction trans = new Transaction(doc, "Discretize Boundary Grid"))
+                {
+                    trans.Start();
+
+                    // Create an instance of the discretizer.
+                    BoundaryGridDiscretizer gridDiscretizer = new BoundaryGridDiscretizer();
+
+                    // Use the minWidth value (e.g., 15ft) to compute cell size (15/3 = 5ft per cell).
+                    gridDiscretizer.CreateDiscretizedGrid(doc, savedBoundaryIds, minWidth);
+
+                    // Optionally, access the grid cell ElementIds:
+                    List<ElementId> gridCells = gridDiscretizer.SavedGridElementIds;
+
+                    trans.Commit();
+                }
                 return Result.Succeeded;
-
-
-
             }
             catch (Exception ex)
             {
@@ -511,25 +469,6 @@ namespace PanelizedAndModularFinal
                 return Result.Failed;
             }
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
         //////////////////////////////////////////////////////////////////////////////////////////
@@ -582,9 +521,6 @@ namespace PanelizedAndModularFinal
                 tx.Commit();
             }
         }
-
-
-
 
         private void CreateCircleNode(Document doc, XYZ position, double area, System.Windows.Media.Color wpfColor, string roomName, ElementId viewId)
         {
@@ -661,10 +597,6 @@ namespace PanelizedAndModularFinal
                 GlobalData.TextNoteUniqueCounter++;
             }
         }
-
-
-
-
 
         ////////////////////////////////////////////////////////////////////////////////
         // Method: GetOrCreateLineStyle
@@ -829,8 +761,6 @@ namespace PanelizedAndModularFinal
      
             }
         }
-
-
         private void ResolveCollisions(List<SpaceNode> spaces)
         {
             const double epsilon = 0.005;  // Prevent minor floating-point shifts
@@ -867,7 +797,6 @@ namespace PanelizedAndModularFinal
                 }
             } while (hasOverlap);
         }
-
 
 
 
@@ -925,6 +854,24 @@ namespace PanelizedAndModularFinal
         //    }
         //}
 
+        private List<SpaceNode> CloneSpaces(List<SpaceNode> originalSpaces)
+        {
+            var cloned = new List<SpaceNode>();
+            foreach (var node in originalSpaces)
+            {
+                var newNode = new SpaceNode(
+                    node.Name,
+                    node.Function,
+                    node.Area,
+                    new XYZ(node.Position.X, node.Position.Y, node.Position.Z),  // 🚨 Position must be cloned properly!
+                    node.WpfColor)
+                {
+                    Radius = node.Radius
+                };
+                cloned.Add(newNode);
+            }
+            return cloned;
+        }
 
 
 
@@ -975,28 +922,11 @@ namespace PanelizedAndModularFinal
             }
         }
 
-
-
-
-
-
-
-
-
-
-
         private void CenterLayout(List<SpaceNode> spaces, BoundingBoxXYZ viewBox)
         {
-            if (viewBox == null)
-            {
-                TaskDialog.Show("Error", "View Bounding Box is Null!");
-                return;
-            }
-
-            // Compute bounding box of all nodes
+            // Compute the bounding box of all nodes (including each circle's radius)
             XYZ layoutMin = new XYZ(double.MaxValue, double.MaxValue, 0);
             XYZ layoutMax = new XYZ(double.MinValue, double.MinValue, 0);
-
             foreach (var node in spaces)
             {
                 double r = GetCircleRadius(node.Area);
@@ -1006,79 +936,19 @@ namespace PanelizedAndModularFinal
                                     Math.Max(layoutMax.Y, node.Position.Y + r), 0);
             }
 
-            // Compute true layout center
-            XYZ layoutCenter = new XYZ((layoutMin.X + layoutMax.X) / 2.0,
-                                        (layoutMin.Y + layoutMax.Y) / 2.0, 0);
+            // Calculate the center of the layout and the view
+            XYZ layoutCenter = new XYZ((layoutMin.X + layoutMax.X) / 2.0, (layoutMin.Y + layoutMax.Y) / 2.0, 0);
+            XYZ viewCenter = new XYZ((viewBox.Min.X + viewBox.Max.X) / 2.0, (viewBox.Min.Y + viewBox.Max.Y) / 2.0, 0);
 
-            // Ensure we use the correct view center from bounding box
-            XYZ viewCenter = new XYZ((viewBox.Min.X + viewBox.Max.X) / 2.0,
-                                      (viewBox.Min.Y + viewBox.Max.Y) / 2.0, 0);
-
-            // Compute the necessary offset
+            // Calculate the offset needed to center the layout
             XYZ offset = viewCenter - layoutCenter;
 
-            // Debugging: Confirm offsets are reasonable
-            TaskDialog.Show("Center Debug", $"Layout Center: {layoutCenter}, View Center: {viewCenter}, Offset: {offset}");
-
-            // Apply the offset to shift everything into position
+            // Apply the offset to all nodes
             foreach (var node in spaces)
             {
                 node.Position += offset;
             }
         }
-
-
-
-
-
-        //private void CenterLayout(List<SpaceNode> spaces, BoundingBoxXYZ viewBox)
-        //{
-        //    // Compute the bounding box of all nodes (including each circle's radius)
-        //    XYZ layoutMin = new XYZ(double.MaxValue, double.MaxValue, 0);
-        //    XYZ layoutMax = new XYZ(double.MinValue, double.MinValue, 0);
-        //    foreach (var node in spaces)
-        //    {
-        //        double r = GetCircleRadius(node.Area);
-        //        layoutMin = new XYZ(Math.Min(layoutMin.X, node.Position.X - r),
-        //                            Math.Min(layoutMin.Y, node.Position.Y - r), 0);
-        //        layoutMax = new XYZ(Math.Max(layoutMax.X, node.Position.X + r),
-        //                            Math.Max(layoutMax.Y, node.Position.Y + r), 0);
-        //    }
-
-        //    // Calculate the center of the layout and the view
-        //    XYZ layoutCenter = new XYZ((layoutMin.X + layoutMax.X) / 2.0, (layoutMin.Y + layoutMax.Y) / 2.0, 0);
-        //    XYZ viewCenter = new XYZ((viewBox.Min.X + viewBox.Max.X) / 2.0, (viewBox.Min.Y + viewBox.Max.Y) / 2.0, 0);
-
-        //    // Calculate the offset needed to center the layout
-        //    XYZ offset = viewCenter - layoutCenter;
-
-        //    // Apply the offset to all nodes
-        //    foreach (var node in spaces)
-        //    {
-        //        node.Position += offset;
-        //    }
-        //}
-
-        private List<SpaceNode> CloneSpaces(List<SpaceNode> originalSpaces)
-        {
-            var cloned = new List<SpaceNode>();
-            foreach (var node in originalSpaces)
-            {
-                // Create a new SpaceNode copying all properties. Ensure that any value type (like XYZ) is cloned.
-                var newNode = new SpaceNode(
-                    node.Name,
-                    node.Function,
-                    node.Area,
-                    new XYZ(node.Position.X, node.Position.Y, node.Position.Z),
-                    node.WpfColor)
-                {
-                    Radius = node.Radius
-                };
-                cloned.Add(newNode);
-            }
-            return cloned;
-        }
-
 
         private BitmapSource GenerateThumbnailFromLayout(List<SpaceNode> layout)
         {
