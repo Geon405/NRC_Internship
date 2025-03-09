@@ -17,7 +17,7 @@ namespace PanelizedAndModularFinal
 
 
             double maxBuildingSize = 0.6 * GlobalData.LandArea;
-            double maxTotalSpaceSize = maxBuildingSize - (0.3 * maxBuildingSize);
+            double maxTotalSpaceSize = maxBuildingSize - (0.15 * maxBuildingSize);
             double lowerBound = maxTotalSpaceSize;
             double upperBound = maxBuildingSize;
 
