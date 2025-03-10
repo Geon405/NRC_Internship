@@ -631,6 +631,11 @@ namespace PanelizedAndModularFinal
             ds.ApplicationDataId = Guid.NewGuid().ToString();
             ds.SetShape(new List<GeometryObject> { solid });
 
+            // --- Set module shape color to red ---
+            OverrideGraphicSettings ogs = new OverrideGraphicSettings();
+            ogs.SetProjectionLineColor(new Autodesk.Revit.DB.Color(255, 0, 0)); // red
+            doc.ActiveView.SetElementOverrides(ds.Id, ogs);
+
             return ds;
         }
 
