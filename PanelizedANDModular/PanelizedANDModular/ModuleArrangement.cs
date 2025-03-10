@@ -126,13 +126,13 @@ namespace PanelizedAndModularFinal
                     CreateModuleSolid(doc, rect[0], rect[1], rect[2], rect[3], 1.0);
                 }
 
-                // Create boundary
-                double gap = 1;
-                SavedBoundaryElementIds = CreateOrthogonalBoundary(doc, placedRectangles, gap, 0, 0);
+                // Create red boundary
+                //double gap = 1;
+                //SavedBoundaryElementIds = CreateOrthogonalBoundary(doc, placedRectangles, gap, 0, 0);
 
                 // Create grid cells inside modules
                 double cellSize = ComputeCellSize(placedRectangles);
-                SavedGridElementIds = CreateGridCellsInsideModules(doc, placedRectangles, cellSize);
+                SavedGridElementIds = CreateGridCellsInsideModules(doc, placedRectangles);
 
                 trans.Commit();
             }
@@ -202,65 +202,60 @@ namespace PanelizedAndModularFinal
                 double localMin = Math.Min(width, height);
                 if (localMin < minDimension)
                     minDimension = localMin;
+
             }
             return minDimension / 3.0;
         }
 
-        private List<ElementId> CreateGridCellsInsideModules(Document doc, List<XYZ[]> placedRectangles, double cellSize)
+        private List<ElementId> CreateGridCellsInsideModules(Document doc, List<XYZ[]> placedRectangles)
         {
             List<ElementId> gridElementIds = new List<ElementId>();
             double shortTol = doc.Application.ShortCurveTolerance;
+            OverrideGraphicSettings ogs = new OverrideGraphicSettings();
+            ogs.SetProjectionLineColor(new Autodesk.Revit.DB.Color(0, 0, 255));
+            Plane plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, XYZ.Zero);
+            SketchPlane sketch = SketchPlane.Create(doc, plane);
 
-            double overallMinX = double.MaxValue;
-            double overallMinY = double.MaxValue;
-            double overallMaxX = double.MinValue;
-            double overallMaxY = double.MinValue;
-
+            // Process each module separately
             foreach (XYZ[] rect in placedRectangles)
             {
+                // Determine module boundaries.
                 double minX = Math.Min(rect[0].X, rect[2].X);
                 double minY = Math.Min(rect[0].Y, rect[2].Y);
                 double maxX = Math.Max(rect[0].X, rect[2].X);
                 double maxY = Math.Max(rect[0].Y, rect[2].Y);
+                double width = maxX - minX;
+                double height = maxY - minY;
 
-                if (minX < overallMinX) overallMinX = minX;
-                if (minY < overallMinY) overallMinY = minY;
-                if (maxX > overallMaxX) overallMaxX = maxX;
-                if (maxY > overallMaxY) overallMaxY = maxY;
-            }
+                // Use the smaller dimension to define a square cell size.
+                double cellSize = Math.Min(width, height) / 3.0;
 
-            int nCols = (int)Math.Ceiling((overallMaxX - overallMinX) / cellSize);
-            int nRows = (int)Math.Ceiling((overallMaxY - overallMinY) / cellSize);
+                // Compute the number of columns and rows needed to cover the entire rectangle.
+                int nCols = (int)Math.Round(width / cellSize);
+                int nRows = (int)Math.Round(height / cellSize);
 
-            Plane plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, XYZ.Zero);
-            SketchPlane sketch = SketchPlane.Create(doc, plane);
-
-            OverrideGraphicSettings ogs = new OverrideGraphicSettings();
-            ogs.SetProjectionLineColor(new Autodesk.Revit.DB.Color(0, 0, 255));
-
-            for (int i = 0; i < nCols; i++)
-            {
-                for (int j = 0; j < nRows; j++)
+                for (int i = 0; i < nCols; i++)
                 {
-                    double cellMinX = overallMinX + i * cellSize;
-                    double cellMinY = overallMinY + j * cellSize;
-                    double cellMaxX = cellMinX + cellSize;
-                    double cellMaxY = cellMinY + cellSize;
-
-                    if (IsCellFullyInsideAnyModule(cellMinX, cellMinY, cellMaxX, cellMaxY, placedRectangles))
+                    for (int j = 0; j < nRows; j++)
                     {
+                        double cellMinX = minX + i * cellSize;
+                        double cellMinY = minY + j * cellSize;
+                        double cellMaxX = cellMinX + cellSize;
+                        double cellMaxY = cellMinY + cellSize;
+
+                        // Create cell geometry
                         XYZ p1 = new XYZ(cellMinX, cellMinY, 0);
                         XYZ p2 = new XYZ(cellMaxX, cellMinY, 0);
                         XYZ p3 = new XYZ(cellMaxX, cellMaxY, 0);
                         XYZ p4 = new XYZ(cellMinX, cellMaxY, 0);
 
                         List<Line> edges = new List<Line>
-                        {
-                            Line.CreateBound(p1, p2),
-                            Line.CreateBound(p2, p3),
-                            Line.CreateBound(p3, p4),
-                            Line.CreateBound(p4, p1)
-                        };
+                {
+                    Line.CreateBound(p1, p2),
+                    Line.CreateBound(p2, p3),
+                    Line.CreateBound(p3, p4),
+                    Line.CreateBound(p4, p1)
+                };
 
                         foreach (Line edge in edges)
                         {
@@ -272,9 +267,11 @@ namespace PanelizedAndModularFinal
                     }
                 }
             }
-
             return gridElementIds;
         }
+
+
+
 
         private bool IsCellFullyInsideAnyModule(double cellMinX, double cellMinY, double cellMaxX, double cellMaxY, List<XYZ[]> placedRectangles)
         {

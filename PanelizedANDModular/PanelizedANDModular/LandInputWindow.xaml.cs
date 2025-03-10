@@ -20,7 +20,7 @@ namespace PanelizedAndModularFinal
         private void btnOK_Click(object sender, RoutedEventArgs e)
         {
             if (double.TryParse(txtWidth.Text, out double width) &&
-                double.TryParse(txtHeight.Text, out double height) &&
+                double.TryParse(txtLength.Text, out double height) &&
                 width > 0 && height > 0)
             {
                 // Set the properties so they can be accessed elsewhere

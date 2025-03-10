@@ -28,7 +28,8 @@ namespace PanelizedAndModularFinal
             int maxModules = (int)Math.Ceiling(upperBound / smallestArea);
 
             // Display minimum and maximum area at the top.
-            lblAreaInfo.Content = $"Minimum Area: {lowerBound} ft², Maximum Area: {upperBound} ft²";
+            lblAreaInfo.Content = $"Minimum Area: {lowerBound:F2} ft², Maximum Area: {upperBound:F2} ft²";
+
 
 
             // Generate valid combinations.
