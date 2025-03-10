@@ -260,7 +260,7 @@ namespace PanelizedAndModularFinal
                 // --- Step 1 Complete: Show Output and Wait for User Confirmation ---
                 TaskDialog step1Dialog = new TaskDialog("Step 1 Complete");
                 step1Dialog.MainInstruction = "Step 1 output is displayed.";
-                step1Dialog.MainContent = "Click OK to clear the screen and proceed to Step 2.";
+                step1Dialog.MainContent = "Click CLOSE to clear the screen and proceed to Step 2.";
                 step1Dialog.Show();
 
                 // Clear Step 1 output by deleting all stored elements
@@ -310,9 +310,43 @@ namespace PanelizedAndModularFinal
                     string selectedCombination = combWindow.SelectedCombination;
                     TaskDialog.Show("Selected Combination", selectedCombination);
 
+
+                    //DISPLAY THE MODULE COMBINATION WITHOUT THE GRID HERE
+
+
                     arranger = new ModuleArrangement();
+                    ModuleArrangement previewArranger = new ModuleArrangement();
                     try
                     {
+
+                        // --- Step 2 Preview: Display Module Arrangement (without grid) ---
+                        List<ElementId> previewIds = previewArranger.DisplayModuleCombination(doc, selectedCombination, moduleTypes);
+
+                        TaskDialog step2Dialog = new TaskDialog("Step 2 Complete");
+                        step2Dialog.MainInstruction = "Step 2 output is displayed.";
+                        step2Dialog.MainContent = "Click CLOSE to clear the screen and proceed to Step 3.";
+                        step2Dialog.Show();
+
+                        // --- Clear Step 2 Preview Output ---
+                        using (Transaction tx = new Transaction(doc, "Clear Preview Output"))
+                        {
+                            tx.Start();
+                            foreach (ElementId id in previewIds)
+                            {
+                                try
+                                {
+                                    doc.Delete(id);
+                                }
+                                catch
+                                {
+                                    // Handle deletion exceptions if necessary.
+                                }
+                            }
+                            tx.Commit();
+                        }
+
+               
+
                         arranger.CreateSquareLikeArrangement(doc, selectedCombination, moduleTypes);
                         arrangementCreated = true;
                     }

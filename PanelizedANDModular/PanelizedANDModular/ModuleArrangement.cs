@@ -511,6 +511,143 @@ namespace PanelizedAndModularFinal
             }
         }
 
+
+
+        public List<ElementId> DisplayModuleCombination(Document doc, string selectedCombination, List<ModuleType> moduleTypes)
+        {
+            List<ElementId> previewElementIds = new List<ElementId>();
+
+            // --- Step 1: Parse Combination and Collect Modules ---
+            Dictionary<int, int> typeCounts = ParseCombination(selectedCombination);
+            List<ModuleType> modulesToPlace = new List<ModuleType>();
+            double landWidth = GlobalData.landWidth;
+            double landHeight = GlobalData.landHeight;
+            foreach (var kvp in typeCounts)
+            {
+                int moduleTypeIndex = kvp.Key;
+                int count = kvp.Value;
+                ModuleType modType = moduleTypes[moduleTypeIndex];
+                for (int i = 0; i < count; i++)
+                    modulesToPlace.Add(modType);
+            }
+
+            // --- Step 2: Determine Module Placement ---
+            double offsetX = 0.0, offsetY = 0.0, currentRowHeight = 0.0;
+            List<XYZ[]> placedRectangles = new List<XYZ[]>();
+            foreach (var mod in modulesToPlace)
+            {
+                double dimX1 = mod.Length, dimY1 = mod.Width;
+                double dimX2 = mod.Width, dimY2 = mod.Length;
+                bool placed = false;
+                double chosenX = 0, chosenY = 0;
+
+                bool FitsInRow(double testX, double testY)
+                {
+                    if (offsetX + testX > landWidth) return false;
+                    if (currentRowHeight > 0 && Math.Abs(testY - currentRowHeight) > 1e-9) return false;
+                    if (offsetY + testY > landHeight) return false;
+                    return true;
+                }
+
+                // Default orientation
+                if (!placed && FitsInRow(dimX1, dimY1))
+                {
+                    chosenX = dimX1; chosenY = dimY1; placed = true;
+                }
+                // Rotated orientation
+                if (!placed && FitsInRow(dimX2, dimY2))
+                {
+                    chosenX = dimX2; chosenY = dimY2; placed = true;
+                }
+                // New row if needed
+                if (!placed)
+                {
+                    offsetY += currentRowHeight;
+                    offsetX = 0.0;
+                    currentRowHeight = 0.0;
+                    if (FitsInRow(dimX1, dimY1))
+                    {
+                        chosenX = dimX1; chosenY = dimY1; placed = true;
+                    }
+                    else if (FitsInRow(dimX2, dimY2))
+                    {
+                        chosenX = dimX2; chosenY = dimY2; placed = true;
+                    }
+                    else
+                        throw new Exception("Module doesn't fit in new row.");
+                }
+
+                // Record rectangle corners.
+                XYZ p1 = new XYZ(offsetX, offsetY, 0);
+                XYZ p2 = new XYZ(offsetX + chosenX, offsetY, 0);
+                XYZ p3 = new XYZ(offsetX + chosenX, offsetY + chosenY, 0);
+                XYZ p4 = new XYZ(offsetX, offsetY + chosenY, 0);
+                placedRectangles.Add(new XYZ[] { p1, p2, p3, p4 });
+
+                offsetX += chosenX;
+                if (Math.Abs(currentRowHeight) < 1e-9)
+                    currentRowHeight = chosenY;
+            }
+
+            // --- Step 3: Center the Layout ---
+            CenterFinalOutputInViewBox(placedRectangles, doc.ActiveView.CropBox);
+
+            // --- Step 4: Create Module Solids for Preview and Store their IDs ---
+            using (Transaction trans = new Transaction(doc, "Display Module Arrangement"))
+            {
+                trans.Start();
+                foreach (var rect in placedRectangles)
+                {
+                    DirectShape ds = CreateModuleSolidAndReturn(doc, rect[0], rect[1], rect[2], rect[3], 1.0);
+                    previewElementIds.Add(ds.Id);
+                }
+                trans.Commit();
+            }
+            OverallCenter = ComputeFinalOutputCenter(placedRectangles);
+            return previewElementIds;
+        }
+
+        private DirectShape CreateModuleSolidAndReturn(Document doc, XYZ p1, XYZ p2, XYZ p3, XYZ p4, double height)
+        {
+            List<Curve> edges = new List<Curve>
+    {
+        Line.CreateBound(p1, p2),
+        Line.CreateBound(p2, p3),
+        Line.CreateBound(p3, p4),
+        Line.CreateBound(p4, p1)
+    };
+
+            CurveLoop loop = new CurveLoop();
+            foreach (Curve c in edges)
+                loop.Append(c);
+
+            Solid solid = GeometryCreationUtilities.CreateExtrusionGeometry(
+                new List<CurveLoop> { loop },
+                XYZ.BasisZ,
+                height);
+
+            DirectShape ds = DirectShape.CreateElement(doc, new ElementId(BuiltInCategory.OST_GenericModel));
+            ds.ApplicationId = "ModuleArrangement";
+            ds.ApplicationDataId = Guid.NewGuid().ToString();
+            ds.SetShape(new List<GeometryObject> { solid });
+
+            return ds;
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         private double GetLength(Segment s)
         {
             return Math.Abs(s.Start.X - s.End.X) < 1e-9
