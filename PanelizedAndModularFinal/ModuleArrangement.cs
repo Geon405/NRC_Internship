@@ -126,13 +126,13 @@ namespace PanelizedAndModularFinal
                     CreateModuleSolid(doc, rect[0], rect[1], rect[2], rect[3], 1.0);
                 }
 
-                // Create boundary
-                double gap = 1;
-                SavedBoundaryElementIds = CreateOrthogonalBoundary(doc, placedRectangles, gap, 0, 0);
+                // Create red boundary
+                //double gap = 1;
+                //SavedBoundaryElementIds = CreateOrthogonalBoundary(doc, placedRectangles, gap, 0, 0);
 
                 // Create grid cells inside modules
                 double cellSize = ComputeCellSize(placedRectangles);
-                SavedGridElementIds = CreateGridCellsInsideModules(doc, placedRectangles, cellSize);
+                SavedGridElementIds = CreateGridCellsInsideModules(doc, placedRectangles);
 
                 trans.Commit();
             }
@@ -202,65 +202,60 @@ namespace PanelizedAndModularFinal
                 double localMin = Math.Min(width, height);
                 if (localMin < minDimension)
                     minDimension = localMin;
+
             }
             return minDimension / 3.0;
         }
 
-        private List<ElementId> CreateGridCellsInsideModules(Document doc, List<XYZ[]> placedRectangles, double cellSize)
+        private List<ElementId> CreateGridCellsInsideModules(Document doc, List<XYZ[]> placedRectangles)
         {
             List<ElementId> gridElementIds = new List<ElementId>();
             double shortTol = doc.Application.ShortCurveTolerance;
+            OverrideGraphicSettings ogs = new OverrideGraphicSettings();
+            ogs.SetProjectionLineColor(new Autodesk.Revit.DB.Color(0, 0, 255));
+            Plane plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, XYZ.Zero);
+            SketchPlane sketch = SketchPlane.Create(doc, plane);
 
-            double overallMinX = double.MaxValue;
-            double overallMinY = double.MaxValue;
-            double overallMaxX = double.MinValue;
-            double overallMaxY = double.MinValue;
-
+            // Process each module separately
             foreach (XYZ[] rect in placedRectangles)
             {
+                // Determine module boundaries.
                 double minX = Math.Min(rect[0].X, rect[2].X);
                 double minY = Math.Min(rect[0].Y, rect[2].Y);
                 double maxX = Math.Max(rect[0].X, rect[2].X);
                 double maxY = Math.Max(rect[0].Y, rect[2].Y);
+                double width = maxX - minX;
+                double height = maxY - minY;
 
-                if (minX < overallMinX) overallMinX = minX;
-                if (minY < overallMinY) overallMinY = minY;
-                if (maxX > overallMaxX) overallMaxX = maxX;
-                if (maxY > overallMaxY) overallMaxY = maxY;
-            }
+                // Use the smaller dimension to define a square cell size.
+                double cellSize = Math.Min(width, height) / 3.0;
 
-            int nCols = (int)Math.Ceiling((overallMaxX - overallMinX) / cellSize);
-            int nRows = (int)Math.Ceiling((overallMaxY - overallMinY) / cellSize);
+                // Compute the number of columns and rows needed to cover the entire rectangle.
+                int nCols = (int)Math.Round(width / cellSize);
+                int nRows = (int)Math.Round(height / cellSize);
 
-            Plane plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, XYZ.Zero);
-            SketchPlane sketch = SketchPlane.Create(doc, plane);
-
-            OverrideGraphicSettings ogs = new OverrideGraphicSettings();
-            ogs.SetProjectionLineColor(new Autodesk.Revit.DB.Color(0, 0, 255));
-
-            for (int i = 0; i < nCols; i++)
-            {
-                for (int j = 0; j < nRows; j++)
+                for (int i = 0; i < nCols; i++)
                 {
-                    double cellMinX = overallMinX + i * cellSize;
-                    double cellMinY = overallMinY + j * cellSize;
-                    double cellMaxX = cellMinX + cellSize;
-                    double cellMaxY = cellMinY + cellSize;
-
-                    if (IsCellFullyInsideAnyModule(cellMinX, cellMinY, cellMaxX, cellMaxY, placedRectangles))
+                    for (int j = 0; j < nRows; j++)
                     {
+                        double cellMinX = minX + i * cellSize;
+                        double cellMinY = minY + j * cellSize;
+                        double cellMaxX = cellMinX + cellSize;
+                        double cellMaxY = cellMinY + cellSize;
+
+                        // Create cell geometry
                         XYZ p1 = new XYZ(cellMinX, cellMinY, 0);
                         XYZ p2 = new XYZ(cellMaxX, cellMinY, 0);
                         XYZ p3 = new XYZ(cellMaxX, cellMaxY, 0);
                         XYZ p4 = new XYZ(cellMinX, cellMaxY, 0);
 
                         List<Line> edges = new List<Line>
-                        {
-                            Line.CreateBound(p1, p2),
-                            Line.CreateBound(p2, p3),
-                            Line.CreateBound(p3, p4),
-                            Line.CreateBound(p4, p1)
-                        };
+                {
+                    Line.CreateBound(p1, p2),
+                    Line.CreateBound(p2, p3),
+                    Line.CreateBound(p3, p4),
+                    Line.CreateBound(p4, p1)
+                };
 
                         foreach (Line edge in edges)
                         {
@@ -272,9 +267,11 @@ namespace PanelizedAndModularFinal
                     }
                 }
             }
-
             return gridElementIds;
         }
+
+
+
 
         private bool IsCellFullyInsideAnyModule(double cellMinX, double cellMinY, double cellMaxX, double cellMaxY, List<XYZ[]> placedRectangles)
         {
@@ -513,6 +510,148 @@ namespace PanelizedAndModularFinal
                     return new Segment(new XYZ(x, s1Start, 0), new XYZ(x, overlapStart, 0));
             }
         }
+
+
+
+        public List<ElementId> DisplayModuleCombination(Document doc, string selectedCombination, List<ModuleType> moduleTypes)
+        {
+            List<ElementId> previewElementIds = new List<ElementId>();
+
+            // --- Step 1: Parse Combination and Collect Modules ---
+            Dictionary<int, int> typeCounts = ParseCombination(selectedCombination);
+            List<ModuleType> modulesToPlace = new List<ModuleType>();
+            double landWidth = GlobalData.landWidth;
+            double landHeight = GlobalData.landHeight;
+            foreach (var kvp in typeCounts)
+            {
+                int moduleTypeIndex = kvp.Key;
+                int count = kvp.Value;
+                ModuleType modType = moduleTypes[moduleTypeIndex];
+                for (int i = 0; i < count; i++)
+                    modulesToPlace.Add(modType);
+            }
+
+            // --- Step 2: Determine Module Placement ---
+            double offsetX = 0.0, offsetY = 0.0, currentRowHeight = 0.0;
+            List<XYZ[]> placedRectangles = new List<XYZ[]>();
+            foreach (var mod in modulesToPlace)
+            {
+                double dimX1 = mod.Length, dimY1 = mod.Width;
+                double dimX2 = mod.Width, dimY2 = mod.Length;
+                bool placed = false;
+                double chosenX = 0, chosenY = 0;
+
+                bool FitsInRow(double testX, double testY)
+                {
+                    if (offsetX + testX > landWidth) return false;
+                    if (currentRowHeight > 0 && Math.Abs(testY - currentRowHeight) > 1e-9) return false;
+                    if (offsetY + testY > landHeight) return false;
+                    return true;
+                }
+
+                // Default orientation
+                if (!placed && FitsInRow(dimX1, dimY1))
+                {
+                    chosenX = dimX1; chosenY = dimY1; placed = true;
+                }
+                // Rotated orientation
+                if (!placed && FitsInRow(dimX2, dimY2))
+                {
+                    chosenX = dimX2; chosenY = dimY2; placed = true;
+                }
+                // New row if needed
+                if (!placed)
+                {
+                    offsetY += currentRowHeight;
+                    offsetX = 0.0;
+                    currentRowHeight = 0.0;
+                    if (FitsInRow(dimX1, dimY1))
+                    {
+                        chosenX = dimX1; chosenY = dimY1; placed = true;
+                    }
+                    else if (FitsInRow(dimX2, dimY2))
+                    {
+                        chosenX = dimX2; chosenY = dimY2; placed = true;
+                    }
+                    else
+                        throw new Exception("Module doesn't fit in new row.");
+                }
+
+                // Record rectangle corners.
+                XYZ p1 = new XYZ(offsetX, offsetY, 0);
+                XYZ p2 = new XYZ(offsetX + chosenX, offsetY, 0);
+                XYZ p3 = new XYZ(offsetX + chosenX, offsetY + chosenY, 0);
+                XYZ p4 = new XYZ(offsetX, offsetY + chosenY, 0);
+                placedRectangles.Add(new XYZ[] { p1, p2, p3, p4 });
+
+                offsetX += chosenX;
+                if (Math.Abs(currentRowHeight) < 1e-9)
+                    currentRowHeight = chosenY;
+            }
+
+            // --- Step 3: Center the Layout ---
+            CenterFinalOutputInViewBox(placedRectangles, doc.ActiveView.CropBox);
+
+            // --- Step 4: Create Module Solids for Preview and Store their IDs ---
+            using (Transaction trans = new Transaction(doc, "Display Module Arrangement"))
+            {
+                trans.Start();
+                foreach (var rect in placedRectangles)
+                {
+                    DirectShape ds = CreateModuleSolidAndReturn(doc, rect[0], rect[1], rect[2], rect[3], 1.0);
+                    previewElementIds.Add(ds.Id);
+                }
+                trans.Commit();
+            }
+            OverallCenter = ComputeFinalOutputCenter(placedRectangles);
+            return previewElementIds;
+        }
+
+        private DirectShape CreateModuleSolidAndReturn(Document doc, XYZ p1, XYZ p2, XYZ p3, XYZ p4, double height)
+        {
+            List<Curve> edges = new List<Curve>
+    {
+        Line.CreateBound(p1, p2),
+        Line.CreateBound(p2, p3),
+        Line.CreateBound(p3, p4),
+        Line.CreateBound(p4, p1)
+    };
+
+            CurveLoop loop = new CurveLoop();
+            foreach (Curve c in edges)
+                loop.Append(c);
+
+            Solid solid = GeometryCreationUtilities.CreateExtrusionGeometry(
+                new List<CurveLoop> { loop },
+                XYZ.BasisZ,
+                height);
+
+            DirectShape ds = DirectShape.CreateElement(doc, new ElementId(BuiltInCategory.OST_GenericModel));
+            ds.ApplicationId = "ModuleArrangement";
+            ds.ApplicationDataId = Guid.NewGuid().ToString();
+            ds.SetShape(new List<GeometryObject> { solid });
+
+            // --- Set module shape color to red ---
+            OverrideGraphicSettings ogs = new OverrideGraphicSettings();
+            ogs.SetProjectionLineColor(new Autodesk.Revit.DB.Color(255, 0, 0)); // red
+            doc.ActiveView.SetElementOverrides(ds.Id, ogs);
+
+            return ds;
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         private double GetLength(Segment s)
         {

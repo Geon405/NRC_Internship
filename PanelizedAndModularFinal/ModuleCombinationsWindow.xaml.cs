@@ -17,7 +17,7 @@ namespace PanelizedAndModularFinal
 
 
             double maxBuildingSize = 0.6 * GlobalData.LandArea;
-            double maxTotalSpaceSize = maxBuildingSize - (0.3 * maxBuildingSize);
+            double maxTotalSpaceSize = maxBuildingSize - (0.15 * maxBuildingSize);
             double lowerBound = maxTotalSpaceSize;
             double upperBound = maxBuildingSize;
 
@@ -28,7 +28,8 @@ namespace PanelizedAndModularFinal
             int maxModules = (int)Math.Ceiling(upperBound / smallestArea);
 
             // Display minimum and maximum area at the top.
-            lblAreaInfo.Content = $"Minimum Area: {lowerBound} ft², Maximum Area: {upperBound} ft²";
+            lblAreaInfo.Content = $"Minimum Area: {lowerBound:F2} ft², Maximum Area: {upperBound:F2} ft²";
+
 
 
             // Generate valid combinations.
