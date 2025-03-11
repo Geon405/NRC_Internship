@@ -27,19 +27,20 @@ namespace PanelizedAndModularFinal
 
             // Predefine the room types with default colors
             RoomTypes = new List<RoomTypeRow>()
-            {
-                new RoomTypeRow { Name = "Bedroom",      Color = System.Windows.Media.Colors.LightBlue,      Quantity = 0 },
-                new RoomTypeRow { Name = "Library",      Color = System.Windows.Media.Colors.Wheat,          Quantity = 0 },
-                new RoomTypeRow { Name = "Den",          Color = System.Windows.Media.Colors.Lavender,       Quantity = 0 },
-                new RoomTypeRow { Name = "Living Room",  Color = System.Windows.Media.Colors.LightCoral,     Quantity = 0 },
-                new RoomTypeRow { Name = "Dining Room",  Color = System.Windows.Media.Colors.Plum,           Quantity = 0 },
-                new RoomTypeRow { Name = "Dining",       Color = System.Windows.Media.Colors.Gold,           Quantity = 0 },
-                new RoomTypeRow { Name = "Half-Bathroom",Color = System.Windows.Media.Colors.LightGray,      Quantity = 0 },
-                new RoomTypeRow { Name = "Kitchen",      Color = System.Windows.Media.Colors.Orange,         Quantity = 0 },
-                new RoomTypeRow { Name = "Laundry Room", Color = System.Windows.Media.Colors.SkyBlue,        Quantity = 0 },
-                new RoomTypeRow { Name = "Washroom",     Color = System.Windows.Media.Colors.MediumAquamarine, Quantity = 0 },
-                new RoomTypeRow { Name = "Storage",      Color = System.Windows.Media.Colors.BurlyWood,      Quantity = 0 }
-            };
+{
+    new RoomTypeRow { Name = "Bedroom",      Color = System.Windows.Media.Colors.DodgerBlue,      Quantity = 0 },
+    new RoomTypeRow { Name = "Library",      Color = System.Windows.Media.Colors.MediumPurple,    Quantity = 0 },
+    new RoomTypeRow { Name = "Den",          Color = System.Windows.Media.Colors.ForestGreen,     Quantity = 0 },
+    new RoomTypeRow { Name = "Living Room",  Color = System.Windows.Media.Colors.Tomato,          Quantity = 0 },
+    new RoomTypeRow { Name = "Dining Room",  Color = System.Windows.Media.Colors.OrangeRed,       Quantity = 0 },
+    new RoomTypeRow { Name = "Dining",       Color = System.Windows.Media.Colors.Gold,            Quantity = 0 },
+    new RoomTypeRow { Name = "Half-Bathroom",Color = System.Windows.Media.Colors.SlateGray,       Quantity = 0 },
+    new RoomTypeRow { Name = "Kitchen",      Color = System.Windows.Media.Colors.Orange,          Quantity = 0 },
+    new RoomTypeRow { Name = "Laundry Room", Color = System.Windows.Media.Colors.MediumTurquoise, Quantity = 0 },
+    new RoomTypeRow { Name = "Washroom",     Color = System.Windows.Media.Colors.MediumSeaGreen,  Quantity = 0 },
+    new RoomTypeRow { Name = "Storage",      Color = System.Windows.Media.Colors.SandyBrown,      Quantity = 0 }
+};
+
 
             RoomsDataGrid.ItemsSource = RoomTypes;
         }

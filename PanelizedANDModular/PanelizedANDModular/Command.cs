@@ -211,23 +211,81 @@ namespace PanelizedAndModularFinal
                 double?[,] weightedAdjMatrix = weightsWindow.WeightedAdjacencyMatrix;
 
                 // --- Step 1: Layout Calculation ---
-                ApplyForceDirectedLayout(spaces, preferredAdjacency, weightedAdjMatrix, viewBox);
-                SnapConnectedCircles(spaces, adjacencyMatrix);
-                ResolveCollisions(spaces);
-                CenterLayout(spaces, viewBox);
+                //ApplyForceDirectedLayout(spaces, preferredAdjacency, weightedAdjMatrix, viewBox);
+                //SnapConnectedCircles(spaces, adjacencyMatrix);
+                //ResolveCollisions(spaces);
+                //CenterLayout(spaces, viewBox);
+
+
+
+                List<List<SpaceNode>> layoutOptions = new List<List<SpaceNode>>();
+                int maxLayouts = Math.Min(15, spaces.Count);
+
+                // Ensure 'random' is declared only once in the correct scope.
+                Random randomGenerator = new Random(); // Rename variable to avoid conflict
+
+                for (int i = 0; i < maxLayouts; i++) // Generate up to 15 layouts
+                {
+                    List<SpaceNode> clonedSpaces = CloneSpaces(spaces); // Make a copy
+
+                    // Apply random shifts before layout adjustment
+                    foreach (var space in clonedSpaces)
+                    {
+                        double randomX = (randomGenerator.NextDouble() - 0.5) * 100; // Increase randomness
+                        double randomY = (randomGenerator.NextDouble() - 0.5) * 100;
+                        space.Position = new XYZ(space.Position.X + randomX, space.Position.Y + randomY, space.Position.Z);
+                    }
+
+                   
+                    ApplyForceDirectedLayout(clonedSpaces, preferredAdjacency, weightedAdjMatrix, viewBox);
+                    SnapConnectedCircles(clonedSpaces, adjacencyMatrix);
+                    ResolveCollisions(clonedSpaces);
+                    CenterLayout(clonedSpaces, viewBox);
+
+
+                    layoutOptions.Add(clonedSpaces);
+                }
+
+                // Show layout selection window
+                LayoutSelectionWindow selectionWindow = new LayoutSelectionWindow(layoutOptions);
+                bool? dialogResult = selectionWindow.ShowDialog();
+
+                if (dialogResult != true)  
+                {
+                    TaskDialog.Show("Canceled", "User canceled layout selection.");
+                    return Result.Cancelled;
+                }
+
+                //  Get the selected layout
+                List<SpaceNode> selectedSpace = selectionWindow.SelectedLayout;
+                GlobalData.SavedSpaces = selectedSpace;
+
+
+
+
+
+
+
+
+
+
+
+
+
 
                 // --- Step 1: Create Connection Lines ---
                 using (Transaction tx = new Transaction(doc, "Connect Rooms"))
                 {
                     tx.Start();
-                    for (int i = 0; i < spaces.Count; i++)
+                    for (int i = 0; i < selectedSpace.Count; i++)  // use selectedSpace count
                     {
-                        for (int j = i + 1; j < spaces.Count; j++)
+                        for (int j = i + 1; j < selectedSpace.Count; j++)
                         {
                             if (weightedAdjMatrix[i, j].HasValue)
                             {
-                                Line connectionLine = Line.CreateBound(spaces[i].Position, spaces[j].Position);
-                                Plane plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, spaces[i].Position);
+                                // Use positions from selectedSpace instead of spaces
+                                Line connectionLine = Line.CreateBound(selectedSpace[i].Position, selectedSpace[j].Position);
+                                Plane plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, selectedSpace[i].Position);
                                 SketchPlane sketchPlane = SketchPlane.Create(doc, plane);
                                 DetailCurve connectionDetail = doc.Create.NewDetailCurve(doc.ActiveView, connectionLine);
 
@@ -247,15 +305,15 @@ namespace PanelizedAndModularFinal
                 using (Transaction tx = new Transaction(doc, "Create Rooms"))
                 {
                     tx.Start();
-                    foreach (var space in spaces)
+                    foreach (var space in selectedSpace)
                     {
                         CreateCircleNode(doc, space.Position, space.Area, space.WpfColor, space.Name, uidoc.ActiveView.Id);
                     }
                     tx.Commit();
                 }
 
-                TaskDialog.Show("Revit", $"Created {spaces.Count} room(s) with connections.");
-                GlobalData.SavedSpaces = spaces;
+                TaskDialog.Show("Revit", $"Created {selectedSpace.Count} room(s) with connections.");
+                GlobalData.SavedSpaces = selectedSpace;
 
                 // --- Step 1 Complete: Show Output and Wait for User Confirmation ---
                 TaskDialog step1Dialog = new TaskDialog("Step 1 Complete");
@@ -311,7 +369,7 @@ namespace PanelizedAndModularFinal
                     TaskDialog.Show("Selected Combination", selectedCombination);
 
 
-                    //DISPLAY THE MODULE COMBINATION WITHOUT THE GRID HERE
+               
 
 
                     arranger = new ModuleArrangement();
@@ -392,11 +450,87 @@ namespace PanelizedAndModularFinal
                     // Create circles for each saved space
                     foreach (var space in savedSpaces)
                     {
+                        //STEP 2 CREATE CIRCLE NODE OUTPUT
                         CreateCircleNode(doc, space.Position, space.Area, space.WpfColor, space.Name, uidoc.ActiveView.Id);
                     }
 
                     tx.Commit();
                 }
+                // Display a dialog to let the user see the output before proceeding
+                // Let the user see the Step 2 output before proceeding.
+                TaskDialog outputDialog = new TaskDialog("Output Displayed");
+                outputDialog.MainInstruction = "The output is now displayed.";
+                outputDialog.MainContent = "Click OK to proceed to the next output.";
+                outputDialog.Show();
+
+                // Clear the output of CreateCircleNode for Step 2.
+                // Clear the output of CreateCircleNode for Step 2.
+                using (Transaction tx = new Transaction(doc, "Clear Step 2 Output"))
+                {
+                    tx.Start();
+                    foreach (ElementId id in GlobalData.Step1Elements)
+                    {
+                        try
+                        {
+                            doc.Delete(id);
+                        }
+                        catch { /* Handle deletion exceptions if necessary */ }
+                    }
+                    tx.Commit();
+                }
+                GlobalData.Step1Elements.Clear();
+
+            
+
+
+              
+                // --- STEP 3: Create Trimmed Square Arrangement (SquareArrangementOnly) ---
+                List<XYZ[]> roomSquares = new List<XYZ[]>();
+                foreach (var space in GlobalData.SavedSpaces)
+                {
+                    // Calculate a radius from the area (assuming the room circle was used earlier)
+                    double radius = Math.Sqrt(space.Area / Math.PI);
+                    // Define square corners (clockwise order) based on the room center.
+                    XYZ pt1 = new XYZ(space.Position.X + radius, space.Position.Y + radius, space.Position.Z);
+                    XYZ pt2 = new XYZ(space.Position.X - radius, space.Position.Y + radius, space.Position.Z);
+                    XYZ pt3 = new XYZ(space.Position.X - radius, space.Position.Y - radius, space.Position.Z);
+                    XYZ pt4 = new XYZ(space.Position.X + radius, space.Position.Y - radius, space.Position.Z);
+                    roomSquares.Add(new XYZ[] { pt1, pt2, pt3, pt4 });
+                }
+
+
+                // Ask the ModuleArrangement for its bounding rectangle
+                double gridMinX, gridMinY, gridMaxX, gridMaxY;
+                arranger.GetArrangementBounds(out gridMinX, out gridMinY, out gridMaxX, out gridMaxY);
+
+
+                // Create the trimmed square arrangement using the SquareArrangementOnly (or TrimCircleSquare) class.
+                TrimCircleSquare trimmer = new TrimCircleSquare();
+                using (Transaction tx = new Transaction(doc, "Trim Squares"))
+                {
+                    tx.Start();
+                    trimmer.CreateTrimmedSquares(doc, roomSquares, gridMinX, gridMinY, gridMaxX, gridMaxY);
+
+                    tx.Commit();
+                }
+
+
+                // Display the total trimmed area calculated by the new class.
+                TaskDialog.Show("Square Arrangement Only", $"Total trimmed area: {trimmer.TotalTrimmedArea}");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
                 return Result.Succeeded;
             }
@@ -699,6 +833,29 @@ namespace PanelizedAndModularFinal
             {
                 node.Position += offset;
             }
+
         }
+
+
+        private List<SpaceNode> CloneSpaces(List<SpaceNode> originalSpaces)
+        {
+            var cloned = new List<SpaceNode>();
+            foreach (var node in originalSpaces)
+            {
+                var newNode = new SpaceNode(
+                    node.Name,
+                    node.Function,
+                    node.Area,
+                    new XYZ(node.Position.X, node.Position.Y, node.Position.Z),  // 🚨 Position must be cloned properly!
+                    node.WpfColor)
+                {
+                    Radius = node.Radius
+                };
+                cloned.Add(newNode);
+            }
+            return cloned;
+        }
+
+
     }
 }

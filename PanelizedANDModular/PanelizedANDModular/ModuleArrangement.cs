@@ -13,41 +13,53 @@ namespace PanelizedAndModularFinal
         public List<ElementId> SavedGridElementIds { get; private set; }
         public XYZ OverallCenter { get; private set; }
 
+
+        // Store the overall boundary of the placed modules
+        private double _overallMinX;
+        private double _overallMinY;
+        private double _overallMaxX;
+        private double _overallMaxY;
+
+
+
+
+        public void GetArrangementBounds(out double minX, out double minY, out double maxX, out double maxY)
+        {
+            minX = _overallMinX;
+            minY = _overallMinY;
+            maxX = _overallMaxX;
+            maxY = _overallMaxY;
+        }
+
+
+
+
         public void CreateSquareLikeArrangement(Document doc, string selectedCombination, List<ModuleType> moduleTypes)
         {
+            // 1. Parse combination and collect modules
             Dictionary<int, int> typeCounts = ParseCombination(selectedCombination);
             List<ModuleType> modulesToPlace = new List<ModuleType>();
-
-            // Using global land dimensions for initial placement (if needed)
             double landWidth = GlobalData.landWidth;
             double landHeight = GlobalData.landHeight;
 
-            // 1. Collect modules from combination string
             foreach (var kvp in typeCounts)
             {
                 int moduleTypeIndex = kvp.Key;
                 int count = kvp.Value;
                 ModuleType modType = moduleTypes[moduleTypeIndex];
                 for (int i = 0; i < count; i++)
-                {
                     modulesToPlace.Add(modType);
-                }
             }
 
             // 2. Prepare placement
-            double offsetX = 0.0;
-            double offsetY = 0.0;
-            double currentRowHeight = 0.0;
+            double offsetX = 0.0, offsetY = 0.0, currentRowHeight = 0.0;
             List<XYZ[]> placedRectangles = new List<XYZ[]>();
 
             // 3. Place modules
             foreach (var mod in modulesToPlace)
             {
-                double dimX1 = mod.Length;
-                double dimY1 = mod.Width;
-                double dimX2 = mod.Width;
-                double dimY2 = mod.Length;
-
+                double dimX1 = mod.Length, dimY1 = mod.Width;
+                double dimX2 = mod.Width, dimY2 = mod.Length;
                 bool placed = false;
                 double chosenX = 0, chosenY = 0;
 
@@ -94,12 +106,10 @@ namespace PanelizedAndModularFinal
                         placed = true;
                     }
                     else
-                    {
                         throw new Exception("Module doesn't fit in new row.");
-                    }
                 }
 
-                // Record rectangle corners (p1: lower left, p2: lower right, p3: upper right, p4: upper left)
+                // Record rectangle corners
                 XYZ p1 = new XYZ(offsetX, offsetY, 0);
                 XYZ p2 = new XYZ(offsetX + chosenX, offsetY, 0);
                 XYZ p3 = new XYZ(offsetX + chosenX, offsetY + chosenY, 0);
@@ -111,11 +121,34 @@ namespace PanelizedAndModularFinal
                     currentRowHeight = chosenY;
             }
 
-            // 4. Center the layout in the active view's crop box
+            // 4. Center the layout in the active view’s crop box
             BoundingBoxXYZ cropBox = doc.ActiveView.CropBox;
             CenterFinalOutputInViewBox(placedRectangles, cropBox);
 
-            // 5. Transaction to build geometry + grid
+            // 4a. Compute arrangement boundary after centering
+            double overallMinX = double.MaxValue;
+            double overallMinY = double.MaxValue;
+            double overallMaxX = double.MinValue;
+            double overallMaxY = double.MinValue;
+
+            foreach (XYZ[] rect in placedRectangles)
+            {
+                double minX = Math.Min(rect[0].X, rect[2].X);
+                double minY = Math.Min(rect[0].Y, rect[2].Y);
+                double maxX = Math.Max(rect[0].X, rect[2].X);
+                double maxY = Math.Max(rect[0].Y, rect[2].Y);
+
+                overallMinX = Math.Min(overallMinX, minX);
+                overallMinY = Math.Min(overallMinY, minY);
+                overallMaxX = Math.Max(overallMaxX, maxX);
+                overallMaxY = Math.Max(overallMaxY, maxY);
+            }
+            _overallMinX = overallMinX;
+            _overallMinY = overallMinY;
+            _overallMaxX = overallMaxX;
+            _overallMaxY = overallMaxY;
+
+            // 5. Create module solids + grid in a transaction
             using (Transaction trans = new Transaction(doc, "Create Modules + Grid"))
             {
                 trans.Start();
@@ -126,18 +159,17 @@ namespace PanelizedAndModularFinal
                     CreateModuleSolid(doc, rect[0], rect[1], rect[2], rect[3], 1.0);
                 }
 
-                // Create red boundary
-                //double gap = 1;
-                //SavedBoundaryElementIds = CreateOrthogonalBoundary(doc, placedRectangles, gap, 0, 0);
+                // (Optional) Create boundary or any other geometry you need
+                // double gap = 1;
+                // SavedBoundaryElementIds = CreateOrthogonalBoundary(doc, placedRectangles, gap, 0, 0);
 
-                // Create grid cells inside modules
-                double cellSize = ComputeCellSize(placedRectangles);
+                // Create grid cells
                 SavedGridElementIds = CreateGridCellsInsideModules(doc, placedRectangles);
 
                 trans.Commit();
             }
 
-            // 6. Compute overall center of the final output
+            // 6. Compute center of the final output
             OverallCenter = ComputeFinalOutputCenter(placedRectangles);
         }
 

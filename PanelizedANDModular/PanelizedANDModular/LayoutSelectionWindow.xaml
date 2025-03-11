@@ -8,57 +8,40 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Scrollable list of layout previews -->
+        <!-- Scrollable list of layouts -->
         <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
-            <ListBox x:Name="LayoutsListBox" 
-                     ItemsSource="{Binding LayoutPreviews}" 
-                     SelectedItem="{Binding SelectedLayout, Mode=TwoWay}"
-                     BorderThickness="0">
-                <ListBox.ItemTemplate>
+            <ItemsControl x:Name="LayoutItemsControl" Margin="10">
+                <ItemsControl.ItemContainerStyle>
+                    <Style TargetType="ContentPresenter">
+                        <Setter Property="Margin" Value="20,40,20,40"/>
+                        <!-- Add spacing between layouts -->
+                    </Style>
+                </ItemsControl.ItemContainerStyle>
+                <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Border BorderBrush="Black" BorderThickness="1" Margin="5">
-                            <StackPanel>
-                                <TextBlock Text="{Binding Title}" 
-                                           FontWeight="Bold" 
-                                           HorizontalAlignment="Center" 
-                                           Margin="5"/>
-                                <ContentControl Margin="5">
-                                    <ContentControl.Style>
-                                        <Style TargetType="ContentControl">
-                                            <Setter Property="Content">
-                                                <Setter.Value>
-                                                    <Image Source="{Binding Thumbnail}" 
-                                                           Height="150" 
-                                                           Stretch="Uniform"/>
-                                                </Setter.Value>
-                                            </Setter>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Thumbnail}" Value="{x:Null}">
-                                                    <Setter Property="Content">
-                                                        <Setter.Value>
-                                                            <TextBlock Text="No Preview" 
-                                                                       HorizontalAlignment="Center" 
-                                                                       VerticalAlignment="Center" 
-                                                                       Height="150" 
-                                                                       FontStyle="Italic"/>
-                                                        </Setter.Value>
-                                                    </Setter>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </ContentControl.Style>
-                                </ContentControl>
+                        <Border BorderBrush="Black" BorderThickness="1" Margin="5" Padding="10">
+                            <StackPanel Orientation="Vertical">
+                                <!-- Layout Title -->
+                                <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="Bold" 
+                                           HorizontalAlignment="Center" Margin="5"/>
+
+                                <!-- Layout Thumbnail -->
+                                <Image Source="{Binding Thumbnail}" Width="400" Height="400"
+                                       Stretch="Uniform" Margin="10"/>
+
+                                <!-- Select Button -->
+                                <Button Content="Select This Layout" Click="SelectButton_Click" 
+                                        Tag="{Binding}" HorizontalAlignment="Center" Margin="5"/>
                             </StackPanel>
                         </Border>
                     </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
         </ScrollViewer>
 
-        <!-- OK and Cancel buttons -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="5">
-            <Button Content="OK" Width="80" Margin="5" Click="OkButton_Click"/>
-            <Button Content="Cancel" Width="80" Margin="5" Click="CancelButton_Click"/>
+        <!-- Cancel Button -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10">
+            <Button Content="Cancel" Click="CancelButton_Click" Width="120" Height="40"/>
         </StackPanel>
     </Grid>
 </Window>
