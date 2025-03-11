@@ -516,11 +516,27 @@ namespace PanelizedAndModularFinal
 
 
                 // Display the total trimmed area calculated by the new class.
-                TaskDialog.Show("Square Arrangement Only", $"Total trimmed area: {trimmer.TotalTrimmedArea}");
+             //   TaskDialog.Show("Square Arrangement Only", $"Total trimmed area: {trimmer.TotalTrimmedArea}");
 
 
 
+                // Now, open the space priority window to let the user assign raw priority values.
+          
+                SpacePriorityWindow priorityWindow = new SpacePriorityWindow(GlobalData.SavedSpaces);
+                bool? priorityResult = priorityWindow.ShowDialog();
 
+                if (priorityResult != true)
+                {
+                    TaskDialog.Show("Canceled", "User canceled at the priority window.");
+                    return Result.Cancelled;
+                }
+
+                // At this point, each SpaceNode's Priority property has been normalized.
+                // You can now access these values for subsequent operations.
+                foreach (SpaceNode node in GlobalData.SavedSpaces)
+                {
+                    TaskDialog.Show("Priority", $"{node.Name}: {node.Priority:F2}");
+                }
 
 
 

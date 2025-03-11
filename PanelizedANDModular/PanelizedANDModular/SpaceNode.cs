@@ -24,6 +24,7 @@ namespace PanelizedAndModularFinal
         public System.Windows.Media.Color WpfColor { get; set; }
         // Radius value for the space.
         public double Radius { get; set; }
+        public double Priority { get; set; }
 
         // Constructor to initialize the space node with provided values.
         public SpaceNode(string name, string function, double area, XYZ position, System.Windows.Media.Color wpfColor)
@@ -34,6 +35,7 @@ namespace PanelizedAndModularFinal
             Position = position;
             WpfColor = wpfColor;
             Radius = 0.0;
+            Priority = 0.0; // default raw value
 
             // Add this instance to the static list.
             _allSpaces.Add(this);
