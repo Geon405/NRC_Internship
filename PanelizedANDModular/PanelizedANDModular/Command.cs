@@ -222,48 +222,53 @@ namespace PanelizedAndModularFinal
                 int maxLayouts = Math.Min(15, spaces.Count);
 
                 // Ensure 'random' is declared only once in the correct scope.
-                Random randomGenerator = new Random(); // Rename variable to avoid conflict
+                //Random randomGenerator = new Random(); // Rename variable to avoid conflict
 
-                for (int i = 0; i < maxLayouts; i++) // Generate up to 15 layouts
-                {
-                    List<SpaceNode> clonedSpaces = CloneSpaces(spaces); // Make a copy
+                //for (int i = 0; i < maxLayouts; i++) // Generate up to 15 layouts
+                //{
+                //    List<SpaceNode> clonedSpaces = CloneSpaces(spaces); // Make a copy
 
-                    // Apply random shifts before layout adjustment
-                    foreach (var space in clonedSpaces)
-                    {
-                        double randomX = (randomGenerator.NextDouble() - 0.5) * 100; // Increase randomness
-                        double randomY = (randomGenerator.NextDouble() - 0.5) * 100;
-                        space.Position = new XYZ(space.Position.X + randomX, space.Position.Y + randomY, space.Position.Z);
-                    }
-
-                   
-                    ApplyForceDirectedLayout(clonedSpaces, preferredAdjacency, weightedAdjMatrix, viewBox);
-                    SnapConnectedCircles(clonedSpaces, adjacencyMatrix);
-                    ResolveCollisions(clonedSpaces);
-                    CenterLayout(clonedSpaces, viewBox);
+                //    // Apply random shifts before layout adjustment
+                //    foreach (var space in clonedSpaces)
+                //    {
+                //        double randomX = (randomGenerator.NextDouble() - 0.5) * 100; // Increase randomness
+                //        double randomY = (randomGenerator.NextDouble() - 0.5) * 100;
+                //        space.Position = new XYZ(space.Position.X + randomX, space.Position.Y + randomY, space.Position.Z);
+                //    }
 
 
-                    layoutOptions.Add(clonedSpaces);
-                }
-
-                // Show layout selection window
-                LayoutSelectionWindow selectionWindow = new LayoutSelectionWindow(layoutOptions);
-                bool? dialogResult = selectionWindow.ShowDialog();
-
-                if (dialogResult != true)  
-                {
-                    TaskDialog.Show("Canceled", "User canceled layout selection.");
-                    return Result.Cancelled;
-                }
-
-                //  Get the selected layout
-                List<SpaceNode> selectedSpace = selectionWindow.SelectedLayout;
-                GlobalData.SavedSpaces = selectedSpace;
+                //    ApplyForceDirectedLayout(clonedSpaces, preferredAdjacency, weightedAdjMatrix, viewBox);
+                //    SnapConnectedCircles(clonedSpaces, adjacencyMatrix);
+                //    ResolveCollisions(clonedSpaces);
+                //    CenterLayout(clonedSpaces, viewBox);
 
 
+                //    layoutOptions.Add(clonedSpaces);
+                //}
+
+                //// Show layout selection window
+                //LayoutSelectionWindow selectionWindow = new LayoutSelectionWindow(layoutOptions);
+                //bool? dialogResult = selectionWindow.ShowDialog();
+
+                //if (dialogResult != true)
+                //{
+                //    TaskDialog.Show("Canceled", "User canceled layout selection.");
+                //    return Result.Cancelled;
+                //}
+
+                ////  Get the selected layout
+                //List<SpaceNode> selectedSpace = selectionWindow.SelectedLayout;
+                //GlobalData.SavedSpaces = selectedSpace;
 
 
 
+
+                ApplyForceDirectedLayout(spaces, preferredAdjacency, weightedAdjMatrix, viewBox);
+                SnapConnectedCircles(spaces, adjacencyMatrix);
+                ResolveCollisions(spaces);
+                ResolveBoundaryViolations(spaces,viewBox);
+                ResolveCollisionsEnsureAllAdjacent(spaces, viewBox);
+                CenterLayout(spaces, viewBox);
 
 
 
@@ -277,15 +282,15 @@ namespace PanelizedAndModularFinal
                 using (Transaction tx = new Transaction(doc, "Connect Rooms"))
                 {
                     tx.Start();
-                    for (int i = 0; i < selectedSpace.Count; i++)  // use selectedSpace count
+                    for (int i = 0; i < spaces.Count; i++)  // use selectedSpace count
                     {
-                        for (int j = i + 1; j < selectedSpace.Count; j++)
+                        for (int j = i + 1; j < spaces.Count; j++)
                         {
                             if (weightedAdjMatrix[i, j].HasValue)
                             {
                                 // Use positions from selectedSpace instead of spaces
-                                Line connectionLine = Line.CreateBound(selectedSpace[i].Position, selectedSpace[j].Position);
-                                Plane plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, selectedSpace[i].Position);
+                                Line connectionLine = Line.CreateBound(spaces[i].Position, spaces[j].Position);
+                                Plane plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, spaces[i].Position);
                                 SketchPlane sketchPlane = SketchPlane.Create(doc, plane);
                                 DetailCurve connectionDetail = doc.Create.NewDetailCurve(doc.ActiveView, connectionLine);
 
@@ -305,15 +310,15 @@ namespace PanelizedAndModularFinal
                 using (Transaction tx = new Transaction(doc, "Create Rooms"))
                 {
                     tx.Start();
-                    foreach (var space in selectedSpace)
+                    foreach (var space in spaces)
                     {
                         CreateCircleNode(doc, space.Position, space.Area, space.WpfColor, space.Name, uidoc.ActiveView.Id);
                     }
                     tx.Commit();
                 }
 
-                TaskDialog.Show("Revit", $"Created {selectedSpace.Count} room(s) with connections.");
-                GlobalData.SavedSpaces = selectedSpace;
+                TaskDialog.Show("Revit", $"Created {spaces.Count} room(s) with connections.");
+                GlobalData.SavedSpaces = spaces;
 
                 // --- Step 1 Complete: Show Output and Wait for User Confirmation ---
                 TaskDialog step1Dialog = new TaskDialog("Step 1 Complete");
@@ -369,7 +374,7 @@ namespace PanelizedAndModularFinal
                     TaskDialog.Show("Selected Combination", selectedCombination);
 
 
-               
+
 
 
                     arranger = new ModuleArrangement();
@@ -403,7 +408,7 @@ namespace PanelizedAndModularFinal
                             tx.Commit();
                         }
 
-               
+
 
                         arranger.CreateSquareLikeArrangement(doc, selectedCombination, moduleTypes);
                         arrangementCreated = true;
@@ -480,10 +485,10 @@ namespace PanelizedAndModularFinal
                 }
                 GlobalData.Step1Elements.Clear();
 
-            
 
 
-              
+
+
                 // --- STEP 3: Create Trimmed Square Arrangement (SquareArrangementOnly) ---
                 List<XYZ[]> roomSquares = new List<XYZ[]>();
                 foreach (var space in GlobalData.SavedSpaces)
@@ -516,12 +521,12 @@ namespace PanelizedAndModularFinal
 
 
                 // Display the total trimmed area calculated by the new class.
-             //   TaskDialog.Show("Square Arrangement Only", $"Total trimmed area: {trimmer.TotalTrimmedArea}");
+                //   TaskDialog.Show("Square Arrangement Only", $"Total trimmed area: {trimmer.TotalTrimmedArea}");
 
 
 
                 // Now, open the space priority window to let the user assign raw priority values.
-          
+
                 SpacePriorityWindow priorityWindow = new SpacePriorityWindow(GlobalData.SavedSpaces);
                 bool? priorityResult = priorityWindow.ShowDialog();
 
@@ -657,7 +662,7 @@ namespace PanelizedAndModularFinal
             return subCat.GetGraphicsStyle(GraphicsStyleType.Projection);
         }
 
-        // Force-directed layout constants and methods follow...
+        // Force-directed layout constants and methods...
         private const int ITERATIONS = 100;
         private const double PREFERRED_ADJ_FACTOR = 10.0;
         private const double SPRING_CONSTANT = 0.5;
@@ -667,20 +672,21 @@ namespace PanelizedAndModularFinal
         private const bool ENABLE_ADAPTIVE_DAMPING = true;
 
         private void ApplyForceDirectedLayout(List<SpaceNode> spaces,
-                                      int[,] preferredAdjMatrix,
-                                      double?[,] weightedAdjMatrix,
-                                      BoundingBoxXYZ viewBox)
+                                              int[,] preferredAdjMatrix,
+                                              double?[,] weightedAdjMatrix,
+                                              BoundingBoxXYZ viewBox)
         {
             for (int iter = 0; iter < ITERATIONS; iter++)
             {
-                double currentDamping = DAMPING;
-                if (ENABLE_ADAPTIVE_DAMPING)
-                {
-                    currentDamping = DAMPING - (DAMPING / 2.0) * (iter / (double)ITERATIONS);
-                }
+                double currentDamping = ENABLE_ADAPTIVE_DAMPING
+                    ? DAMPING - (DAMPING / 2.0) * (iter / (double)ITERATIONS)
+                    : DAMPING;
+
                 XYZ[] forces = new XYZ[spaces.Count];
                 for (int i = 0; i < forces.Length; i++)
                     forces[i] = XYZ.Zero;
+
+                // Calculate forces between nodes.
                 for (int i = 0; i < spaces.Count; i++)
                 {
                     for (int j = i + 1; j < spaces.Count; j++)
@@ -692,6 +698,7 @@ namespace PanelizedAndModularFinal
                         if (distance < 1e-6) distance = 1e-6;
                         double repForce = REPULSION_CONSTANT / (distance * distance);
                         XYZ repulsion = repForce * delta.Normalize();
+
                         double weight = 0.0;
                         if (weightedAdjMatrix[i, j].HasValue && weightedAdjMatrix[i, j].Value > 0)
                         {
@@ -701,22 +708,20 @@ namespace PanelizedAndModularFinal
                         {
                             weight = (weight == 0.0) ? 1.0 : weight * PREFERRED_ADJ_FACTOR;
                         }
-                        double desiredDistance = 1.0;
-                        if (preferredAdjMatrix[i, j] == 1)
-                        {
-                            desiredDistance = spaces[i].Radius + spaces[j].Radius;
-                        }
-                        double attrForce = 0.0;
-                        if (weight > 0)
-                        {
-                            attrForce = SPRING_CONSTANT * weight * (distance - desiredDistance);
-                        }
+                        double desiredDistance = (preferredAdjMatrix[i, j] == 1)
+                            ? spaces[i].Radius + spaces[j].Radius
+                            : 1.0;
+                        double attrForce = (weight > 0)
+                            ? SPRING_CONSTANT * weight * (distance - desiredDistance)
+                            : 0.0;
                         XYZ attraction = -attrForce * delta.Normalize();
                         XYZ forceIJ = repulsion + attraction;
                         forces[i] -= forceIJ;
                         forces[j] += forceIJ;
                     }
                 }
+
+                // Apply forces and update positions.
                 double totalMovement = 0.0;
                 for (int i = 0; i < spaces.Count; i++)
                 {
@@ -732,7 +737,11 @@ namespace PanelizedAndModularFinal
                 {
                     break;
                 }
+
+                // Resolve collisions between nodes.
                 ResolveCollisions(spaces);
+                // Resolve any nodes that exceed the viewBox boundaries.
+                ResolveBoundaryViolations(spaces, viewBox);
             }
         }
 
@@ -766,6 +775,102 @@ namespace PanelizedAndModularFinal
                 }
             } while (hasOverlap);
         }
+
+        private void ResolveBoundaryViolations(List<SpaceNode> spaces, BoundingBoxXYZ viewBox)
+        {
+            const int maxAttempts = 36; // 36 attempts => 10° steps (360° total)
+            const double angleStep = Math.PI / 18.0; // 10 degrees in radians
+
+            foreach (SpaceNode node in spaces)
+            {
+                double radius = GetCircleRadius(node.Area);
+                // Check if the node's circle goes out of the view box.
+                if (node.Position.X - radius < viewBox.Min.X ||
+                    node.Position.X + radius > viewBox.Max.X ||
+                    node.Position.Y - radius < viewBox.Min.Y ||
+                    node.Position.Y + radius > viewBox.Max.Y)
+                {
+                    // Find the closest node.
+                    SpaceNode closest = null;
+                    double minDist = double.MaxValue;
+                    foreach (SpaceNode other in spaces)
+                    {
+                        if (other == node) continue;
+                        double d = (node.Position - other.Position).GetLength();
+                        if (d < minDist)
+                        {
+                            minDist = d;
+                            closest = other;
+                        }
+                    }
+
+                    if (closest != null)
+                    {
+                        double closestRadius = GetCircleRadius(closest.Area);
+                        // Start with the direction from the closest node to the current node.
+                        XYZ direction = node.Position - closest.Position;
+                        if (direction.GetLength() < 1e-6)
+                            direction = new XYZ(1, 0, 0);
+                        direction = direction.Normalize();
+
+                        bool found = false;
+                        XYZ newPos = node.Position;
+                        for (int attempt = 0; attempt < maxAttempts; attempt++)
+                        {
+                            // Calculate new position so that circles just touch.
+                            newPos = closest.Position + direction * (closestRadius + radius);
+                            // Clamp new position to ensure the full circle remains within viewBox.
+                            double clampedX = Math.Max(viewBox.Min.X + radius, Math.Min(newPos.X, viewBox.Max.X - radius));
+                            double clampedY = Math.Max(viewBox.Min.Y + radius, Math.Min(newPos.Y, viewBox.Max.Y - radius));
+                            newPos = new XYZ(clampedX, clampedY, node.Position.Z);
+
+                            // Check for overlaps with all other nodes.
+                            bool overlap = false;
+                            foreach (SpaceNode other in spaces)
+                            {
+                                if (other == node)
+                                    continue;
+                                double otherRadius = GetCircleRadius(other.Area);
+                                if ((newPos - other.Position).GetLength() < (radius + otherRadius))
+                                {
+                                    overlap = true;
+                                    break;
+                                }
+                            }
+                            if (!overlap)
+                            {
+                                found = true;
+                                break;
+                            }
+                            // Rotate the direction slightly and try again.
+                            direction = Rotate(direction, angleStep);
+                        }
+                        node.Position = newPos;
+                    }
+                    else
+                    {
+                        // Fallback: simply clamp the current position.
+                        double clampedX = Math.Max(viewBox.Min.X + radius, Math.Min(node.Position.X, viewBox.Max.X - radius));
+                        double clampedY = Math.Max(viewBox.Min.Y + radius, Math.Min(node.Position.Y, viewBox.Max.Y - radius));
+                        node.Position = new XYZ(clampedX, clampedY, node.Position.Z);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Rotates the given 2D vector (ignoring the Z component) by the given angle (in radians).
+        /// </summary>
+        private XYZ Rotate(XYZ vector, double angle)
+        {
+            double cos = Math.Cos(angle);
+            double sin = Math.Sin(angle);
+            double x = vector.X * cos - vector.Y * sin;
+            double y = vector.X * sin + vector.Y * cos;
+            return new XYZ(x, y, vector.Z);
+        }
+
+
 
         private double GetCircleRadius(double area)
         {
@@ -871,6 +976,206 @@ namespace PanelizedAndModularFinal
             }
             return cloned;
         }
+
+
+
+
+
+
+
+
+
+        private void ResolveCollisionsEnsureAllAdjacent(List<SpaceNode> spaces, BoundingBoxXYZ viewBox)
+        {
+            const double epsilon = 0.001;
+            const int maxIterations = 50; // Prevent infinite loops if space is tight.
+
+            // 1) Standard collision resolution loop to remove overlaps.
+            bool hasOverlap;
+            do
+            {
+                hasOverlap = false;
+                for (int i = 0; i < spaces.Count; i++)
+                {
+                    for (int j = i + 1; j < spaces.Count; j++)
+                    {
+                        XYZ posI = spaces[i].Position;
+                        XYZ posJ = spaces[j].Position;
+                        double radiusI = GetCircleRadius(spaces[i].Area);
+                        double radiusJ = GetCircleRadius(spaces[j].Area);
+
+                        XYZ delta = posJ - posI;
+                        double distance = delta.GetLength();
+                        double minDist = radiusI + radiusJ;
+
+                        // If circles overlap, push them apart equally.
+                        if (distance < minDist)
+                        {
+                            hasOverlap = true;
+                            double overlap = (minDist - distance) + epsilon;
+                            XYZ pushDir = (distance == 0) ? new XYZ(1, 0, 0) : delta.Normalize();
+
+                            // Push each circle half the overlap distance away.
+                            spaces[i].Position -= 0.5 * overlap * pushDir;
+                            spaces[j].Position += 0.5 * overlap * pushDir;
+
+                            // Clamp to ensure circles remain in the bounding box.
+                            spaces[i].Position = ClampToViewBox(spaces[i].Position, radiusI, viewBox);
+                            spaces[j].Position = ClampToViewBox(spaces[j].Position, radiusJ, viewBox);
+                        }
+                    }
+                }
+            }
+            while (hasOverlap);
+
+            // 2) Iteratively ensure that *all* circles have at least one adjacency.
+            int iteration = 0;
+            while (!AllCirclesHaveAdjacency(spaces, epsilon) && iteration < maxIterations)
+            {
+                // For each circle that has no adjacency, force it to be adjacent to its closest neighbor.
+                for (int i = 0; i < spaces.Count; i++)
+                {
+                    if (!CircleHasAdjacency(spaces, i, epsilon))
+                    {
+                        ForceAdjacencyWithClosest(spaces, i, viewBox);
+                    }
+                }
+
+                // After forcing adjacency, re-run collision resolution
+                // so that new overlaps introduced get resolved again.
+                do
+                {
+                    hasOverlap = false;
+                    for (int i = 0; i < spaces.Count; i++)
+                    {
+                        for (int j = i + 1; j < spaces.Count; j++)
+                        {
+                            XYZ posI = spaces[i].Position;
+                            XYZ posJ = spaces[j].Position;
+                            double radiusI = GetCircleRadius(spaces[i].Area);
+                            double radiusJ = GetCircleRadius(spaces[j].Area);
+
+                            XYZ delta = posJ - posI;
+                            double distance = delta.GetLength();
+                            double minDist = radiusI + radiusJ;
+
+                            if (distance < minDist)
+                            {
+                                hasOverlap = true;
+                                double overlap = (minDist - distance) + epsilon;
+                                XYZ pushDir = (distance == 0) ? new XYZ(1, 0, 0) : delta.Normalize();
+
+                                spaces[i].Position -= 0.5 * overlap * pushDir;
+                                spaces[j].Position += 0.5 * overlap * pushDir;
+
+                                // Clamp
+                                spaces[i].Position = ClampToViewBox(spaces[i].Position, radiusI, viewBox);
+                                spaces[j].Position = ClampToViewBox(spaces[j].Position, radiusJ, viewBox);
+                            }
+                        }
+                    }
+                }
+                while (hasOverlap);
+
+                iteration++;
+            }
+        }
+
+        /// <summary>
+        /// Returns true if *every* circle in 'spaces' has adjacency with at least one other circle.
+        /// </summary>
+        private bool AllCirclesHaveAdjacency(List<SpaceNode> spaces, double epsilon)
+        {
+            for (int i = 0; i < spaces.Count; i++)
+            {
+                if (!CircleHasAdjacency(spaces, i, epsilon))
+                    return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Returns true if circle 'index' is touching at least one other circle.
+        /// </summary>
+        private bool CircleHasAdjacency(List<SpaceNode> spaces, int index, double epsilon)
+        {
+            double rI = GetCircleRadius(spaces[index].Area);
+            XYZ posI = spaces[index].Position;
+
+            for (int j = 0; j < spaces.Count; j++)
+            {
+                if (j == index) continue;
+                double rJ = GetCircleRadius(spaces[j].Area);
+                double dist = (posI - spaces[j].Position).GetLength();
+                double sumRadius = rI + rJ;
+
+                // If they are essentially touching
+                if (Math.Abs(dist - sumRadius) < epsilon)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Forces the circle at 'index' to be adjacent to its closest neighbor (if any).
+        /// </summary>
+        private void ForceAdjacencyWithClosest(List<SpaceNode> spaces, int index, BoundingBoxXYZ viewBox)
+        {
+            double rI = GetCircleRadius(spaces[index].Area);
+            SpaceNode circleI = spaces[index];
+
+            // Find closest circle
+            double closestDist = double.MaxValue;
+            int closestIndex = -1;
+            for (int j = 0; j < spaces.Count; j++)
+            {
+                if (j == index) continue;
+                double dist = (circleI.Position - spaces[j].Position).GetLength();
+                if (dist < closestDist)
+                {
+                    closestDist = dist;
+                    closestIndex = j;
+                }
+            }
+
+            // If we found a neighbor, place circleI so it touches that neighbor.
+            if (closestIndex >= 0)
+            {
+                SpaceNode circleJ = spaces[closestIndex];
+                double rJ = GetCircleRadius(circleJ.Area);
+
+                XYZ delta = circleI.Position - circleJ.Position;
+                double distance = delta.GetLength();
+                if (distance < 1e-6)
+                {
+                    // If they're at the exact same position, pick an arbitrary direction.
+                    delta = new XYZ(1, 0, 0);
+                    distance = 1.0;
+                }
+
+                XYZ dir = delta.Normalize();
+                double minDist = rI + rJ;
+                // Move circleI so it is exactly minDist away from circleJ along 'dir'.
+                circleI.Position = circleJ.Position + dir * minDist;
+
+                // Clamp to keep circleI inside bounding box
+                circleI.Position = ClampToViewBox(circleI.Position, rI, viewBox);
+            }
+        }
+
+        /// <summary>
+        /// Clamps the given center point so the entire circle stays inside the bounding box.
+        /// </summary>
+        private XYZ ClampToViewBox(XYZ position, double radius, BoundingBoxXYZ viewBox)
+        {
+            double clampedX = Math.Max(viewBox.Min.X + radius, Math.Min(position.X, viewBox.Max.X - radius));
+            double clampedY = Math.Max(viewBox.Min.Y + radius, Math.Min(position.Y, viewBox.Max.Y - radius));
+            // Z unchanged; 2D layout typically uses X-Y only.
+            return new XYZ(clampedX, clampedY, position.Z);
+        }
+
 
 
     }
