@@ -218,57 +218,90 @@ namespace PanelizedAndModularFinal
 
 
 
+
+
+
+
+
+
+
+
+
+
                 List<List<SpaceNode>> layoutOptions = new List<List<SpaceNode>>();
                 int maxLayouts = Math.Min(15, spaces.Count);
 
                 // Ensure 'random' is declared only once in the correct scope.
-                //Random randomGenerator = new Random(); // Rename variable to avoid conflict
+                Random randomGenerator = new Random(); // Rename variable to avoid conflict
 
-                //for (int i = 0; i < maxLayouts; i++) // Generate up to 15 layouts
-                //{
-                //    List<SpaceNode> clonedSpaces = CloneSpaces(spaces); // Make a copy
+                for (int i = 0; i < maxLayouts; i++) // Generate up to 15 layouts
+                {
+                    List<SpaceNode> clonedSpaces = CloneSpaces(spaces); // Make a copy
 
-                //    // Apply random shifts before layout adjustment
-                //    foreach (var space in clonedSpaces)
-                //    {
-                //        double randomX = (randomGenerator.NextDouble() - 0.5) * 100; // Increase randomness
-                //        double randomY = (randomGenerator.NextDouble() - 0.5) * 100;
-                //        space.Position = new XYZ(space.Position.X + randomX, space.Position.Y + randomY, space.Position.Z);
-                //    }
-
-
-                //    ApplyForceDirectedLayout(clonedSpaces, preferredAdjacency, weightedAdjMatrix, viewBox);
-                //    SnapConnectedCircles(clonedSpaces, adjacencyMatrix);
-                //    ResolveCollisions(clonedSpaces);
-                //    CenterLayout(clonedSpaces, viewBox);
-
-
-                //    layoutOptions.Add(clonedSpaces);
-                //}
-
-                //// Show layout selection window
-                //LayoutSelectionWindow selectionWindow = new LayoutSelectionWindow(layoutOptions);
-                //bool? dialogResult = selectionWindow.ShowDialog();
-
-                //if (dialogResult != true)
-                //{
-                //    TaskDialog.Show("Canceled", "User canceled layout selection.");
-                //    return Result.Cancelled;
-                //}
-
-                ////  Get the selected layout
-                //List<SpaceNode> selectedSpace = selectionWindow.SelectedLayout;
-                //GlobalData.SavedSpaces = selectedSpace;
+                    // Apply random shifts before layout adjustment
+                    foreach (var space in clonedSpaces)
+                    {
+                        double randomX = (randomGenerator.NextDouble() - 0.5) * 100; // Increase randomness
+                        double randomY = (randomGenerator.NextDouble() - 0.5) * 100;
+                        space.Position = new XYZ(space.Position.X + randomX, space.Position.Y + randomY, space.Position.Z);
+                    }
 
 
 
 
-                ApplyForceDirectedLayout(spaces, preferredAdjacency, weightedAdjMatrix, viewBox);
-                SnapConnectedCircles(spaces, adjacencyMatrix);
-                ResolveCollisions(spaces);
-                ResolveBoundaryViolations(spaces,viewBox);
-                ResolveCollisionsEnsureAllAdjacent(spaces, viewBox);
-                CenterLayout(spaces, viewBox);
+                    ApplyForceDirectedLayout(clonedSpaces, preferredAdjacency, weightedAdjMatrix, viewBox);
+                    SnapConnectedCircles(clonedSpaces, adjacencyMatrix);
+                    ResolveCollisions(clonedSpaces);
+                    ResolveBoundaryViolations(clonedSpaces, viewBox);
+                    ResolveCollisionsEnsureAllAdjacent(clonedSpaces, viewBox);
+                    CenterLayout(clonedSpaces, viewBox);
+
+
+                    layoutOptions.Add(clonedSpaces);
+                }
+
+                // Show layout selection window
+                LayoutSelectionWindow selectionWindow = new LayoutSelectionWindow(layoutOptions);
+                bool? dialogResult = selectionWindow.ShowDialog();
+
+                if (dialogResult != true)
+                {
+                    TaskDialog.Show("Canceled", "User canceled layout selection.");
+                    return Result.Cancelled;
+                }
+
+                //  Get the selected layout
+                List<SpaceNode> selectedSpace = selectionWindow.SelectedLayout;
+                GlobalData.SavedSpaces = selectedSpace;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                //ApplyForceDirectedLayout(spaces, preferredAdjacency, weightedAdjMatrix, viewBox);
+                //SnapConnectedCircles(spaces, adjacencyMatrix);
+                //ResolveCollisions(spaces);
+                //ResolveBoundaryViolations(spaces,viewBox);
+                //ResolveCollisionsEnsureAllAdjacent(spaces, viewBox);
+                //CenterLayout(spaces, viewBox);
 
 
 
@@ -282,15 +315,15 @@ namespace PanelizedAndModularFinal
                 using (Transaction tx = new Transaction(doc, "Connect Rooms"))
                 {
                     tx.Start();
-                    for (int i = 0; i < spaces.Count; i++)  // use selectedSpace count
+                    for (int i = 0; i < selectedSpace.Count; i++)  // use selectedSpace count
                     {
-                        for (int j = i + 1; j < spaces.Count; j++)
+                        for (int j = i + 1; j < selectedSpace.Count; j++)
                         {
                             if (weightedAdjMatrix[i, j].HasValue)
                             {
                                 // Use positions from selectedSpace instead of spaces
-                                Line connectionLine = Line.CreateBound(spaces[i].Position, spaces[j].Position);
-                                Plane plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, spaces[i].Position);
+                                Line connectionLine = Line.CreateBound(selectedSpace[i].Position, selectedSpace[j].Position);
+                                Plane plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, selectedSpace[i].Position);
                                 SketchPlane sketchPlane = SketchPlane.Create(doc, plane);
                                 DetailCurve connectionDetail = doc.Create.NewDetailCurve(doc.ActiveView, connectionLine);
 
@@ -310,7 +343,7 @@ namespace PanelizedAndModularFinal
                 using (Transaction tx = new Transaction(doc, "Create Rooms"))
                 {
                     tx.Start();
-                    foreach (var space in spaces)
+                    foreach (var space in selectedSpace)
                     {
                         CreateCircleNode(doc, space.Position, space.Area, space.WpfColor, space.Name, uidoc.ActiveView.Id);
                     }
@@ -318,7 +351,7 @@ namespace PanelizedAndModularFinal
                 }
 
                 TaskDialog.Show("Revit", $"Created {spaces.Count} room(s) with connections.");
-                GlobalData.SavedSpaces = spaces;
+                GlobalData.SavedSpaces = selectedSpace;
 
                 // --- Step 1 Complete: Show Output and Wait for User Confirmation ---
                 TaskDialog step1Dialog = new TaskDialog("Step 1 Complete");
@@ -1123,15 +1156,17 @@ namespace PanelizedAndModularFinal
         /// </summary>
         private void ForceAdjacencyWithClosest(List<SpaceNode> spaces, int index, BoundingBoxXYZ viewBox)
         {
-            double rI = GetCircleRadius(spaces[index].Area);
             SpaceNode circleI = spaces[index];
+            double rI = GetCircleRadius(circleI.Area);
 
-            // Find closest circle
-            double closestDist = double.MaxValue;
+            // Find the closest circle
             int closestIndex = -1;
+            double closestDist = double.MaxValue;
+
             for (int j = 0; j < spaces.Count; j++)
             {
                 if (j == index) continue;
+
                 double dist = (circleI.Position - spaces[j].Position).GetLength();
                 if (dist < closestDist)
                 {
@@ -1140,7 +1175,7 @@ namespace PanelizedAndModularFinal
                 }
             }
 
-            // If we found a neighbor, place circleI so it touches that neighbor.
+            // Move circleI to touch the closest circle without overlap
             if (closestIndex >= 0)
             {
                 SpaceNode circleJ = spaces[closestIndex];
@@ -1148,22 +1183,23 @@ namespace PanelizedAndModularFinal
 
                 XYZ delta = circleI.Position - circleJ.Position;
                 double distance = delta.GetLength();
+
                 if (distance < 1e-6)
                 {
-                    // If they're at the exact same position, pick an arbitrary direction.
+                    // Same position, use arbitrary direction
                     delta = new XYZ(1, 0, 0);
-                    distance = 1.0;
                 }
 
-                XYZ dir = delta.Normalize();
-                double minDist = rI + rJ;
-                // Move circleI so it is exactly minDist away from circleJ along 'dir'.
-                circleI.Position = circleJ.Position + dir * minDist;
+                XYZ direction = delta.Normalize();
+                double targetDistance = rI + rJ;
 
-                // Clamp to keep circleI inside bounding box
+                circleI.Position = circleJ.Position + direction * targetDistance;
+
+                // Clamp position to stay within view bounds
                 circleI.Position = ClampToViewBox(circleI.Position, rI, viewBox);
             }
         }
+
 
         /// <summary>
         /// Clamps the given center point so the entire circle stays inside the bounding box.
