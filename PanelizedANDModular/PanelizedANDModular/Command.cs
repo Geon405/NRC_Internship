@@ -522,39 +522,102 @@ namespace PanelizedAndModularFinal
 
 
 
+
+
+
+
+
+
                 // --- STEP 3: Create Trimmed Square Arrangement (SquareArrangementOnly) ---
+
+
                 List<XYZ[]> roomSquares = new List<XYZ[]>();
+                
+
                 foreach (var space in GlobalData.SavedSpaces)
                 {
-                    // Calculate a radius from the area (assuming the room circle was used earlier)
+                    // Calculate the radius from the circle's area.
                     double radius = Math.Sqrt(space.Area / Math.PI);
+
                     // Define square corners (clockwise order) based on the room center.
                     XYZ pt1 = new XYZ(space.Position.X + radius, space.Position.Y + radius, space.Position.Z);
                     XYZ pt2 = new XYZ(space.Position.X - radius, space.Position.Y + radius, space.Position.Z);
                     XYZ pt3 = new XYZ(space.Position.X - radius, space.Position.Y - radius, space.Position.Z);
                     XYZ pt4 = new XYZ(space.Position.X + radius, space.Position.Y - radius, space.Position.Z);
+
                     roomSquares.Add(new XYZ[] { pt1, pt2, pt3, pt4 });
+
+                    // Calculate the area of the square (side length is 2 * radius)
+                    space.SquareArea = Math.Pow(2 * radius, 2);
                 }
 
-
-                // Ask the ModuleArrangement for its bounding rectangle
-                double gridMinX, gridMinY, gridMaxX, gridMaxY;
-                arranger.GetArrangementBounds(out gridMinX, out gridMinY, out gridMaxX, out gridMaxY);
+             
 
 
-                // Create the trimmed square arrangement using the SquareArrangementOnly (or TrimCircleSquare) class.
+
+
+                List<Line> boundaryLines = arranger.GetPerimeterOutline();
+
+
+
+                // Assuming you have a List<Line> named perimeterLines already.
                 TrimCircleSquare trimmer = new TrimCircleSquare();
-                using (Transaction tx = new Transaction(doc, "Trim Squares"))
-                {
-                    tx.Start();
-                    trimmer.CreateTrimmedSquares(doc, roomSquares, gridMinX, gridMinY, gridMaxX, gridMaxY);
+                //List<XYZ> boundaryPolygon = trimmer.BuildBoundaryPolygon(boundaryLines);
 
-                    tx.Commit();
+                //// Create detail curves for each edge of the polygon in red.
+                //if (boundaryPolygon.Count >= 2)
+                //{
+                //    using (Transaction trans = new Transaction(doc, "Display Boundary Polygon"))
+                //    {
+                //        trans.Start();
+                //        // Iterate over adjacent vertices.
+                //        for (int i = 0; i < boundaryPolygon.Count - 1; i++)
+                //        {
+                //            Line line = Line.CreateBound(boundaryPolygon[i], boundaryPolygon[i + 1]);
+                //            DetailCurve detailCurve = doc.Create.NewDetailCurve(doc.ActiveView, line);
+                //            // Set the detail curve color to red.
+                //            OverrideGraphicSettings ogs = new OverrideGraphicSettings();
+                //            ogs.SetProjectionLineColor(new Autodesk.Revit.DB.Color(255, 0, 0));
+                //            doc.ActiveView.SetElementOverrides(detailCurve.Id, ogs);
+                //        }
+                //        trans.Commit();
+                //    }
+                //}
+
+
+
+
+
+                
+
+                using (Transaction trans = new Transaction(doc, "Trim Red Squares"))
+                {
+                    trans.Start();
+
+                    trimmer.CreateTrimmedSquares(doc, roomSquares, boundaryLines);
+
+                    trans.Commit();
                 }
 
+                // 5. Check how much area was trimmed in total
+                double totalTrimmed = trimmer.TotalTrimmedArea;
+                //TaskDialog.Show("Info", "Total trimmed area: " + totalTrimmed);
 
-                // Display the total trimmed area calculated by the new class.
-                //   TaskDialog.Show("Square Arrangement Only", $"Total trimmed area: {trimmer.TotalTrimmedArea}");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -571,10 +634,7 @@ namespace PanelizedAndModularFinal
 
                 // At this point, each SpaceNode's Priority property has been normalized.
                 // You can now access these values for subsequent operations.
-                foreach (SpaceNode node in GlobalData.SavedSpaces)
-                {
-                    TaskDialog.Show("Priority", $"{node.Name}: {node.Priority:F2}");
-                }
+        
 
 
 

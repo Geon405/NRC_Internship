@@ -20,7 +20,8 @@ namespace PanelizedAndModularFinal
         private double _overallMaxX;
         private double _overallMaxY;
 
-
+        // Store all placed rectangles (each is an array of 4 XYZ corners)
+        private List<XYZ[]> _placedRectangles = new List<XYZ[]>();
 
 
         public void GetArrangementBounds(out double minX, out double minY, out double maxX, out double maxY)
@@ -148,6 +149,9 @@ namespace PanelizedAndModularFinal
             _overallMaxX = overallMaxX;
             _overallMaxY = overallMaxY;
 
+            // ** Store these rectangles so we can compute perimeter later **
+            _placedRectangles = placedRectangles;
+
             // 5. Create module solids + grid in a transaction
             using (Transaction trans = new Transaction(doc, "Create Modules + Grid"))
             {
@@ -172,6 +176,66 @@ namespace PanelizedAndModularFinal
             // 6. Compute center of the final output
             OverallCenter = ComputeFinalOutputCenter(placedRectangles);
         }
+
+
+        // <summary>
+        /// Returns a list of perimeter edges (Lines) that represent the merged boundary
+        /// around all placed modules.
+        /// </summary>
+        public List<Line> GetPerimeterOutline()
+        {
+            // 1. Gather all edges as Segment objects
+            List<Segment> allEdges = new List<Segment>();
+            foreach (XYZ[] rect in _placedRectangles)
+            {
+                // Each rect has p1, p2, p3, p4 in some order
+                XYZ p1 = rect[0];
+                XYZ p2 = rect[1];
+                XYZ p3 = rect[2];
+                XYZ p4 = rect[3];
+
+                allEdges.Add(new Segment(p1, p2));
+                allEdges.Add(new Segment(p2, p3));
+                allEdges.Add(new Segment(p3, p4));
+                allEdges.Add(new Segment(p4, p1));
+            }
+
+            // 2. Merge/clean edges (removes overlaps, duplicates, etc.)
+            List<Segment> cleanedSegments = SubtractOverlaps(allEdges);
+
+            // 3. Convert them into Revit Line objects
+            List<Line> perimeterLines = new List<Line>();
+            foreach (Segment seg in cleanedSegments)
+            {
+                double length = (seg.End - seg.Start).GetLength();
+                if (length > 1e-9) // skip tiny segments
+                {
+                    perimeterLines.Add(Line.CreateBound(seg.Start, seg.End));
+                }
+            }
+
+            return perimeterLines;
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         /// <summary>
         /// Centers the layout (placedRectangles) within the provided view box.
@@ -224,20 +288,20 @@ namespace PanelizedAndModularFinal
             return new XYZ(centerX, centerY, 0);
         }
 
-        private double ComputeCellSize(List<XYZ[]> placedRectangles)
-        {
-            double minDimension = double.MaxValue;
-            foreach (var rect in placedRectangles)
-            {
-                double width = Math.Abs(rect[1].X - rect[0].X);
-                double height = Math.Abs(rect[3].Y - rect[0].Y);
-                double localMin = Math.Min(width, height);
-                if (localMin < minDimension)
-                    minDimension = localMin;
+        //private double ComputeCellSize(List<XYZ[]> placedRectangles)
+        //{
+        //    double minDimension = double.MaxValue;
+        //    foreach (var rect in placedRectangles)
+        //    {
+        //        double width = Math.Abs(rect[1].X - rect[0].X);
+        //        double height = Math.Abs(rect[3].Y - rect[0].Y);
+        //        double localMin = Math.Min(width, height);
+        //        if (localMin < minDimension)
+        //            minDimension = localMin;
 
-            }
-            return minDimension / 3.0;
-        }
+        //    }
+        //    return minDimension / 3.0;
+        //}
 
         private List<ElementId> CreateGridCellsInsideModules(Document doc, List<XYZ[]> placedRectangles)
         {
@@ -305,23 +369,23 @@ namespace PanelizedAndModularFinal
 
 
 
-        private bool IsCellFullyInsideAnyModule(double cellMinX, double cellMinY, double cellMaxX, double cellMaxY, List<XYZ[]> placedRectangles)
-        {
-            foreach (XYZ[] rect in placedRectangles)
-            {
-                double minX = Math.Min(rect[0].X, rect[2].X);
-                double minY = Math.Min(rect[0].Y, rect[2].Y);
-                double maxX = Math.Max(rect[0].X, rect[2].X);
-                double maxY = Math.Max(rect[0].Y, rect[2].Y);
+        //private bool IsCellFullyInsideAnyModule(double cellMinX, double cellMinY, double cellMaxX, double cellMaxY, List<XYZ[]> placedRectangles)
+        //{
+        //    foreach (XYZ[] rect in placedRectangles)
+        //    {
+        //        double minX = Math.Min(rect[0].X, rect[2].X);
+        //        double minY = Math.Min(rect[0].Y, rect[2].Y);
+        //        double maxX = Math.Max(rect[0].X, rect[2].X);
+        //        double maxY = Math.Max(rect[0].Y, rect[2].Y);
 
-                if (cellMinX >= minX && cellMaxX <= maxX &&
-                    cellMinY >= minY && cellMaxY <= maxY)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
+        //        if (cellMinX >= minX && cellMaxX <= maxX &&
+        //            cellMinY >= minY && cellMaxY <= maxY)
+        //        {
+        //            return true;
+        //        }
+        //    }
+        //    return false;
+        //}
 
         private void CreateModuleSolid(Document doc, XYZ p1, XYZ p2, XYZ p3, XYZ p4, double height)
         {
@@ -367,67 +431,67 @@ namespace PanelizedAndModularFinal
             return result;
         }
 
-        private List<ElementId> CreateOrthogonalBoundary(Document doc, List<XYZ[]> placedRectangles, double gap, double shiftX, double shiftY)
-        {
-            List<Segment> allEdges = new List<Segment>();
-            foreach (var rect in placedRectangles)
-            {
-                XYZ p1 = rect[0].Add(new XYZ(shiftX, shiftY, 0));
-                XYZ p2 = rect[1].Add(new XYZ(shiftX, shiftY, 0));
-                XYZ p3 = rect[2].Add(new XYZ(shiftX, shiftY, 0));
-                XYZ p4 = rect[3].Add(new XYZ(shiftX, shiftY, 0));
+        //private List<ElementId> CreateOrthogonalBoundary(Document doc, List<XYZ[]> placedRectangles, double gap, double shiftX, double shiftY)
+        //{
+        //    List<Segment> allEdges = new List<Segment>();
+        //    foreach (var rect in placedRectangles)
+        //    {
+        //        XYZ p1 = rect[0].Add(new XYZ(shiftX, shiftY, 0));
+        //        XYZ p2 = rect[1].Add(new XYZ(shiftX, shiftY, 0));
+        //        XYZ p3 = rect[2].Add(new XYZ(shiftX, shiftY, 0));
+        //        XYZ p4 = rect[3].Add(new XYZ(shiftX, shiftY, 0));
 
-                double minX = Math.Min(p1.X, p3.X);
-                double maxX = Math.Max(p1.X, p3.X);
-                double minY = Math.Min(p1.Y, p3.Y);
-                double maxY = Math.Max(p1.Y, p3.Y);
+        //        double minX = Math.Min(p1.X, p3.X);
+        //        double maxX = Math.Max(p1.X, p3.X);
+        //        double minY = Math.Min(p1.Y, p3.Y);
+        //        double maxY = Math.Max(p1.Y, p3.Y);
 
-                allEdges.Add(new Segment(new XYZ(minX, minY, 0), new XYZ(maxX, minY, 0)));
-                allEdges.Add(new Segment(new XYZ(minX, maxY, 0), new XYZ(maxX, maxY, 0)));
-                allEdges.Add(new Segment(new XYZ(minX, minY, 0), new XYZ(minX, maxY, 0)));
-                allEdges.Add(new Segment(new XYZ(maxX, minY, 0), new XYZ(maxX, maxY, 0)));
-            }
+        //        allEdges.Add(new Segment(new XYZ(minX, minY, 0), new XYZ(maxX, minY, 0)));
+        //        allEdges.Add(new Segment(new XYZ(minX, maxY, 0), new XYZ(maxX, maxY, 0)));
+        //        allEdges.Add(new Segment(new XYZ(minX, minY, 0), new XYZ(minX, maxY, 0)));
+        //        allEdges.Add(new Segment(new XYZ(maxX, minY, 0), new XYZ(maxX, maxY, 0)));
+        //    }
 
-            List<Segment> boundarySegments = SubtractOverlaps(allEdges);
-            List<Segment> offsetSegments = new List<Segment>();
-            double shortTol = doc.Application.ShortCurveTolerance;
+        //    List<Segment> boundarySegments = SubtractOverlaps(allEdges);
+        //    List<Segment> offsetSegments = new List<Segment>();
+        //    double shortTol = doc.Application.ShortCurveTolerance;
 
-            foreach (Segment seg in boundarySegments)
-            {
-                bool horizontal = Math.Abs(seg.Start.Y - seg.End.Y) < 1e-9;
-                XYZ mid = (seg.Start + seg.End) / 2.0;
-                XYZ normal = horizontal ? new XYZ(0, 1, 0) : new XYZ(1, 0, 0);
+        //    foreach (Segment seg in boundarySegments)
+        //    {
+        //        bool horizontal = Math.Abs(seg.Start.Y - seg.End.Y) < 1e-9;
+        //        XYZ mid = (seg.Start + seg.End) / 2.0;
+        //        XYZ normal = horizontal ? new XYZ(0, 1, 0) : new XYZ(1, 0, 0);
 
-                if (IsPointInsideAnyRect(mid + normal * 0.01, placedRectangles, shiftX, shiftY))
-                    normal = normal.Negate();
+        //        if (IsPointInsideAnyRect(mid + normal * 0.01, placedRectangles, shiftX, shiftY))
+        //            normal = normal.Negate();
 
-                XYZ offStart = seg.Start + normal * gap;
-                XYZ offEnd = seg.End + normal * gap;
+        //        XYZ offStart = seg.Start + normal * gap;
+        //        XYZ offEnd = seg.End + normal * gap;
 
-                if ((offEnd - offStart).GetLength() > shortTol)
-                    offsetSegments.Add(new Segment(offStart, offEnd));
-            }
+        //        if ((offEnd - offStart).GetLength() > shortTol)
+        //            offsetSegments.Add(new Segment(offStart, offEnd));
+        //    }
 
-            Plane boundaryPlane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, XYZ.Zero);
-            SketchPlane boundarySketch = SketchPlane.Create(doc, boundaryPlane);
-            OverrideGraphicSettings ogs = new OverrideGraphicSettings();
-            ogs.SetProjectionLineColor(new Autodesk.Revit.DB.Color(255, 0, 0));
+        //    Plane boundaryPlane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, XYZ.Zero);
+        //    SketchPlane boundarySketch = SketchPlane.Create(doc, boundaryPlane);
+        //    OverrideGraphicSettings ogs = new OverrideGraphicSettings();
+        //    ogs.SetProjectionLineColor(new Autodesk.Revit.DB.Color(255, 0, 0));
 
-            List<ElementId> boundaryDetailCurveIds = new List<ElementId>();
-            foreach (Segment seg in offsetSegments)
-            {
-                double length = (seg.End - seg.Start).GetLength();
-                if (length < shortTol) continue;
+        //    List<ElementId> boundaryDetailCurveIds = new List<ElementId>();
+        //    foreach (Segment seg in offsetSegments)
+        //    {
+        //        double length = (seg.End - seg.Start).GetLength();
+        //        if (length < shortTol) continue;
 
-                Line line = Line.CreateBound(seg.Start, seg.End);
-                if (line.Length < shortTol) continue;
+        //        Line line = Line.CreateBound(seg.Start, seg.End);
+        //        if (line.Length < shortTol) continue;
 
-                DetailCurve dc = doc.Create.NewDetailCurve(doc.ActiveView, line);
-                doc.ActiveView.SetElementOverrides(dc.Id, ogs);
-                boundaryDetailCurveIds.Add(dc.Id);
-            }
-            return boundaryDetailCurveIds;
-        }
+        //        DetailCurve dc = doc.Create.NewDetailCurve(doc.ActiveView, line);
+        //        doc.ActiveView.SetElementOverrides(dc.Id, ogs);
+        //        boundaryDetailCurveIds.Add(dc.Id);
+        //    }
+        //    return boundaryDetailCurveIds;
+        //}
 
         private bool IsPointInsideAnyRect(XYZ pt, List<XYZ[]> rects, double shiftX, double shiftY)
         {

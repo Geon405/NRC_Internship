@@ -46,7 +46,7 @@ namespace PanelizedAndModularFinal
             {
                 SelectedLayout = selectedPreview.Layout;
 
-                TaskDialog.Show("DEBUG", $"[Selection Window] Selected layout first room: {SelectedLayout[0].Name} @ {SelectedLayout[0].Position.X}, {SelectedLayout[0].Position.Y}");
+             
 
                 DialogResult = true;
                 Close();
