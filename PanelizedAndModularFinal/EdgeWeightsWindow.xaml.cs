@@ -22,6 +22,7 @@ namespace PanelizedAndModularFinal
     {
         // This will hold the final user-entered weights.
         public double?[,] WeightedAdjacencyMatrix { get; private set; }
+        public bool UserWentBack { get; private set; } = false;
 
         private List<SpaceNode> _spaces;
         private int[,] _adjacency;
@@ -78,8 +79,12 @@ namespace PanelizedAndModularFinal
             Close();
         }
 
-
-
+        private void Back_Click(object sender, RoutedEventArgs e)
+        {
+            UserWentBack = true;
+            DialogResult = false;
+            Close();
+        }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
@@ -87,7 +92,6 @@ namespace PanelizedAndModularFinal
             Close();
         }
     }
-
     // Simple row model for binding in the DataGrid
     public class EdgeWeightRow
     {
