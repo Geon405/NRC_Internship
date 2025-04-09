@@ -49,6 +49,12 @@
       "frameworks": {
         "net8.0-windows7.0": {
           "targetAlias": "net8.0-windows",
+          "dependencies": {
+            "clipper_standard": {
+              "target": "Package",
+              "version": "[0.0.1, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",

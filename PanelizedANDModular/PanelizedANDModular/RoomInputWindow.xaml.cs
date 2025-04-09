@@ -20,6 +20,8 @@ namespace PanelizedAndModularFinal
     public partial class RoomInputWindow : Window
     {
         public List<RoomTypeRow> RoomTypes { get; set; }
+        public bool UserWentBack { get; private set; } = false;
+
 
         public RoomInputWindow()
         {
@@ -53,6 +55,13 @@ namespace PanelizedAndModularFinal
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             this.DialogResult = false; // user canceled
+        }
+
+        private void BackButton_Click(object sender, RoutedEventArgs e)
+        {
+            UserWentBack = true;
+            DialogResult = false;
+            Close();
         }
     }
 }

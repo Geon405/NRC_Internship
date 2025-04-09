@@ -11,6 +11,7 @@ namespace PanelizedAndModularFinal
         // 2D connectivity matrix: 0 (no connection) or 1 (connected)
         public int[,] ConnectivityMatrix { get; private set; }
         private List<SpaceNode> _spaces;
+        public bool UserWentBack { get; private set; } = false;
 
         public ConnectivityMatrixWindow(List<SpaceNode> spaces)
         {
@@ -111,9 +112,8 @@ namespace PanelizedAndModularFinal
             }
         }
 
-        private void OK_Click(object sender, RoutedEventArgs e)
+        private void OkButton_Click(object sender, RoutedEventArgs e)
         {
-            // Ensure all pending edits are committed
             MatrixGrid.CommitEdit(DataGridEditingUnit.Row, true);
             MatrixGrid.CommitEdit();
 
@@ -130,9 +130,16 @@ namespace PanelizedAndModularFinal
             Close();
         }
 
-        private void Cancel_Click(object sender, RoutedEventArgs e)
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
+            Close();
+        }
+
+        private void BackButton_Click(object sender, RoutedEventArgs e)
+        {
+            UserWentBack = true;
+            DialogResult = false; // Use `false` to signal back
             Close();
         }
 

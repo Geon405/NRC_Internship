@@ -14,6 +14,7 @@ namespace PanelizedAndModularFinal
     {
         public List<LayoutPreview> LayoutPreviews { get; private set; }
         public List<SpaceNode> SelectedLayout { get; private set; }
+        public bool UserWentBack { get; private set; } = false;
 
         public LayoutSelectionWindow(List<List<SpaceNode>> layoutOptions)
         {
@@ -46,7 +47,7 @@ namespace PanelizedAndModularFinal
             {
                 SelectedLayout = selectedPreview.Layout;
 
-             
+
 
                 DialogResult = true;
                 Close();
@@ -55,6 +56,20 @@ namespace PanelizedAndModularFinal
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
+            DialogResult = false;
+            Close();
+        }
+
+        private void Back_Click(object sender, RoutedEventArgs e)
+        {
+            UserWentBack = true;
+            DialogResult = false; // Use `false` to signal back
+            Close();
+        }
+
+        private void BackButton_Click(object sender, RoutedEventArgs e)
+        {
+            UserWentBack = true;
             DialogResult = false;
             Close();
         }
@@ -126,6 +141,3 @@ namespace PanelizedAndModularFinal
         }
     }
 }
-
-
-

@@ -9,6 +9,7 @@ namespace PanelizedAndModularFinal
     public partial class RoomInstancesWindow : Window
     {
         public List<RoomInstanceRow> Instances { get; set; }
+        public bool UserWentBack { get; private set; } = false;
 
         public RoomInstancesWindow(List<RoomInstanceRow> instances)
         {
@@ -163,6 +164,13 @@ namespace PanelizedAndModularFinal
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             this.DialogResult = false;
+        }
+
+        private void BackButton_Click(object sender, RoutedEventArgs e)
+        {
+            UserWentBack = true;
+            this.DialogResult = false;
+            Close();
         }
     }
 }

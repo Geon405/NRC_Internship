@@ -11,6 +11,7 @@ namespace PanelizedAndModularFinal
         // 2D adjacency matrix: 0 (no adjacency) or 1 (preferred adjacency)
         public int[,] PreferredAdjacency { get; private set; }
         private List<SpaceNode> _spaces;
+        public bool UserWentBack { get; private set; } = false;
 
         public PreferredAdjacencyWindow(List<SpaceNode> spaces)
         {
@@ -138,6 +139,13 @@ namespace PanelizedAndModularFinal
         {
             public string RoomName { get; set; }
             public int[] Values { get; set; }
+        }
+
+        private void Back_Click(object sender, RoutedEventArgs e)
+        {
+            UserWentBack = true;
+            DialogResult = false; // Use `false` to signal back
+            Close();
         }
     }
 }

@@ -23,6 +23,7 @@
         </DataGrid>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10">
+            <Button Content="Back" Width="75" Margin="5" Click="Back_Click"/>
             <Button Content="OK" Width="70" Margin="5" Click="OK_Click"/>
             <Button Content="Cancel" Width="70" Margin="5" Click="Cancel_Click"/>
         </StackPanel>

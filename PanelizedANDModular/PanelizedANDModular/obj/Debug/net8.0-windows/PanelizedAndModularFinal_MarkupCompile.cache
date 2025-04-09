@@ -12,8 +12,8 @@ TRACE;DEBUG;NET;NET8_0;NETCOREAPP
 
 111118841218
 
-22-1003372358
-200805319329
+26-803667638
+201-805938263
 ConnectivityMatrixWindow.xaml;EdgeWeightsWindow.xaml;LandInputWindow.xaml;LayoutSelectionWindow.xaml;ModuleCombinationsWindow.xaml;ModuleInputWindow.xaml;ModuleTypesWindow.xaml;PreferredAdjacencyWindow.xaml;RoomInputWindow.xaml;RoomInstancesWindow.xaml;SpacePriorityWindow.xaml;
 
 False

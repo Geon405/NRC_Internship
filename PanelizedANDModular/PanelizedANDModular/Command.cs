@@ -57,608 +57,564 @@ namespace PanelizedAndModularFinal
 
             try
             {
-                // --- Step 1: Land Area Input and Crop Region Update ---
-                LandInputWindow landWindow = new LandInputWindow();
-                bool? landResult = landWindow.ShowDialog();
-                if (landResult != true)
+                while (true)
                 {
-                    TaskDialog.Show("Canceled", "User canceled land area input.");
-                    return Result.Cancelled;
-                }
-
-                // Retrieve user-inputted land dimensions
-                double userWidth = landWindow.InputWidth;
-                double userHeight = landWindow.InputHeight;
-                double userArea = landWindow.LandArea; // User input area (in sq ft)
-
-                // Store values in global data
-                GlobalData.landWidth = userWidth;
-                GlobalData.landHeight = userHeight;
-
-                // Retrieve the active view and its current crop box
-                View activeView = doc.ActiveView;
-                BoundingBoxXYZ cropBox = activeView.CropBox;
-
-                // Calculate the center of the current crop box
-                XYZ center = new XYZ(
-                    (cropBox.Min.X + cropBox.Max.X) / 2.0,
-                    (cropBox.Min.Y + cropBox.Max.Y) / 2.0,
-                    cropBox.Min.Z);
-
-                // Use actual width and height instead of a square calculation
-                double cropWidth = userWidth;
-                double cropHeight = userHeight;
-
-                // Calculate new min and max points for the crop box
-                XYZ newMin = new XYZ(center.X - (cropWidth / 2.0), center.Y - (cropHeight / 2.0), cropBox.Min.Z);
-                XYZ newMax = new XYZ(center.X + (cropWidth / 2.0), center.Y + (cropHeight / 2.0), cropBox.Max.Z);
-
-                // Update the crop region inside a transaction
-                using (Transaction trans = new Transaction(doc, "Update Crop Region"))
-                {
-                    trans.Start();
-                    activeView.CropBoxActive = true;
-                    BoundingBoxXYZ newCropBox = activeView.CropBox;
-                    newCropBox.Min = newMin;
-                    newCropBox.Max = newMax;
-                    activeView.CropBox = newCropBox;
-                    trans.Commit();
-                }
-
-                double availableLayoutArea = userWidth * userHeight;
-                GlobalData.LandArea = availableLayoutArea;
-
-                // --- Step 1: Room Input and Room Instances Creation ---
-                RoomInputWindow firstWindow = new RoomInputWindow();
-                bool? firstResult = firstWindow.ShowDialog();
-                if (firstResult != true)
-                {
-                    TaskDialog.Show("Canceled", "User canceled at the first window.");
-                    return Result.Cancelled;
-                }
-
-                List<RoomTypeRow> userSelections = firstWindow.RoomTypes;
-                List<RoomInstanceRow> instanceRows = new List<RoomInstanceRow>();
-
-                foreach (var row in userSelections)
-                {
-                    if (row.Quantity <= 0) continue;
-                    for (int i = 0; i < row.Quantity; i++)
+                    // --- Step 1: Land Area Input and Crop Region Update ---
+                    LandInputWindow landWindow = new LandInputWindow();
+                    bool? landResult = landWindow.ShowDialog();
+                    if (landResult != true)
                     {
-                        string instanceName = $"{row.Name} {i + 1}";
-                        var instance = new RoomInstanceRow
-                        {
-                            RoomType = row.Name,
-                            Name = instanceName,
-                            WpfColor = row.Color,
-                            Area = 0.0 // Default area
-                        };
-                        instanceRows.Add(instance);
-                    }
-                }
-
-                if (instanceRows.Count == 0)
-                {
-                    TaskDialog.Show("Info", "No rooms were requested.");
-                    return Result.Cancelled;
-                }
-
-                // Open second window for room adjustments
-                RoomInstancesWindow secondWindow = new RoomInstancesWindow(instanceRows);
-                bool? secondResult = secondWindow.ShowDialog();
-                if (secondResult != true)
-                {
-                    TaskDialog.Show("Canceled", "User canceled at the second window.");
-                    return Result.Cancelled;
-                }
-
-                // Create room nodes (spaces) from user adjustments
-                List<SpaceNode> spaces = new List<SpaceNode>();
-                Random random = new Random();
-
-                foreach (var inst in secondWindow.Instances)
-                {
-                    double area = inst.Area < 10.0 ? 10.0 : inst.Area;
-                    View activeView1 = doc.ActiveView;
-                    BoundingBoxXYZ viewBox1 = activeView1.CropBoxActive && activeView1.CropBox != null
-                        ? activeView1.CropBox
-                        : activeView1.get_BoundingBox(null);
-                    double layoutWidth1 = viewBox1.Max.X - viewBox1.Min.X;
-                    double layoutHeight1 = viewBox1.Max.Y - viewBox1.Min.Y;
-                    XYZ position = new XYZ(viewBox1.Min.X + random.NextDouble() * layoutWidth1, viewBox1.Min.Y + random.NextDouble() * layoutHeight1, 0);
-                    var node = new SpaceNode(inst.Name, inst.RoomType, area, position, inst.WpfColor);
-                    spaces.Add(node);
-                }
-
-                activeView = doc.ActiveView;
-                BoundingBoxXYZ viewBox = activeView.CropBoxActive && activeView.CropBox != null
-                    ? activeView.CropBox
-                    : activeView.get_BoundingBox(null);
-
-                double totalRoomArea = 0.0;
-                foreach (var space in spaces)
-                {
-                    totalRoomArea += space.Area;
-                }
-                GlobalData.TotalRoomArea = totalRoomArea;
-
-                // --- Step 1: Adjacency, Connectivity, and Edge Weights ---
-                PreferredAdjacencyWindow adjacencyWindow = new PreferredAdjacencyWindow(spaces);
-                bool? result = adjacencyWindow.ShowDialog();
-                if (result != true)
-                {
-                    TaskDialog.Show("Canceled", "User canceled at the preferred adjacency matrix window.");
-                    return Result.Cancelled;
-                }
-                int[,] preferredAdjacency = adjacencyWindow.PreferredAdjacency;
-
-                ConnectivityMatrixWindow connectivityWindow = new ConnectivityMatrixWindow(spaces);
-                bool? connectivityResult = connectivityWindow.ShowDialog();
-                if (connectivityResult != true)
-                {
-                    TaskDialog.Show("Canceled", "User canceled at the connectivity matrix window.");
-                    return Result.Cancelled;
-                }
-                int[,] adjacencyMatrix = connectivityWindow.ConnectivityMatrix;
-
-                EdgeWeightsWindow weightsWindow = new EdgeWeightsWindow(spaces, adjacencyMatrix);
-                bool? weightResult = weightsWindow.ShowDialog();
-                if (weightResult != true)
-                {
-                    TaskDialog.Show("Canceled", "User canceled the edge weights window.");
-                    return Result.Cancelled;
-                }
-                double?[,] weightedAdjMatrix = weightsWindow.WeightedAdjacencyMatrix;
-
-                // --- Step 1: Layout Calculation ---
-                //ApplyForceDirectedLayout(spaces, preferredAdjacency, weightedAdjMatrix, viewBox);
-                //SnapConnectedCircles(spaces, adjacencyMatrix);
-                //ResolveCollisions(spaces);
-                //CenterLayout(spaces, viewBox);
-
-
-
-
-
-
-
-
-
-
-
-
-
-                List<List<SpaceNode>> layoutOptions = new List<List<SpaceNode>>();
-                int maxLayouts = Math.Min(15, spaces.Count);
-
-                // Ensure 'random' is declared only once in the correct scope.
-                Random randomGenerator = new Random(); // Rename variable to avoid conflict
-
-                for (int i = 0; i < maxLayouts; i++) // Generate up to 15 layouts
-                {
-                    List<SpaceNode> clonedSpaces = CloneSpaces(spaces); // Make a copy
-
-                    // Apply random shifts before layout adjustment
-                    foreach (var space in clonedSpaces)
-                    {
-                        double randomX = (randomGenerator.NextDouble() - 0.5) * 100; // Increase randomness
-                        double randomY = (randomGenerator.NextDouble() - 0.5) * 100;
-                        space.Position = new XYZ(space.Position.X + randomX, space.Position.Y + randomY, space.Position.Z);
-                    }
-
-
-
-
-                    ApplyForceDirectedLayout(clonedSpaces, preferredAdjacency, weightedAdjMatrix, viewBox);
-                    SnapConnectedCircles(clonedSpaces, adjacencyMatrix);
-                    ResolveCollisions(clonedSpaces);
-                    ResolveBoundaryViolations(clonedSpaces, viewBox);
-                    ResolveCollisionsEnsureAllAdjacent(clonedSpaces, viewBox);
-                    CenterLayout(clonedSpaces, viewBox);
-
-
-                    layoutOptions.Add(clonedSpaces);
-                }
-
-                // Show layout selection window
-                LayoutSelectionWindow selectionWindow = new LayoutSelectionWindow(layoutOptions);
-                bool? dialogResult = selectionWindow.ShowDialog();
-
-                if (dialogResult != true)
-                {
-                    TaskDialog.Show("Canceled", "User canceled layout selection.");
-                    return Result.Cancelled;
-                }
-
-                //  Get the selected layout
-                List<SpaceNode> selectedSpace = selectionWindow.SelectedLayout;
-                GlobalData.SavedSpaces = selectedSpace;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                //ApplyForceDirectedLayout(spaces, preferredAdjacency, weightedAdjMatrix, viewBox);
-                //SnapConnectedCircles(spaces, adjacencyMatrix);
-                //ResolveCollisions(spaces);
-                //ResolveBoundaryViolations(spaces,viewBox);
-                //ResolveCollisionsEnsureAllAdjacent(spaces, viewBox);
-                //CenterLayout(spaces, viewBox);
-
-
-
-
-
-
-
-
-
-                // --- Step 1: Create Connection Lines ---
-                using (Transaction tx = new Transaction(doc, "Connect Rooms"))
-                {
-                    tx.Start();
-                    for (int i = 0; i < selectedSpace.Count; i++)  // use selectedSpace count
-                    {
-                        for (int j = i + 1; j < selectedSpace.Count; j++)
-                        {
-                            if (weightedAdjMatrix[i, j].HasValue)
-                            {
-                                // Use positions from selectedSpace instead of spaces
-                                Line connectionLine = Line.CreateBound(selectedSpace[i].Position, selectedSpace[j].Position);
-                                Plane plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, selectedSpace[i].Position);
-                                SketchPlane sketchPlane = SketchPlane.Create(doc, plane);
-                                DetailCurve connectionDetail = doc.Create.NewDetailCurve(doc.ActiveView, connectionLine);
-
-                                OverrideGraphicSettings ogs = new OverrideGraphicSettings();
-                                ogs.SetProjectionLineWeight(8);
-                                doc.ActiveView.SetElementOverrides(connectionDetail.Id, ogs);
-
-                                GlobalData.SavedConnectionLines.Add(connectionDetail.Id);
-                                GlobalData.Step1Elements.Add(connectionDetail.Id);
-                            }
-                        }
-                    }
-                    tx.Commit();
-                }
-
-                // --- Step 1: Create Room Circles (and associated geometry) ---
-                using (Transaction tx = new Transaction(doc, "Create Rooms"))
-                {
-                    tx.Start();
-                    foreach (var space in selectedSpace)
-                    {
-                        CreateCircleNode(doc, space.Position, space.Area, space.WpfColor, space.Name, uidoc.ActiveView.Id);
-                    }
-                    tx.Commit();
-                }
-
-                TaskDialog.Show("Revit", $"Created {spaces.Count} room(s) with connections.");
-                GlobalData.SavedSpaces = selectedSpace;
-
-                // --- Step 1 Complete: Show Output and Wait for User Confirmation ---
-                TaskDialog step1Dialog = new TaskDialog("Step 1 Complete");
-                step1Dialog.MainInstruction = "Step 1 output is displayed.";
-                step1Dialog.MainContent = "Click CLOSE to clear the screen and proceed to Step 2.";
-                step1Dialog.Show();
-
-                // Clear Step 1 output by deleting all stored elements
-                using (Transaction tx = new Transaction(doc, "Clear Step 1 Output"))
-                {
-                    tx.Start();
-                    foreach (ElementId id in GlobalData.Step1Elements)
-                    {
-                        try
-                        {
-                            doc.Delete(id);
-                        }
-                        catch { /* Handle deletion exceptions if necessary */ }
-                    }
-                    tx.Commit();
-                }
-                GlobalData.Step1Elements.Clear();
-
-                // --- Step 2: Module Input and New Output ---
-                //STEP 2 STEP 2 STEP 2
-                ModuleInputWindow inputWindow = new ModuleInputWindow();
-                bool? inputResult = inputWindow.ShowDialog();
-                if (inputResult != true)
-                {
-                    TaskDialog.Show("Canceled", "User canceled the module input.");
-                    return Result.Cancelled;
-                }
-
-                double minWidth = inputWindow.MinWidth;
-                GlobalData.moduleWidth = minWidth;
-                double maxHeight = inputWindow.MaxHeight;
-
-                ModuleTypesWindow typesWindow = new ModuleTypesWindow(minWidth, maxHeight);
-                List<ModuleType> moduleTypes = typesWindow.ModuleTypes;
-
-                bool arrangementCreated = false;
-                ModuleArrangement arranger = null;
-                while (!arrangementCreated)
-                {
-                    ModuleCombinationsWindow combWindow = new ModuleCombinationsWindow(moduleTypes, minWidth);
-                    bool? combResult = combWindow.ShowDialog();
-                    if (combResult != true)
-                    {
-                        TaskDialog.Show("Canceled", "User canceled the module combination selection.");
+                        TaskDialog.Show("Canceled", "User canceled land area input.");
                         return Result.Cancelled;
                     }
-                    string selectedCombination = combWindow.SelectedCombination;
-                    TaskDialog.Show("Selected Combination", selectedCombination);
 
+                    // Retrieve user-inputted land dimensions
+                    double userWidth = landWindow.InputWidth;
+                    double userHeight = landWindow.InputHeight;
+                    double userArea = landWindow.LandArea; // User input area (in sq ft)
 
+                    // Store values in global data
+                    GlobalData.landWidth = userWidth;
+                    GlobalData.landHeight = userHeight;
 
+                    // Retrieve the active view and its current crop box
+                    View activeView = doc.ActiveView;
+                    BoundingBoxXYZ cropBox = activeView.CropBox;
 
+                    // Calculate the center of the current crop box
+                    XYZ center = new XYZ(
+                        (cropBox.Min.X + cropBox.Max.X) / 2.0,
+                        (cropBox.Min.Y + cropBox.Max.Y) / 2.0,
+                        cropBox.Min.Z);
 
-                    arranger = new ModuleArrangement();
-                    ModuleArrangement previewArranger = new ModuleArrangement();
-                    try
+                    // Use actual width and height instead of a square calculation
+                    double cropWidth = userWidth;
+                    double cropHeight = userHeight;
+
+                    // Calculate new min and max points for the crop box
+                    XYZ newMin = new XYZ(center.X - (cropWidth / 2.0), center.Y - (cropHeight / 2.0), cropBox.Min.Z);
+                    XYZ newMax = new XYZ(center.X + (cropWidth / 2.0), center.Y + (cropHeight / 2.0), cropBox.Max.Z);
+
+                    // Update the crop region inside a transaction
+                    using (Transaction trans = new Transaction(doc, "Update Crop Region"))
                     {
+                        trans.Start();
+                        activeView.CropBoxActive = true;
+                        BoundingBoxXYZ newCropBox = activeView.CropBox;
+                        newCropBox.Min = newMin;
+                        newCropBox.Max = newMax;
+                        activeView.CropBox = newCropBox;
+                        trans.Commit();
+                    }
 
-                        // --- Step 2 Preview: Display Module Arrangement (without grid) ---
-                        List<ElementId> previewIds = previewArranger.DisplayModuleCombination(doc, selectedCombination, moduleTypes);
-
-                        TaskDialog step2Dialog = new TaskDialog("Step 2 Complete");
-                        step2Dialog.MainInstruction = "Step 2 output is displayed.";
-                        step2Dialog.MainContent = "Click CLOSE to clear the screen and proceed to Step 3.";
-                        step2Dialog.Show();
-
-                        // --- Clear Step 2 Preview Output ---
-                        using (Transaction tx = new Transaction(doc, "Clear Preview Output"))
+                    while (true)
+                    {
+                        double availableLayoutArea = userWidth * userHeight;
+                        GlobalData.LandArea = availableLayoutArea;
+                        // --- Step 1: Room Input and Room Instances Creation ---
+                        RoomInputWindow firstWindow = new RoomInputWindow();
+                        bool? firstResult = firstWindow.ShowDialog();
+                        if (firstResult != true)
                         {
-                            tx.Start();
-                            foreach (ElementId id in previewIds)
+                            if (firstWindow.UserWentBack)
                             {
-                                try
+                                return Execute(commandData, ref message, elements); // re-run the command
+                            }
+                            TaskDialog.Show("Canceled", "User canceled at the first window.");
+                            return Result.Cancelled;
+                        }
+
+                        List<RoomTypeRow> userSelections = firstWindow.RoomTypes;
+                        List<RoomInstanceRow> instanceRows = new List<RoomInstanceRow>();
+
+                        foreach (var row in userSelections)
+                        {
+                            if (row.Quantity <= 0) continue;
+                            for (int i = 0; i < row.Quantity; i++)
+                            {
+                                string instanceName = $"{row.Name} {i + 1}";
+                                var instance = new RoomInstanceRow
                                 {
-                                    doc.Delete(id);
+                                    RoomType = row.Name,
+                                    Name = instanceName,
+                                    WpfColor = row.Color,
+                                    Area = 0.0 // Default area
+                                };
+                                instanceRows.Add(instance);
+                            }
+                        }
+
+                        if (instanceRows.Count == 0)
+                        {
+                            TaskDialog.Show("Info", "No rooms were requested.");
+                            return Result.Cancelled;
+                        }
+                        while (true)
+                        {
+
+                            // Open second window for room adjustments
+                            RoomInstancesWindow secondWindow = new RoomInstancesWindow(instanceRows);
+                            bool? secondResult = secondWindow.ShowDialog();
+                            if (secondResult != true)
+                            {
+                                if (secondWindow.UserWentBack)
+                                    break; // Go back to RoomInputWindow
+                                else
+                                    TaskDialog.Show("Canceled", "User canceled at the second window.");
+                                return Result.Cancelled;
+                            }
+
+                            // Create room nodes (spaces) from user adjustments
+                            List<SpaceNode> spaces = new List<SpaceNode>();
+                            Random random = new Random();
+
+                            foreach (var inst in secondWindow.Instances)
+                            {
+                                double area = inst.Area < 10.0 ? 10.0 : inst.Area;
+                                View activeView1 = doc.ActiveView;
+                                BoundingBoxXYZ viewBox1 = activeView1.CropBoxActive && activeView1.CropBox != null
+                                    ? activeView1.CropBox
+                                    : activeView1.get_BoundingBox(null);
+                                double layoutWidth1 = viewBox1.Max.X - viewBox1.Min.X;
+                                double layoutHeight1 = viewBox1.Max.Y - viewBox1.Min.Y;
+                                XYZ position = new XYZ(viewBox1.Min.X + random.NextDouble() * layoutWidth1, viewBox1.Min.Y + random.NextDouble() * layoutHeight1, 0);
+                                var node = new SpaceNode(inst.Name, inst.RoomType, area, position, inst.WpfColor);
+                                spaces.Add(node);
+                            }
+
+                            activeView = doc.ActiveView;
+                            BoundingBoxXYZ viewBox = activeView.CropBoxActive && activeView.CropBox != null
+                                ? activeView.CropBox
+                                : activeView.get_BoundingBox(null);
+
+                            double totalRoomArea = 0.0;
+                            foreach (var space in spaces)
+                            {
+                                totalRoomArea += space.Area;
+                            }
+                            GlobalData.TotalRoomArea = totalRoomArea;
+                            while (true)
+                            {
+                                // --- Step 1: Adjacency, Connectivity, and Edge Weights ---
+                                PreferredAdjacencyWindow adjacencyWindow = new PreferredAdjacencyWindow(spaces);
+                                bool? result = adjacencyWindow.ShowDialog();
+                                if (result != true)
+                                {
+                                    if (adjacencyWindow.UserWentBack)
+                                        break;
+                                    else
+                                        TaskDialog.Show("Canceled", "User canceled at the preferred adjacency matrix window.");
+                                    return Result.Cancelled;
                                 }
-                                catch
+                                int[,] preferredAdjacency = adjacencyWindow.PreferredAdjacency;
+
+                                while (true)
                                 {
-                                    // Handle deletion exceptions if necessary.
+                                    ConnectivityMatrixWindow connectivityWindow = new ConnectivityMatrixWindow(spaces);
+                                    bool? connectivityResult = connectivityWindow.ShowDialog();
+                                    if (connectivityResult != true)
+                                    {
+                                        if (connectivityWindow.UserWentBack)
+                                            break;
+                                        else
+                                            TaskDialog.Show("Canceled", "User canceled at the connectivity matrix window.");
+                                        return Result.Cancelled;
+                                    }
+                                    int[,] adjacencyMatrix = connectivityWindow.ConnectivityMatrix;
+
+                                    while (true)
+                                    {
+                                        EdgeWeightsWindow weightsWindow = new EdgeWeightsWindow(spaces, adjacencyMatrix);
+                                        bool? weightResult = weightsWindow.ShowDialog();
+                                        if (weightResult != true)
+                                        {
+                                            if (weightsWindow.UserWentBack)
+                                                break;
+                                            else
+                                                TaskDialog.Show("Canceled", "User canceled the edge weights window.");
+                                            return Result.Cancelled;
+                                        }
+                                        double?[,] weightedAdjMatrix = weightsWindow.WeightedAdjacencyMatrix;
+
+                                        List<List<SpaceNode>> layoutOptions = new List<List<SpaceNode>>();
+                                        int maxLayouts = Math.Min(15, spaces.Count);
+
+                                        // Ensure 'random' is declared only once in the correct scope.
+                                        Random randomGenerator = new Random(); // Rename variable to avoid conflict
+
+                                        for (int i = 0; i < maxLayouts; i++) // Generate up to 15 layouts
+                                        {
+                                            List<SpaceNode> clonedSpaces = CloneSpaces(spaces); // Make a copy
+
+                                            // Apply random shifts before layout adjustment
+                                            foreach (var space in clonedSpaces)
+                                            {
+                                                double randomX = (randomGenerator.NextDouble() - 0.5) * 100; // Increase randomness
+                                                double randomY = (randomGenerator.NextDouble() - 0.5) * 100;
+                                                space.Position = new XYZ(space.Position.X + randomX, space.Position.Y + randomY, space.Position.Z);
+                                            }
+
+                                            ApplyForceDirectedLayout(clonedSpaces, preferredAdjacency, weightedAdjMatrix, viewBox);
+                                            SnapConnectedCircles(clonedSpaces, adjacencyMatrix);
+                                            ResolveCollisions(clonedSpaces);
+                                            ResolveBoundaryViolations(clonedSpaces, viewBox);
+                                            ResolveCollisionsEnsureAllAdjacent(clonedSpaces, viewBox);
+                                            CenterLayout(clonedSpaces, viewBox);
+
+
+                                            layoutOptions.Add(clonedSpaces);
+                                        }
+
+                                        while (true)
+                                        {
+                                            // Show layout selection window
+                                            LayoutSelectionWindow selectionWindow = new LayoutSelectionWindow(layoutOptions);
+                                            bool? dialogResult = selectionWindow.ShowDialog();
+
+                                            if (dialogResult != true)
+                                            {
+                                                TaskDialog.Show("Canceled", "User canceled layout selection.");
+                                                return Result.Cancelled;
+                                            }
+
+                                            //  Get the selected layout
+                                            List<SpaceNode> selectedSpace = selectionWindow.SelectedLayout;
+                                            GlobalData.SavedSpaces = selectedSpace;
+
+                                            // --- Step 1: Create Connection Lines ---
+                                            using (Transaction tx = new Transaction(doc, "Connect Rooms"))
+                                            {
+                                                tx.Start();
+                                                for (int i = 0; i < selectedSpace.Count; i++)  // use selectedSpace count
+                                                {
+                                                    for (int j = i + 1; j < selectedSpace.Count; j++)
+                                                    {
+                                                        if (weightedAdjMatrix[i, j].HasValue)
+                                                        {
+                                                            // Use positions from selectedSpace instead of spaces
+                                                            Line connectionLine = Line.CreateBound(selectedSpace[i].Position, selectedSpace[j].Position);
+                                                            Plane plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, selectedSpace[i].Position);
+                                                            SketchPlane sketchPlane = SketchPlane.Create(doc, plane);
+                                                            DetailCurve connectionDetail = doc.Create.NewDetailCurve(doc.ActiveView, connectionLine);
+
+                                                            OverrideGraphicSettings ogs = new OverrideGraphicSettings();
+                                                            ogs.SetProjectionLineWeight(8);
+                                                            doc.ActiveView.SetElementOverrides(connectionDetail.Id, ogs);
+
+                                                            GlobalData.SavedConnectionLines.Add(connectionDetail.Id);
+                                                            GlobalData.Step1Elements.Add(connectionDetail.Id);
+                                                        }
+                                                    }
+                                                }
+                                                tx.Commit();
+                                            }
+
+                                            // --- Step 1: Create Room Circles (and associated geometry) ---
+                                            using (Transaction tx = new Transaction(doc, "Create Rooms"))
+                                            {
+                                                tx.Start();
+                                                foreach (var space in selectedSpace)
+                                                {
+                                                    CreateCircleNode(doc, space.Position, space.Area, space.WpfColor, space.Name, uidoc.ActiveView.Id);
+                                                }
+                                                tx.Commit();
+                                            }
+
+                                            TaskDialog.Show("Revit", $"Created {spaces.Count} room(s) with connections.");
+                                            GlobalData.SavedSpaces = selectedSpace;
+
+                                            // --- Step 1 Complete: Show Output and Wait for User Confirmation ---
+                                            TaskDialog step1Dialog = new TaskDialog("Step 1 Complete");
+                                            step1Dialog.MainInstruction = "Step 1 output is displayed.";
+                                            step1Dialog.MainContent = "Click CLOSE to clear the screen and proceed to Step 2.";
+                                            step1Dialog.Show();
+
+                                            // Clear Step 1 output by deleting all stored elements
+                                            using (Transaction tx = new Transaction(doc, "Clear Step 1 Output"))
+                                            {
+                                                tx.Start();
+                                                foreach (ElementId id in GlobalData.Step1Elements)
+                                                {
+                                                    try
+                                                    {
+                                                        doc.Delete(id);
+                                                    }
+                                                    catch { /* Handle deletion exceptions if necessary */ }
+                                                }
+                                                tx.Commit();
+                                            }
+                                            GlobalData.Step1Elements.Clear();
+
+                                            // --- Step 2: Module Input and New Output ---
+                                            //STEP 2 STEP 2 STEP 2
+                                            ModuleInputWindow inputWindow = new ModuleInputWindow();
+                                            bool? inputResult = inputWindow.ShowDialog();
+                                            if (inputResult != true)
+                                            {
+                                                TaskDialog.Show("Canceled", "User canceled the module input.");
+                                                return Result.Cancelled;
+                                            }
+
+                                            double minWidth = inputWindow.MinWidth;
+                                            GlobalData.moduleWidth = minWidth;
+                                            double maxHeight = inputWindow.MaxHeight;
+
+                                            ModuleTypesWindow typesWindow = new ModuleTypesWindow(minWidth, maxHeight);
+                                            List<ModuleType> moduleTypes = typesWindow.ModuleTypes;
+
+                                            bool arrangementCreated = false;
+                                            ModuleArrangement arranger = null;
+                                            while (!arrangementCreated)
+                                            {
+                                                ModuleCombinationsWindow combWindow = new ModuleCombinationsWindow(moduleTypes, minWidth);
+                                                bool? combResult = combWindow.ShowDialog();
+                                                if (combResult != true)
+                                                {
+                                                    TaskDialog.Show("Canceled", "User canceled the module combination selection.");
+                                                    return Result.Cancelled;
+                                                }
+                                                string selectedCombination = combWindow.SelectedCombination;
+                                                TaskDialog.Show("Selected Combination", selectedCombination);
+
+
+
+
+
+                                                arranger = new ModuleArrangement();
+                                                ModuleArrangement previewArranger = new ModuleArrangement();
+                                                try
+                                                {
+
+                                                    // --- Step 2 Preview: Display Module Arrangement (without grid) ---
+                                                    List<ElementId> previewIds = previewArranger.DisplayModuleCombination(doc, selectedCombination, moduleTypes);
+
+                                                    TaskDialog step2Dialog = new TaskDialog("Step 2 Complete");
+                                                    step2Dialog.MainInstruction = "Step 2 output is displayed.";
+                                                    step2Dialog.MainContent = "Click CLOSE to clear the screen and proceed to Step 3.";
+                                                    step2Dialog.Show();
+
+                                                    // --- Clear Step 2 Preview Output ---
+                                                    using (Transaction tx = new Transaction(doc, "Clear Preview Output"))
+                                                    {
+                                                        tx.Start();
+                                                        foreach (ElementId id in previewIds)
+                                                        {
+                                                            try
+                                                            {
+                                                                doc.Delete(id);
+                                                            }
+                                                            catch
+                                                            {
+                                                                // Handle deletion exceptions if necessary.
+                                                            }
+                                                        }
+                                                        tx.Commit();
+                                                    }
+
+
+
+                                                    arranger.CreateSquareLikeArrangement(doc, selectedCombination, moduleTypes);
+                                                    arrangementCreated = true;
+                                                }
+                                                catch (Exception ex)
+                                                {
+                                                    if (ex.Message.Contains("Module doesn't fit"))
+                                                    {
+                                                        TaskDialog.Show("Error", "Module doesn't fit in row. Please select another combination.");
+                                                    }
+                                                    else
+                                                    {
+                                                        throw;
+                                                    }
+                                                }
+                                            }
+
+                                            // --- Step 2: Re-Output Saved Layout (Connection Lines and Room Circles) ---
+                                            List<SpaceNode> savedSpaces = GlobalData.SavedSpaces;
+                                            using (Transaction tx = new Transaction(doc, "Output Saved Layout"))
+                                            {
+                                                tx.Start();
+
+                                                XYZ overallBoundaryCenter = arranger.OverallCenter;
+                                                CenterLayoutOnOverallBoundary(savedSpaces, overallBoundaryCenter);
+
+
+                                                // Create circles for each saved space
+                                                foreach (var space in savedSpaces)
+                                                {
+                                                    //STEP 2 CREATE CIRCLE NODE OUTPUT
+                                                    CreateCircleNode(doc, space.Position, space.Area, space.WpfColor, space.Name, uidoc.ActiveView.Id);
+                                                }
+
+                                                tx.Commit();
+                                            }
+                                            // Display a dialog to let the user see the output before proceeding
+                                            // Let the user see the Step 2 output before proceeding.
+                                            TaskDialog outputDialog = new TaskDialog("Output Displayed");
+                                            outputDialog.MainInstruction = "The output is now displayed.";
+                                            outputDialog.MainContent = "Click OK to proceed to the next output.";
+                                            outputDialog.Show();
+
+                                            // Clear the output of CreateCircleNode for Step 2.
+                                            // Clear the output of CreateCircleNode for Step 2.
+                                            using (Transaction tx = new Transaction(doc, "Clear Step 2 Output"))
+                                            {
+                                                tx.Start();
+                                                foreach (ElementId id in GlobalData.Step1Elements)
+                                                {
+                                                    try
+                                                    {
+                                                        doc.Delete(id);
+                                                    }
+                                                    catch { /* Handle deletion exceptions if necessary */ }
+                                                }
+                                                tx.Commit();
+                                            }
+                                            GlobalData.Step1Elements.Clear();
+
+                                            // --- STEP 3: Create Trimmed Square Arrangement (SquareArrangementOnly) ---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                            // 1. Build the room squares and their lines.
+                                            Transaction trans = new Transaction(doc, "Draw Colored Squares");
+                                            trans.Start();
+
+                                            foreach (var space in GlobalData.SavedSpaces)
+                                            {
+                                                // Calculate radius from area.
+                                                double radius = Math.Sqrt(space.Area / Math.PI);
+                                                XYZ pt1 = new XYZ(space.Position.X + radius, space.Position.Y + radius, space.Position.Z);
+                                                XYZ pt2 = new XYZ(space.Position.X - radius, space.Position.Y + radius, space.Position.Z);
+                                                XYZ pt3 = new XYZ(space.Position.X - radius, space.Position.Y - radius, space.Position.Z);
+                                                XYZ pt4 = new XYZ(space.Position.X + radius, space.Position.Y - radius, space.Position.Z);
+
+                                                // Define the square points (closing the loop by adding the first point again).
+                                                List<XYZ> pts = new List<XYZ> { pt1, pt2, pt3, pt4, pt1 };
+
+                                                // Create a sketch plane. Here we use the first point to define a horizontal plane.
+                                                SketchPlane sp = SketchPlane.Create(doc, Plane.CreateByNormalAndOrigin(XYZ.BasisZ, pt1));
+
+                                                for (int i = 0; i < pts.Count - 1; i++)
+                                                {
+                                                    Line line = Line.CreateBound(pts[i], pts[i + 1]);
+                                                    ModelCurve curve = doc.Create.NewModelCurve(line, sp);
+
+                                                    OverrideGraphicSettings ogs = new OverrideGraphicSettings();
+                                                    Autodesk.Revit.DB.Color revitColor = new Autodesk.Revit.DB.Color(space.WpfColor.R, space.WpfColor.G, space.WpfColor.B);
+                                                    ogs.SetProjectionLineColor(revitColor);
+
+                                                    // Set a thicker line weight.
+                                                    ogs.SetProjectionLineWeight(5);  // Adjust the value for desired thickness.
+
+                                                    doc.ActiveView.SetElementOverrides(curve.Id, ogs);
+                                                }
+
+                                                // Optionally, store the square's area.
+                                                space.SquareArea = Math.Pow(2 * radius, 2);
+                                            }
+
+                                            trans.Commit();
+
+
+
+                                            //////////////////////////////////////////////////////////////////////////////////
+                                            //TRIMMING STEP !!!!
+                                            /////////////////////////////////////////////////////////////////////////////////
+                                            ///
+
+                                            // Get the polygon loop from your boundary lines
+                                            List<Line> boundaryLines = arranger.GetPerimeterOutline();
+                                            List<Line> orderedLines = ReorderLines(boundaryLines);
+                                            CurveLoop polygonLoop = new CurveLoop();
+                                            foreach (Line line in orderedLines)
+                                            {
+                                                polygonLoop.Append(line);
+                                            }
+
+                                            // Start a transaction to create detail curves in the active view
+                                            using (Transaction tx = new Transaction(doc, "Draw Green Polygon"))
+                                            {
+                                                tx.Start();
+                                                // Create a sketch plane (using the XY plane in this example)
+                                                SketchPlane sketchPlane = SketchPlane.Create(doc, Plane.CreateByNormalAndOrigin(XYZ.BasisZ, XYZ.Zero));
+
+                                                // For each curve in the polygon, create a detail curve and set its color
+                                                foreach (Curve curve in polygonLoop)
+                                                {
+                                                    DetailCurve detailCurve = doc.Create.NewDetailCurve(doc.ActiveView, curve);
+
+                                                    // Setup override settings for green color (RGB: 0,255,0)
+                                                    OverrideGraphicSettings ogs = new OverrideGraphicSettings();
+                                                    ogs.SetProjectionLineColor(new Autodesk.Revit.DB.Color(0, 255, 0));
+
+
+                                                    // Apply the override to the detail curve
+                                                    doc.ActiveView.SetElementOverrides(detailCurve.Id, ogs);
+                                                }
+                                                tx.Commit();
+                                            }
+
+                                            // 3. Trim squares and display the resulting shapes.
+                                            //SquareTrimmer2 trimmer = new SquareTrimmer2(doc, polygonLoop);
+                                            //trimmer.TrimSquaresAndDisplay(roomSquares);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                            // Now, open the space priority window to let the user assign raw priority values.
+
+                                            SpacePriorityWindow priorityWindow = new SpacePriorityWindow(GlobalData.SavedSpaces);
+                                            bool? priorityResult = priorityWindow.ShowDialog();
+
+                                            if (priorityResult != true)
+                                            {
+                                                TaskDialog.Show("Canceled", "User canceled at the priority window.");
+                                                return Result.Cancelled;
+                                            }
+
+                                            // At this point, each SpaceNode's Priority property has been normalized.
+                                            // You can now access these values for subsequent operations.
+
+
+                                            return Result.Succeeded;
+                                        }
+                                        return Result.Cancelled;
+                                    }
                                 }
                             }
-                            tx.Commit();
-                        }
-
-
-
-                        arranger.CreateSquareLikeArrangement(doc, selectedCombination, moduleTypes);
-                        arrangementCreated = true;
-                    }
-                    catch (Exception ex)
-                    {
-                        if (ex.Message.Contains("Module doesn't fit"))
-                        {
-                            TaskDialog.Show("Error", "Module doesn't fit in row. Please select another combination.");
-                        }
-                        else
-                        {
-                            throw;
                         }
                     }
                 }
-
-                // --- Step 2: Re-Output Saved Layout (Connection Lines and Room Circles) ---
-                List<SpaceNode> savedSpaces = GlobalData.SavedSpaces;
-                using (Transaction tx = new Transaction(doc, "Output Saved Layout"))
-                {
-                    tx.Start();
-
-                    //// Recreate connection lines based on saved spaces
-                    //for (int i = 0; i < savedSpaces.Count; i++)
-                    //{
-                    //    for (int j = i + 1; j < savedSpaces.Count; j++)
-                    //    {
-                    //        Line connectionLine = Line.CreateBound(savedSpaces[i].Position, savedSpaces[j].Position);
-                    //        Plane plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, savedSpaces[i].Position);
-                    //        SketchPlane sketchPlane = SketchPlane.Create(doc, plane);
-                    //        DetailCurve connectionDetail = doc.Create.NewDetailCurve(doc.ActiveView, connectionLine);
-
-                    //        OverrideGraphicSettings ogs = new OverrideGraphicSettings();
-                    //        ogs.SetProjectionLineWeight(8);
-                    //        doc.ActiveView.SetElementOverrides(connectionDetail.Id, ogs);
-                    //    }
-                    //}
-
-                    XYZ overallBoundaryCenter = arranger.OverallCenter;
-                    CenterLayoutOnOverallBoundary(savedSpaces, overallBoundaryCenter);
-
-
-                    // Create circles for each saved space
-                    foreach (var space in savedSpaces)
-                    {
-                        //STEP 2 CREATE CIRCLE NODE OUTPUT
-                        CreateCircleNode(doc, space.Position, space.Area, space.WpfColor, space.Name, uidoc.ActiveView.Id);
-                    }
-
-                    tx.Commit();
-                }
-                // Display a dialog to let the user see the output before proceeding
-                // Let the user see the Step 2 output before proceeding.
-                TaskDialog outputDialog = new TaskDialog("Output Displayed");
-                outputDialog.MainInstruction = "The output is now displayed.";
-                outputDialog.MainContent = "Click OK to proceed to the next output.";
-                outputDialog.Show();
-
-                // Clear the output of CreateCircleNode for Step 2.
-                // Clear the output of CreateCircleNode for Step 2.
-                using (Transaction tx = new Transaction(doc, "Clear Step 2 Output"))
-                {
-                    tx.Start();
-                    foreach (ElementId id in GlobalData.Step1Elements)
-                    {
-                        try
-                        {
-                            doc.Delete(id);
-                        }
-                        catch { /* Handle deletion exceptions if necessary */ }
-                    }
-                    tx.Commit();
-                }
-                GlobalData.Step1Elements.Clear();
-
-
-
-
-
-
-
-
-
-
-
-                // --- STEP 3: Create Trimmed Square Arrangement (SquareArrangementOnly) ---
-
-
-                List<XYZ[]> roomSquares = new List<XYZ[]>();
-                List<List<Line>> roomSquareLines = new List<List<Line>>();
-
-                foreach (var space in GlobalData.SavedSpaces)
-                {
-                    // Calculate the radius from the circle's area.
-                    double radius = Math.Sqrt(space.Area / Math.PI);
-
-                    // Define square corners (clockwise order) based on the room center.
-                    XYZ pt1 = new XYZ(space.Position.X + radius, space.Position.Y + radius, space.Position.Z);
-                    XYZ pt2 = new XYZ(space.Position.X - radius, space.Position.Y + radius, space.Position.Z);
-                    XYZ pt3 = new XYZ(space.Position.X - radius, space.Position.Y - radius, space.Position.Z);
-                    XYZ pt4 = new XYZ(space.Position.X + radius, space.Position.Y - radius, space.Position.Z);
-
-                    // Store the square points.
-                    roomSquares.Add(new XYZ[] { pt1, pt2, pt3, pt4 });
-
-                    // Create perimeter lines for the square.
-                    Line line1 = Line.CreateBound(pt1, pt2);
-                    Line line2 = Line.CreateBound(pt2, pt3);
-                    Line line3 = Line.CreateBound(pt3, pt4);
-                    Line line4 = Line.CreateBound(pt4, pt1);
-
-                    // Store the lines. (Assuming roomSquareLines is a List<List<Line>>)
-                    roomSquareLines.Add(new List<Line> { line1, line2, line3, line4 });
-
-                    // Calculate and store the square's area.
-                    space.SquareArea = Math.Pow(2 * radius, 2);
-                }
-
-
-
-
-
-
-
-                List<Line> boundaryLines = arranger.GetPerimeterOutline();
-
-
-
-                // Assuming you have a List<Line> named perimeterLines already.
-                TrimCircleSquare trimmer = new TrimCircleSquare();
-                //List<XYZ> boundaryPolygon = trimmer.BuildBoundaryPolygon(boundaryLines);
-
-                //// Create detail curves for each edge of the polygon in red.
-                //if (boundaryPolygon.Count >= 2)
-                //{
-                //    using (Transaction trans = new Transaction(doc, "Display Boundary Polygon"))
-                //    {
-                //        trans.Start();
-                //        // Iterate over adjacent vertices.
-                //        for (int i = 0; i < boundaryPolygon.Count - 1; i++)
-                //        {
-                //            Line line = Line.CreateBound(boundaryPolygon[i], boundaryPolygon[i + 1]);
-                //            DetailCurve detailCurve = doc.Create.NewDetailCurve(doc.ActiveView, line);
-                //            // Set the detail curve color to red.
-                //            OverrideGraphicSettings ogs = new OverrideGraphicSettings();
-                //            ogs.SetProjectionLineColor(new Autodesk.Revit.DB.Color(255, 0, 0));
-                //            doc.ActiveView.SetElementOverrides(detailCurve.Id, ogs);
-                //        }
-                //        trans.Commit();
-                //    }
-                //}
-
-
-
-
-
-
-
-                using (Transaction trans = new Transaction(doc, "Trim Red Squares"))
-                {
-                    trans.Start();
-
-                    trimmer.CreateTrimmedSquares(doc, roomSquares, roomSquareLines, boundaryLines);
-
-
-                    trans.Commit();
-                }
-
-                // 5. Check how much area was trimmed in total
-                double totalTrimmed = trimmer.TotalTrimmedArea;
-                TaskDialog.Show("Info", "Total trimmed area: " + totalTrimmed);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                // Now, open the space priority window to let the user assign raw priority values.
-
-                SpacePriorityWindow priorityWindow = new SpacePriorityWindow(GlobalData.SavedSpaces);
-                bool? priorityResult = priorityWindow.ShowDialog();
-
-                if (priorityResult != true)
-                {
-                    TaskDialog.Show("Canceled", "User canceled at the priority window.");
-                    return Result.Cancelled;
-                }
-
-                // At this point, each SpaceNode's Priority property has been normalized.
-                // You can now access these values for subsequent operations.
-        
-
-
-
-
-
-
-
-
-
-
-
-                return Result.Succeeded;
             }
             catch (Exception ex)
             {
@@ -1072,7 +1028,7 @@ namespace PanelizedAndModularFinal
                     node.Name,
                     node.Function,
                     node.Area,
-                    new XYZ(node.Position.X, node.Position.Y, node.Position.Z),  
+                    new XYZ(node.Position.X, node.Position.Y, node.Position.Z),
                     node.WpfColor)
                 {
                     Radius = node.Radius
@@ -1462,6 +1418,183 @@ namespace PanelizedAndModularFinal
             double clampedY = Math.Max(viewBox.Min.Y + radius, Math.Min(position.Y, viewBox.Max.Y - radius));
             return new XYZ(clampedX, clampedY, position.Z);
         }
+
+
+
+
+
+
+
+        public bool VerifyBoundaryLinesAndDisplay(List<Line> boundaryLines)
+        {
+            string message = "";
+
+            // Check for null or empty list.
+            if (boundaryLines == null || boundaryLines.Count == 0)
+            {
+                TaskDialog.Show("Boundary Lines Verification", "Boundary lines list is null or empty.");
+                return false;
+            }
+            message += $"Boundary lines count: {boundaryLines.Count}\n";
+
+            // A valid polygon should have at least 3 segments.
+            if (boundaryLines.Count < 3)
+            {
+                message += "Not enough boundary lines to form a polygon (minimum 3 required).";
+                TaskDialog.Show("Boundary Lines Verification", message);
+                return false;
+            }
+
+            // Verify continuity: Check each line's end matches the next line's start.
+            for (int i = 0; i < boundaryLines.Count - 1; i++)
+            {
+                XYZ endPoint = boundaryLines[i].GetEndPoint(1);
+                XYZ nextStart = boundaryLines[i + 1].GetEndPoint(0);
+                if (!endPoint.IsAlmostEqualTo(nextStart))
+                {
+                    message += $"Discontinuity between line {i} and line {i + 1}: {endPoint} does not match {nextStart}.\n";
+                    TaskDialog.Show("Boundary Lines Verification", message);
+                    return false;
+                }
+            }
+
+            // Verify closure: The end of the last line should match the start of the first line.
+            if (!boundaryLines[boundaryLines.Count - 1].GetEndPoint(1).IsAlmostEqualTo(boundaryLines[0].GetEndPoint(0)))
+            {
+                message += "The last boundary line does not close the loop with the first boundary line.";
+                TaskDialog.Show("Boundary Lines Verification", message);
+                return false;
+            }
+
+            message += "Boundary lines verified: continuous and forming a closed loop.";
+            TaskDialog.Show("Boundary Lines Verification", message);
+            return true;
+        }
+
+
+        public List<Line> FixDiscontinuityLines(List<Line> boundaryLines, double snapTolerance = 1e-6)
+        {
+            if (boundaryLines == null || boundaryLines.Count == 0)
+            {
+                TaskDialog.Show("Fix Discontinuities", "Boundary lines list is null or empty.");
+                return boundaryLines;
+            }
+
+            List<Line> fixedLines = new List<Line>();
+            fixedLines.Add(boundaryLines[0]);
+
+            for (int i = 1; i < boundaryLines.Count; i++)
+            {
+                // Use the last line in fixedLines.
+                XYZ previousEnd = fixedLines[fixedLines.Count - 1].GetEndPoint(1);
+                XYZ currentStart = boundaryLines[i].GetEndPoint(0);
+                XYZ currentEnd = boundaryLines[i].GetEndPoint(1);
+
+                // Snap the start point if within tolerance.
+                if (!previousEnd.IsAlmostEqualTo(currentStart))
+                {
+                    double distance = previousEnd.DistanceTo(currentStart);
+                    if (distance <= snapTolerance)
+                    {
+                        currentStart = previousEnd;
+                    }
+                    else
+                    {
+                        // Optionally force snap even if gap is larger.
+                        currentStart = previousEnd;
+                    }
+                }
+
+                double newLength = currentEnd.DistanceTo(currentStart);
+                // Only add the line if it's longer than our tolerance.
+                if (newLength > snapTolerance)
+                {
+                    fixedLines.Add(Line.CreateBound(currentStart, currentEnd));
+                }
+                else
+                {
+                    TaskDialog.Show("Fix Discontinuities", $"Skipped a line at index {i} due to insufficient length.");
+                }
+            }
+
+            // Ensure the loop is closed.
+            if (fixedLines.Count > 0)
+            {
+                XYZ firstPoint = fixedLines[0].GetEndPoint(0);
+                XYZ lastEnd = fixedLines[fixedLines.Count - 1].GetEndPoint(1);
+                if (!lastEnd.IsAlmostEqualTo(firstPoint))
+                {
+                    double finalLength = lastEnd.DistanceTo(firstPoint);
+                    if (finalLength > snapTolerance)
+                    {
+                        fixedLines[fixedLines.Count - 1] = Line.CreateBound(fixedLines[fixedLines.Count - 1].GetEndPoint(0), firstPoint);
+                        TaskDialog.Show("Fix Discontinuities", "Adjusted final line to close the loop.");
+                    }
+                    else
+                    {
+                        TaskDialog.Show("Fix Discontinuities", "Final segment length is too short to adjust.");
+                    }
+                }
+            }
+
+            return fixedLines;
+        }
+
+
+
+
+
+        // Helper method to reorder and orient the lines into a continuous loop.
+        List<Line> ReorderLines(List<Line> lines)
+        {
+            // Create a working copy.
+            List<Line> remaining = new List<Line>(lines);
+            List<Line> ordered = new List<Line>();
+
+            if (remaining.Count == 0)
+                return ordered;
+
+            // Start with the first line.
+            ordered.Add(remaining[0]);
+            remaining.RemoveAt(0);
+
+            // Loop until all lines are connected.
+            while (remaining.Count > 0)
+            {
+                // Get the end point of the last added line.
+                XYZ lastPoint = ordered.Last().GetEndPoint(1);
+                bool foundMatch = false;
+
+                // Try to find a line whose start or end matches the last point.
+                for (int i = 0; i < remaining.Count; i++)
+                {
+                    Line candidate = remaining[i];
+                    if (lastPoint.IsAlmostEqualTo(candidate.GetEndPoint(0)))
+                    {
+                        ordered.Add(candidate);
+                        remaining.RemoveAt(i);
+                        foundMatch = true;
+                        break;
+                    }
+                    else if (lastPoint.IsAlmostEqualTo(candidate.GetEndPoint(1)))
+                    {
+                        // Reverse the candidate so that its start matches the last point.
+                        Line reversed = Line.CreateBound(candidate.GetEndPoint(1), candidate.GetEndPoint(0));
+                        ordered.Add(reversed);
+                        remaining.RemoveAt(i);
+                        foundMatch = true;
+                        break;
+                    }
+                }
+
+                if (!foundMatch)
+                {
+                    throw new Exception("Cannot form a continuous loop with the provided lines.");
+                }
+            }
+            return ordered;
+        }
+
 
 
 

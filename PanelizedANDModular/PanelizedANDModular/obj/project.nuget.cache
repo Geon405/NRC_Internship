@@ -1,8 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "k54st23KwFE=",
+  "dgSpecHash": "MZCAHi50g+s=",
   "success": true,
   "projectFilePath": "C:\\Users\\martinchan\\source\\repos\\CRR1\\PanelizedAndModularFinal - Copy\\PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\martinchan\\.nuget\\packages\\clipper_standard\\0.0.1\\clipper_standard.0.0.1.nupkg.sha512"
+  ],
   "logs": []
 }
