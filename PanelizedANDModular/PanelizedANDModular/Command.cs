@@ -364,6 +364,7 @@ namespace PanelizedAndModularFinal
 
                                             bool arrangementCreated = false;
                                             ModuleArrangement arranger = null;
+
                                             while (!arrangementCreated)
                                             {
                                                 ModuleCombinationsWindow combWindow = new ModuleCombinationsWindow(moduleTypes, minWidth);
@@ -380,54 +381,68 @@ namespace PanelizedAndModularFinal
 
 
 
-                                                arranger = new ModuleArrangement();
-                                                ModuleArrangement previewArranger = new ModuleArrangement();
-                                                try
+
+                                                //////////////////////////////////////////////////////////////////////////////////////
+                                                ////////////////////////////////////////////////////////////////////////////////////////
+                                                ////////////////////////////////////////////////////////////////////////////////////////
+                                                ///////////////////////////////////////////////////////////////////////////////////////
+                                                ////////////////////////////////////////////////////////////////////////////////////////
+                                                ///////////////////////////////////////////////////////////////////////////////////////
+                                                //MODULE COMBINATION STARTS HERE!!!!!!!///////////////////////////////////
+
+
+
+
+
+
+
+
+                                             
+
+
+
+                                                ArrangementsWindow arr1 = new ArrangementsWindow(doc, moduleTypes, selectedCombination, 10);
+                                                bool? dialogResult1 = arr1.ShowDialog();
+
+                                                // If the user clicked OK and made a selection:
+                                                if (dialogResult1 == true)
                                                 {
+                                                    // Retrieve the selected arrangement (module rectangles).
+                                                    List<XYZ[]> selectedArrangement = arr1.SelectedArrangement;
+                                                    // Optionally, perform further processing with the selection.
 
-                                                    // --- Step 2 Preview: Display Module Arrangement (without grid) ---
-                                                    List<ElementId> previewIds = previewArranger.DisplayModuleCombination(doc, selectedCombination, moduleTypes);
-
-                                                    TaskDialog step2Dialog = new TaskDialog("Step 2 Complete");
-                                                    step2Dialog.MainInstruction = "Step 2 output is displayed.";
-                                                    step2Dialog.MainContent = "Click CLOSE to clear the screen and proceed to Step 3.";
-                                                    step2Dialog.Show();
-
-                                                    // --- Clear Step 2 Preview Output ---
-                                                    using (Transaction tx = new Transaction(doc, "Clear Preview Output"))
-                                                    {
-                                                        tx.Start();
-                                                        foreach (ElementId id in previewIds)
-                                                        {
-                                                            try
-                                                            {
-                                                                doc.Delete(id);
-                                                            }
-                                                            catch
-                                                            {
-                                                                // Handle deletion exceptions if necessary.
-                                                            }
-                                                        }
-                                                        tx.Commit();
-                                                    }
-
-
-
-                                                    arranger.CreateSquareLikeArrangement(doc, selectedCombination, moduleTypes);
-                                                    arrangementCreated = true;
+                                                    
                                                 }
-                                                catch (Exception ex)
-                                                {
-                                                    if (ex.Message.Contains("Module doesn't fit"))
-                                                    {
-                                                        TaskDialog.Show("Error", "Module doesn't fit in row. Please select another combination.");
-                                                    }
-                                                    else
-                                                    {
-                                                        throw;
-                                                    }
-                                                }
+
+                                             
+                                                arrangementCreated = true;
+                                           
                                             }
+
+
+
+                                            ////////////////////////////////////////////////////////////////////////////////////////
+                                            ///////////////////////////////////////////////////////////////////////////////////////
+                                            ////////////////////////////////////////////////////////////////////////////////////////
+                                            ///////////////////////////////////////////////////////////////////////////////////////
+                                            ////////////////////////////////////////////////////////////////////////////////////////
+                                            ///////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
                                             // --- Step 2: Re-Output Saved Layout (Connection Lines and Room Circles) ---
                                             List<SpaceNode> savedSpaces = GlobalData.SavedSpaces;
@@ -473,13 +488,6 @@ namespace PanelizedAndModularFinal
                                             GlobalData.Step1Elements.Clear();
 
                                             // --- STEP 3: Create Trimmed Square Arrangement (SquareArrangementOnly) ---
-
-
-
-
-
-
-
 
 
 
