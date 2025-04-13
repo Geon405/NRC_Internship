@@ -3,13 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using Autodesk.Revit.DB;
-using static PanelizedAndModularFinal.ModuleArrangement;
 
 namespace PanelizedAndModularFinal
 {
+    // A simple wrapper to hold the module rectangles for an arrangement.
+    public class Arrangement
+    {
+        public List<XYZ[]> ModuleRectangles { get; set; }
+    }
+
     public partial class ArrangementsWindow : Window
     {
-        // Holds the valid arrangements, each with ModuleRectangles and GridCellIds, etc.
+        // Holds the valid arrangements, each wrapped as an Arrangement.
         public List<Arrangement> ValidArrangements { get; private set; }
 
         // The user's chosen list of module rectangles (the corners for each module).
@@ -17,14 +22,21 @@ namespace PanelizedAndModularFinal
 
         private Document _doc;
 
-        public ArrangementsWindow(Document doc, List<ModuleType> moduleTypes, string selectedCombination, int desiredArrangementCount)
+        public ArrangementsWindow(Document doc, List<ModuleType> moduleTypes, string selectedCombination)
         {
             InitializeComponent();
             _doc = doc;
 
-            // Generate valid arrangements.
+            // Generate valid arrangements using the new CreateAllSquareLikeArrangements method.
             ModuleArrangement moduleArrangement = new ModuleArrangement();
-            ValidArrangements = moduleArrangement.CreateMultipleSquareLikeArrangements(doc, selectedCombination, moduleTypes, desiredArrangementCount);
+            List<List<XYZ[]>> arrList = moduleArrangement.CreateAllSquareLikeArrangements(doc, selectedCombination, moduleTypes);
+
+            // (Optional) If you want to limit to a desired count, take the first N arrangements.
+            //if (desiredArrangementCount > 0)
+            //    arrList = arrList.Take(desiredArrangementCount).ToList();
+
+            // Wrap each arrangement (List<XYZ[]>) into our Arrangement class.
+            ValidArrangements = arrList.Select(a => new Arrangement() { ModuleRectangles = a }).ToList();
 
             // Build a display list for the ListBox.
             var displayList = new List<string>();

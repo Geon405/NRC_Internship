@@ -393,30 +393,107 @@ namespace PanelizedAndModularFinal
 
 
 
+    
+
+
+
+                                                //ArrangementsWindow arrWindow = new ArrangementsWindow(doc, moduleTypes, selectedCombination);
+                                                //bool? dialogResult1 = arrWindow.ShowDialog();
+                                                //if (dialogResult1 == true)
+                                                //{
+                                                //    // The user selected an arrangement and it has been drawn in red.
+                                                //    // You can also retrieve the selected arrangement if needed:
+                                                //    List<XYZ[]> selectedArrangement = arrWindow.SelectedArrangement;
+                                                //    // Continue with further processing if necessary.
+                                                //}
+
+
+
+                                                ModuleArrangement arrangementHelper = new ModuleArrangement();
+                                               
+                                                List<List<XYZ[]>> allArrangements = arrangementHelper.CreateAllSquareLikeArrangements(doc, selectedCombination, moduleTypes);
 
 
 
 
-                                             
-
-
-
-                                                ArrangementsWindow arr1 = new ArrangementsWindow(doc, moduleTypes, selectedCombination, 10);
-                                                bool? dialogResult1 = arr1.ShowDialog();
-
-                                                // If the user clicked OK and made a selection:
-                                                if (dialogResult1 == true)
+                                                TaskDialog.Show("count", allArrangements.Count.ToString());
+                                                // Loop through each arrangement.
+                                                foreach (List<XYZ[]> arrangement in allArrangements)
                                                 {
-                                                    // Retrieve the selected arrangement (module rectangles).
-                                                    List<XYZ[]> selectedArrangement = arr1.SelectedArrangement;
-                                                    // Optionally, perform further processing with the selection.
+                                                    // Create red detail curves for each rectangle in the arrangement.
+                                                    List<ElementId> detailCurveIds = new List<ElementId>();
+                                                    using (Transaction trans1 = new Transaction(doc, "Display Arrangement"))
+                                                    {
+                                                        trans1.Start();
+                                                        foreach (XYZ[] rect in arrangement)
+                                                        {
+                                                            // Create 4 edges for the module rectangle.
+                                                            DetailCurve dc1 = doc.Create.NewDetailCurve(doc.ActiveView, Line.CreateBound(rect[0], rect[1]));
+                                                            DetailCurve dc2 = doc.Create.NewDetailCurve(doc.ActiveView, Line.CreateBound(rect[1], rect[2]));
+                                                            DetailCurve dc3 = doc.Create.NewDetailCurve(doc.ActiveView, Line.CreateBound(rect[2], rect[3]));
+                                                            DetailCurve dc4 = doc.Create.NewDetailCurve(doc.ActiveView, Line.CreateBound(rect[3], rect[0]));
 
-                                                    
+                                                            detailCurveIds.Add(dc1.Id);
+                                                            detailCurveIds.Add(dc2.Id);
+                                                            detailCurveIds.Add(dc3.Id);
+                                                            detailCurveIds.Add(dc4.Id);
+
+                                                            // Set each detail curve's line color to red.
+                                                            OverrideGraphicSettings ogs = new OverrideGraphicSettings();
+                                                            ogs.SetProjectionLineColor(new Autodesk.Revit.DB.Color(255, 0, 0));
+                                                            doc.ActiveView.SetElementOverrides(dc1.Id, ogs);
+                                                            doc.ActiveView.SetElementOverrides(dc2.Id, ogs);
+                                                            doc.ActiveView.SetElementOverrides(dc3.Id, ogs);
+                                                            doc.ActiveView.SetElementOverrides(dc4.Id, ogs);
+                                                        }
+                                                        trans1.Commit();
+                                                    }
+
+                                                    // Prompt user to review the current arrangement.
+                                                    TaskDialog td = new TaskDialog("Arrangement Display");
+                                                    td.MainInstruction = "Review current arrangement.";
+                                                    td.MainContent = "Click OK to proceed to the next arrangement.";
+                                                    td.Show();
+
+                                                    // Delete the displayed detail curves before showing the next arrangement.
+                                                    using (Transaction trans1 = new Transaction(doc, "Remove Arrangement Display"))
+                                                    {
+                                                        trans1.Start();
+                                                        foreach (ElementId id in detailCurveIds)
+                                                        {
+                                                            try { doc.Delete(id); }
+                                                            catch (Exception) { /* In case element is already deleted */ }
+                                                        }
+                                                        trans1.Commit();
+                                                    }
                                                 }
 
-                                             
+                                                TaskDialog.Show("Complete", "All arrangements have been displayed.");
+
+
+
+
+
+
+
+
+
+                                                //ArrangementsWindow arr1 = new ArrangementsWindow(doc, moduleTypes, selectedCombination, 10);
+                                                //bool? dialogResult1 = arr1.ShowDialog();
+
+                                                //// If the user clicked OK and made a selection:
+                                                //if (dialogResult1 == true)
+                                                //{
+                                                //    // Retrieve the selected arrangement (module rectangles).
+                                                //    List<XYZ[]> selectedArrangement = arr1.SelectedArrangement;
+                                                //    // Optionally, perform further processing with the selection.
+
+
+                                                //}
+
+
                                                 arrangementCreated = true;
-                                           
+
                                             }
 
 

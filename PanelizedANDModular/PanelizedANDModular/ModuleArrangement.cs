@@ -32,22 +32,12 @@ namespace PanelizedAndModularFinal
             maxY = _overallMaxY;
         }
 
-       
 
 
-        public class Arrangement
+
+        public List<List<XYZ[]>> CreateAllSquareLikeArrangements(Document doc, string selectedCombination, List<ModuleType> moduleTypes)
         {
-            public List<XYZ[]> ModuleRectangles { get; set; }
-            public List<ElementId> GridCellIds { get; set; }
-
-            public List<ModuleArrangement.Arrangement> ValidArrangements { get; private set; }
-        }
-
-        public List<Arrangement> CreateMultipleSquareLikeArrangements(Document doc, string selectedCombination, List<ModuleType> moduleTypes, int desiredArrangementCount)
-        {
-            List<Arrangement> allArrangements = new List<Arrangement>();
-
-            // 1. Parse combination and collect modules.
+            // Parse combination and collect modules.
             Dictionary<int, int> typeCounts = ParseCombination(selectedCombination);
             List<ModuleType> modulesToPlace = new List<ModuleType>();
             foreach (var kvp in typeCounts)
@@ -58,174 +48,171 @@ namespace PanelizedAndModularFinal
                 for (int i = 0; i < count; i++)
                     modulesToPlace.Add(modType);
             }
+            // Place bigger modules first.
+            modulesToPlace = modulesToPlace.OrderByDescending(mod => mod.Length * mod.Width).ToList();
 
             double landWidth = GlobalData.landWidth;
             double landHeight = GlobalData.landHeight;
-            Random rnd = new Random();
-            int attempts = 0;
+            List<List<XYZ[]>> solutions = new List<List<XYZ[]>>();
+            HashSet<string> uniqueSignatures = new HashSet<string>();
+            List<XYZ[]> currentArrangement = new List<XYZ[]>();
 
-            while (allArrangements.Count < desiredArrangementCount && attempts < desiredArrangementCount * 10)
+            // Create a unique signature for each arrangement.
+            string GetArrangementSignature(List<XYZ[]> arrangement)
             {
-                attempts++;
-                List<XYZ[]> placedRectangles = new List<XYZ[]>();
-                double offsetX = 0.0, offsetY = 0.0, currentRowHeight = 0.0;
-                bool validArrangement = true;
-
-                // 2. Place each module randomly in one of two orientations.
-                foreach (ModuleType mod in modulesToPlace)
+                List<string> rectSignatures = new List<string>();
+                foreach (XYZ[] rect in arrangement)
                 {
-                    bool useOriginal = rnd.Next(0, 2) == 0;
-                    double modX = useOriginal ? mod.Length : mod.Width;
-                    double modY = useOriginal ? mod.Width : mod.Length;
-
-                    // Calculate the area of the module and display it.
-                    double moduleArea = modX * modY;
-                    //TaskDialog.Show("Module Area", $"Module area: {moduleArea:F2} sq. units.");
-
-                    // Check if the module fits in the current row.
-                    if (offsetX + modX > landWidth || offsetY + modY > landHeight)
-                    {
-                        bool newRow = rnd.Next(0, 2) == 0;
-                        if (newRow)
-                        {
-                            offsetY += currentRowHeight;
-                            offsetX = 0.0;
-                            currentRowHeight = 0.0;
-                        }
-                        else
-                        {
-                            offsetX = 0.0;
-                            offsetY += currentRowHeight;
-                            currentRowHeight = 0.0;
-                        }
-                        if (offsetX + modX > landWidth || offsetY + modY > landHeight)
-                        {
-                            validArrangement = false;
-                            break;
-                        }
-                    }
-
-                    // Create rectangle corners.
-                    XYZ p1 = new XYZ(offsetX, offsetY, 0);
-                    XYZ p2 = new XYZ(offsetX + modX, offsetY, 0);
-                    XYZ p3 = new XYZ(offsetX + modX, offsetY + modY, 0);
-                    XYZ p4 = new XYZ(offsetX, offsetY + modY, 0);
-                    placedRectangles.Add(new XYZ[] { p1, p2, p3, p4 });
-
-                    offsetX += modX;
-                    currentRowHeight = (currentRowHeight < 1e-9) ? modY : Math.Max(currentRowHeight, modY);
+                    string sig = string.Format("{0:F4},{1:F4};{2:F4},{3:F4};{4:F4},{5:F4};{6:F4},{7:F4}",
+                        rect[0].X, rect[0].Y,
+                        rect[1].X, rect[1].Y,
+                        rect[2].X, rect[2].Y,
+                        rect[3].X, rect[3].Y);
+                    rectSignatures.Add(sig);
                 }
-
-                if (!validArrangement)
-                    continue;
-
-                // 3. Center the layout in the active view.
-                CenterFinalOutputInViewBox(placedRectangles, doc.ActiveView.CropBox);
-
-                // 4. Verify that the arrangement is entirely within the crop box.
-                BoundingBoxXYZ cropBox = doc.ActiveView.CropBox;
-                foreach (XYZ[] rect in placedRectangles)
-                {
-                    foreach (XYZ pt in rect)
-                    {
-                        if (pt.X < cropBox.Min.X || pt.X > cropBox.Max.X ||
-                            pt.Y < cropBox.Min.Y || pt.Y > cropBox.Max.Y)
-                        {
-                            validArrangement = false;
-                            break;
-                        }
-                    }
-                    if (!validArrangement)
-                        break;
-                }
-
-                if (!validArrangement)
-                    continue;
-
-                // 5. No grid cell creation here.
-                List<ElementId> gridCellIds = new List<ElementId>();
-
-                // 6. Save the arrangement.
-                Arrangement arr = new Arrangement
-                {
-                    ModuleRectangles = placedRectangles,
-                    GridCellIds = gridCellIds
-                };
-                allArrangements.Add(arr);
+                rectSignatures.Sort();
+                return string.Join("|", rectSignatures);
             }
 
-            return allArrangements;
+            // Recursive method to place modules.
+            void PlaceModule(int index, double offsetX, double offsetY, double currentRowHeight)
+            {
+                if (index == modulesToPlace.Count)
+                {
+                    if (offsetY + currentRowHeight <= landHeight)
+                    {
+                        var arrangementCopy = currentArrangement
+                            .Select(rect => rect.Select(pt => new XYZ(pt.X, pt.Y, pt.Z)).ToArray())
+                            .ToList();
+                        CenterFinalOutputInViewBox(arrangementCopy, doc.ActiveView.CropBox);
+                        string signature = GetArrangementSignature(arrangementCopy);
+                        if (!uniqueSignatures.Contains(signature))
+                        {
+                            uniqueSignatures.Add(signature);
+                            solutions.Add(arrangementCopy);
+                        }
+                    }
+                    return;
+                }
+
+                ModuleType mod = modulesToPlace[index];
+                double[] dimsX = { mod.Length, mod.Width };
+                double[] dimsY = { mod.Width, mod.Length };
+
+                // Try to place the module in the current row in both orientations.
+                for (int orientation = 0; orientation < 2; orientation++)
+                {
+                    double chosenX = dimsX[orientation];
+                    double chosenY = dimsY[orientation];
+                    bool fitsHorizontally = (offsetX + chosenX <= landWidth);
+                    // Allow different module heights by taking the max of currentRowHeight and chosenY.
+                    bool fitsVertically = (offsetY + Math.Max(currentRowHeight, chosenY) <= landHeight);
+
+                    if (fitsHorizontally && fitsVertically)
+                    {
+                        // Create rectangle at current row.
+                        XYZ p1 = new XYZ(offsetX, offsetY, 0);
+                        XYZ p2 = new XYZ(offsetX + chosenX, offsetY, 0);
+                        XYZ p3 = new XYZ(offsetX + chosenX, offsetY + chosenY, 0);
+                        XYZ p4 = new XYZ(offsetX, offsetY + chosenY, 0);
+                        currentArrangement.Add(new XYZ[] { p1, p2, p3, p4 });
+
+                        double newOffsetX = offsetX + chosenX;
+                        double newCurrentRowHeight = Math.Max(currentRowHeight, chosenY);
+                        PlaceModule(index + 1, newOffsetX, offsetY, newCurrentRowHeight);
+                        currentArrangement.RemoveAt(currentArrangement.Count - 1);
+                    }
+                }
+
+                // If current row isn't empty, try starting a new row.
+                if (offsetX > 0)
+                {
+                    double newOffsetY = offsetY + currentRowHeight;
+                    if (newOffsetY < landHeight)
+                    {
+                        for (int orientation = 0; orientation < 2; orientation++)
+                        {
+                            double chosenX = dimsX[orientation];
+                            double chosenY = dimsY[orientation];
+                            bool fitsHorizontallyNew = (chosenX <= landWidth);
+                            bool fitsVerticallyNew = (newOffsetY + chosenY <= landHeight);
+
+                            if (fitsHorizontallyNew && fitsVerticallyNew)
+                            {
+                                // Place module at new row starting at x = 0.
+                                XYZ p1 = new XYZ(0, newOffsetY, 0);
+                                XYZ p2 = new XYZ(chosenX, newOffsetY, 0);
+                                XYZ p3 = new XYZ(chosenX, newOffsetY + chosenY, 0);
+                                XYZ p4 = new XYZ(0, newOffsetY + chosenY, 0);
+                                currentArrangement.Add(new XYZ[] { p1, p2, p3, p4 });
+                                PlaceModule(index + 1, chosenX, newOffsetY, chosenY);
+                                currentArrangement.RemoveAt(currentArrangement.Count - 1);
+                            }
+                        }
+                    }
+                }
+            }
+
+            PlaceModule(0, 0.0, 0.0, 0.0);
+            return solutions;
         }
 
 
 
-        /// <summary>
-        /// Creates grid cells (as detail curves) inside each module rectangle.
+
+
+
+        // <summary>
+        /// Returns a list of perimeter edges (Lines) that represent the merged boundary
+        /// around all placed modules.
         /// </summary>
-        private List<ElementId> CreateGridCellsInsideModules(Document doc, List<XYZ[]> placedRectangles)
+        public List<Line> GetPerimeterOutline()
         {
-            List<ElementId> gridElementIds = new List<ElementId>();
-            double shortTol = doc.Application.ShortCurveTolerance;
-            OverrideGraphicSettings ogs = new OverrideGraphicSettings();
-            ogs.SetProjectionLineColor(new Autodesk.Revit.DB.Color(0, 0, 0));
-            Plane plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, XYZ.Zero);
-            SketchPlane sketch = SketchPlane.Create(doc, plane);
-
-            // Process each module separately.
-            foreach (XYZ[] rect in placedRectangles)
+            // 1. Gather all edges as Segment objects
+            List<Segment> allEdges = new List<Segment>();
+            foreach (XYZ[] rect in _placedRectangles)
             {
-                // Determine module boundaries.
-                double minX = Math.Min(rect[0].X, rect[2].X);
-                double minY = Math.Min(rect[0].Y, rect[2].Y);
-                double maxX = Math.Max(rect[0].X, rect[2].X);
-                double maxY = Math.Max(rect[0].Y, rect[2].Y);
-                double width = maxX - minX;
-                double height = maxY - minY;
+                // Each rect has p1, p2, p3, p4 in some order
+                XYZ p1 = rect[0];
+                XYZ p2 = rect[1];
+                XYZ p3 = rect[2];
+                XYZ p4 = rect[3];
 
-                // Use the smaller dimension to define a square cell size.
-                double cellSize = Math.Min(width, height) / 3.0;
+                allEdges.Add(new Segment(p1, p2));
+                allEdges.Add(new Segment(p2, p3));
+                allEdges.Add(new Segment(p3, p4));
+                allEdges.Add(new Segment(p4, p1));
+            }
 
-                // Compute the number of columns and rows.
-                int nCols = (int)Math.Round(width / cellSize);
-                int nRows = (int)Math.Round(height / cellSize);
+            // 2. Merge/clean edges (removes overlaps, duplicates, etc.)
+            List<Segment> cleanedSegments = SubtractOverlaps(allEdges);
 
-                for (int i = 0; i < nCols; i++)
+            // 3. Convert them into Revit Line objects
+            List<Line> perimeterLines = new List<Line>();
+            foreach (Segment seg in cleanedSegments)
+            {
+                double length = (seg.End - seg.Start).GetLength();
+                if (length > 1e-9) // skip tiny segments
                 {
-                    for (int j = 0; j < nRows; j++)
-                    {
-                        double cellMinX = minX + i * cellSize;
-                        double cellMinY = minY + j * cellSize;
-                        double cellMaxX = cellMinX + cellSize;
-                        double cellMaxY = cellMinY + cellSize;
-
-                        // Define cell corners.
-                        XYZ p1 = new XYZ(cellMinX, cellMinY, 0);
-                        XYZ p2 = new XYZ(cellMaxX, cellMinY, 0);
-                        XYZ p3 = new XYZ(cellMaxX, cellMaxY, 0);
-                        XYZ p4 = new XYZ(cellMinX, cellMaxY, 0);
-
-                        // Create edges for the cell.
-                        List<Line> edges = new List<Line>
-                {
-                    Line.CreateBound(p1, p2),
-                    Line.CreateBound(p2, p3),
-                    Line.CreateBound(p3, p4),
-                    Line.CreateBound(p4, p1)
-                };
-
-                        foreach (Line edge in edges)
-                        {
-                            if (edge.Length < shortTol) continue;
-                            // Create detail curves for each edge.
-                            DetailCurve dc = doc.Create.NewDetailCurve(doc.ActiveView, edge);
-                            doc.ActiveView.SetElementOverrides(dc.Id, ogs);
-                            gridElementIds.Add(dc.Id);
-                        }
-                    }
+                    perimeterLines.Add(Line.CreateBound(seg.Start, seg.End));
                 }
             }
-            return gridElementIds;
+
+            return perimeterLines;
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -286,12 +273,97 @@ namespace PanelizedAndModularFinal
         }
 
   
+        private List<ElementId> CreateGridCellsInsideModules(Document doc, List<XYZ[]> placedRectangles)
+        {
+            List<ElementId> gridElementIds = new List<ElementId>();
+            double shortTol = doc.Application.ShortCurveTolerance;
+            OverrideGraphicSettings ogs = new OverrideGraphicSettings();
+            ogs.SetProjectionLineColor(new Autodesk.Revit.DB.Color(0, 0, 255));
+            Plane plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, XYZ.Zero);
+            SketchPlane sketch = SketchPlane.Create(doc, plane);
+
+            // Process each module separately
+            foreach (XYZ[] rect in placedRectangles)
+            {
+                // Determine module boundaries.
+                double minX = Math.Min(rect[0].X, rect[2].X);
+                double minY = Math.Min(rect[0].Y, rect[2].Y);
+                double maxX = Math.Max(rect[0].X, rect[2].X);
+                double maxY = Math.Max(rect[0].Y, rect[2].Y);
+                double width = maxX - minX;
+                double height = maxY - minY;
+
+                // Use the smaller dimension to define a square cell size.
+                double cellSize = Math.Min(width, height) / 3.0;
+
+                // Compute the number of columns and rows needed to cover the entire rectangle.
+                int nCols = (int)Math.Round(width / cellSize);
+                int nRows = (int)Math.Round(height / cellSize);
+
+                for (int i = 0; i < nCols; i++)
+                {
+                    for (int j = 0; j < nRows; j++)
+                    {
+                        double cellMinX = minX + i * cellSize;
+                        double cellMinY = minY + j * cellSize;
+                        double cellMaxX = cellMinX + cellSize;
+                        double cellMaxY = cellMinY + cellSize;
+
+                        // Create cell geometry
+                        XYZ p1 = new XYZ(cellMinX, cellMinY, 0);
+                        XYZ p2 = new XYZ(cellMaxX, cellMinY, 0);
+                        XYZ p3 = new XYZ(cellMaxX, cellMaxY, 0);
+                        XYZ p4 = new XYZ(cellMinX, cellMaxY, 0);
+
+                        List<Line> edges = new List<Line>
+                {
+                    Line.CreateBound(p1, p2),
+                    Line.CreateBound(p2, p3),
+                    Line.CreateBound(p3, p4),
+                    Line.CreateBound(p4, p1)
+                };
+
+                        foreach (Line edge in edges)
+                        {
+                            if (edge.Length < shortTol) continue;
+                            DetailCurve dc = doc.Create.NewDetailCurve(doc.ActiveView, edge);
+                            doc.ActiveView.SetElementOverrides(dc.Id, ogs);
+                            gridElementIds.Add(dc.Id);
+                        }
+                    }
+                }
+            }
+            return gridElementIds;
+        }
 
 
 
 
+      
 
-   
+        private void CreateModuleSolid(Document doc, XYZ p1, XYZ p2, XYZ p3, XYZ p4, double height)
+        {
+            List<Curve> edges = new List<Curve>
+            {
+                Line.CreateBound(p1, p2),
+                Line.CreateBound(p2, p3),
+                Line.CreateBound(p3, p4),
+                Line.CreateBound(p4, p1)
+            };
+            CurveLoop loop = new CurveLoop();
+            foreach (Curve c in edges)
+                loop.Append(c);
+
+            Solid solid = GeometryCreationUtilities.CreateExtrusionGeometry(
+                new List<CurveLoop> { loop },
+                XYZ.BasisZ,
+                height);
+
+            DirectShape ds = DirectShape.CreateElement(doc, new ElementId(BuiltInCategory.OST_GenericModel));
+            ds.ApplicationId = "ModuleArrangement";
+            ds.ApplicationDataId = Guid.NewGuid().ToString();
+            ds.SetShape(new List<GeometryObject> { solid });
+        }
 
         private Dictionary<int, int> ParseCombination(string combo)
         {
@@ -313,9 +385,8 @@ namespace PanelizedAndModularFinal
             return result;
         }
 
-     
 
-  
+
 
         private List<Segment> SubtractOverlaps(List<Segment> allEdges)
         {
@@ -409,52 +480,6 @@ namespace PanelizedAndModularFinal
                     return new Segment(new XYZ(x, s1Start, 0), new XYZ(x, overlapStart, 0));
             }
         }
-
-
-        private double GetLength(Segment s)
-        {
-            return Math.Abs(s.Start.X - s.End.X) < 1e-9
-                ? Math.Abs(s.End.Y - s.Start.Y)
-                : Math.Abs(s.End.X - s.Start.X);
-        }
-
-        private struct Segment
-        {
-            public XYZ Start;
-            public XYZ End;
-            public Segment(XYZ s, XYZ e)
-            {
-                if (Math.Abs(s.X - e.X) < 1e-9)
-                {
-                    if (s.Y > e.Y) { var tmp = s; s = e; e = tmp; }
-                }
-                else
-                {
-                    if (s.X > e.X) { var tmp = s; s = e; e = tmp; }
-                }
-                Start = s;
-                End = e;
-            }
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -591,44 +616,37 @@ namespace PanelizedAndModularFinal
 
 
 
-        // <summary>
-        /// Returns a list of perimeter edges (Lines) that represent the merged boundary
-        /// around all placed modules.
-        /// </summary>
-        public List<Line> GetPerimeterOutline()
+
+
+
+
+
+
+
+        private double GetLength(Segment s)
         {
-            // 1. Gather all edges as Segment objects
-            List<Segment> allEdges = new List<Segment>();
-            foreach (XYZ[] rect in _placedRectangles)
-            {
-                // Each rect has p1, p2, p3, p4 in some order
-                XYZ p1 = rect[0];
-                XYZ p2 = rect[1];
-                XYZ p3 = rect[2];
-                XYZ p4 = rect[3];
-
-                allEdges.Add(new Segment(p1, p2));
-                allEdges.Add(new Segment(p2, p3));
-                allEdges.Add(new Segment(p3, p4));
-                allEdges.Add(new Segment(p4, p1));
-            }
-
-            // 2. Merge/clean edges (removes overlaps, duplicates, etc.)
-            List<Segment> cleanedSegments = SubtractOverlaps(allEdges);
-
-            // 3. Convert them into Revit Line objects
-            List<Line> perimeterLines = new List<Line>();
-            foreach (Segment seg in cleanedSegments)
-            {
-                double length = (seg.End - seg.Start).GetLength();
-                if (length > 1e-9) // skip tiny segments
-                {
-                    perimeterLines.Add(Line.CreateBound(seg.Start, seg.End));
-                }
-            }
-
-            return perimeterLines;
+            return Math.Abs(s.Start.X - s.End.X) < 1e-9
+                ? Math.Abs(s.End.Y - s.Start.Y)
+                : Math.Abs(s.End.X - s.Start.X);
         }
 
+        private struct Segment
+        {
+            public XYZ Start;
+            public XYZ End;
+            public Segment(XYZ s, XYZ e)
+            {
+                if (Math.Abs(s.X - e.X) < 1e-9)
+                {
+                    if (s.Y > e.Y) { var tmp = s; s = e; e = tmp; }
+                }
+                else
+                {
+                    if (s.X > e.X) { var tmp = s; s = e; e = tmp; }
+                }
+                Start = s;
+                End = e;
+            }
+        }
     }
 }
