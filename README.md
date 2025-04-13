@@ -1,6 +1,6 @@
-# CRR Internship - Modular Building Layout Generator
+# NRC Internship - Modular Building Layout Generator
 
-This project was developed during my internship as part of the CRR initiative. It leverages C# and the Revit API to streamline and automate the layout design process for modular and panelized buildings. The tool is intended to assist Building Engineering students and professionals in architecture, construction, and MEP engineering by reducing time spent on repetitive design tasks.
+This project was developed during my internship as part of the NRC initiative. It leverages C# and the Revit API to streamline and automate the layout design process for modular and panelized buildings. The tool is intended to assist Building Engineering students and professionals in architecture, construction, and MEP engineering by reducing time spent on repetitive design tasks.
 
 ## 🔧 Technologies Used
 - **C#**
