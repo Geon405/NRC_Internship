@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP
 
-12-1473379169
+12787536009
 
-291402806805
+281246045850
 201-805938263
-ArrangementsWindow.xaml;ConnectivityMatrixWindow.xaml;EdgeWeightsWindow.xaml;LandInputWindow.xaml;LayoutSelectionWindow.xaml;ModuleCombinationsWindow.xaml;ModuleInputWindow.xaml;ModuleTypesWindow.xaml;PreferredAdjacencyWindow.xaml;RoomInputWindow.xaml;RoomInstancesWindow.xaml;SpacePriorityWindow.xaml;
+ArrangementSelectionWindow.xaml;ConnectivityMatrixWindow.xaml;EdgeWeightsWindow.xaml;LandInputWindow.xaml;LayoutSelectionWindow.xaml;ModuleCombinationsWindow.xaml;ModuleInputWindow.xaml;ModuleTypesWindow.xaml;PreferredAdjacencyWindow.xaml;RoomInputWindow.xaml;RoomInstancesWindow.xaml;SpacePriorityWindow.xaml;
 
 False
 

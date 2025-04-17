@@ -602,5 +602,5 @@ C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedA
 C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\SpacePriorityWindow.baml
 C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\SpacePriorityWindow.g.cs
 C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\clipper.dll
-C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\ArrangementsWindow.baml
-C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\ArrangementsWindow.g.cs
+C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\ArrangementSelectionWindow.baml
+C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\ArrangementSelectionWindow.g.cs

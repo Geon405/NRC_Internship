@@ -35,7 +35,7 @@
     <Compile Update="SpacePriorityWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="ArrangementsWindow.xaml.cs">
+    <Compile Update="ArrangementSelectionWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
@@ -73,7 +73,7 @@
     <Page Update="SpacePriorityWindow.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="ArrangementsWindow.xaml">
+    <Page Update="ArrangementSelectionWindow.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>

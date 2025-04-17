@@ -15,6 +15,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Controls;
 using System.Windows;
 using PanelizedAndModularFinal;
+using System.Diagnostics;
+using System.Windows.Interop;
 #endregion
 
 public static class GlobalData
@@ -363,8 +365,10 @@ namespace PanelizedAndModularFinal
                                             List<ModuleType> moduleTypes = typesWindow.ModuleTypes;
 
                                             bool arrangementCreated = false;
-                                            ModuleArrangement arranger = null;
 
+
+                                            ModuleArrangement2 arrangement2 = null;
+                                            ModuleArrangementResult chosen = null;
                                             while (!arrangementCreated)
                                             {
                                                 ModuleCombinationsWindow combWindow = new ModuleCombinationsWindow(moduleTypes, minWidth);
@@ -382,186 +386,127 @@ namespace PanelizedAndModularFinal
 
 
 
-                                                ModuleArrangement2 arrangement2 = new ModuleArrangement2(moduleTypes, selectedCombination, cropBox);
 
-                                                // Generate all valid arrangements.
-                                                List<ModuleArrangementResult> validArrangements = arrangement2.GetValidArrangements();
 
-                                                if (validArrangements.Count > 0)
+                                                double boundaryWidth = cropBox.Max.X - cropBox.Min.X;
+                                                double boundaryLength = cropBox.Max.Y - cropBox.Min.Y;
+
+                                                // 3) Hide Revit’s crop‐box outline
+                                                using (var tx = new Transaction(doc, "Hide Crop Region"))
                                                 {
-                                                    arrangement2.DisplayScenarioSummary();
+                                                    tx.Start();
+                                                    var view = doc.ActiveView;
+                                                    view.CropBoxActive = false;
+                                                    view.CropBoxVisible = false;
+                                                    tx.Commit();
+                                                }
 
-                                                    // Display each valid arrangement one-by-one.
-                                                    for (int i = 0; i < validArrangements.Count; i++)
+                                                // 4) Draw your own land boundary
+                                                var corners = new List<XYZ>
+                                                {
+                                                new XYZ(cropBox.Min.X, cropBox.Min.Y, 0),
+                                                new XYZ(cropBox.Max.X, cropBox.Min.Y, 0),
+                                                 new XYZ(cropBox.Max.X, cropBox.Max.Y, 0),
+                                                new XYZ(cropBox.Min.X, cropBox.Max.Y, 0),
+                                                new XYZ(cropBox.Min.X, cropBox.Min.Y, 0),
+                                                };
+
+                                                using (var tx2 = new Transaction(doc, "Draw Land Boundary"))
+                                                {
+                                                    tx2.Start();
+                                                    var view = doc.ActiveView;
+                                                    foreach (var pair in corners.Zip(corners.Skip(1), Tuple.Create))
                                                     {
-                                                        ModuleArrangementResult arr = validArrangements[i];
-                                                        // Draw the arrangement and get drawn elements.
-                                                        List<ElementId> drawnElementIds = arrangement2.DrawArrangement(doc, arr);
+                                                        Line edge = Line.CreateBound(pair.Item1, pair.Item2);
+                                                        doc.Create.NewDetailCurve(view, edge);
+                                                    }
+                                                    tx2.Commit();
+                                                }
 
-                                                        // Show a TaskDialog so that the user can view the arrangement and click OK.
-                                                        TaskDialog.Show("Arrangement Display", "Arrangement " + (i + 1) + " is displayed. Click OK to view the next arrangement.");
+                                                // 5) Generate unique arrangements
+                                                 arrangement2 = new ModuleArrangement2(moduleTypes, selectedCombination, cropBox);
+                                                List<ModuleArrangementResult> uniqueArrangements = arrangement2.GetValidArrangements();
 
-                                                        // Remove the drawn arrangement before showing the next one.
-                                                        using (Transaction t = new Transaction(doc, "Clear Arrangement"))
+                                                if (uniqueArrangements.Count == 0)
+                                                {
+                                                    TaskDialog.Show("Arrangement Error", "No valid arrangements found. Please try another combination.");
+                                                    return Result.Cancelled;
+                                                }
+
+                                                // 6) Show summary and unique count
+                                                arrangement2.DisplayScenarioSummary(uniqueArrangements);
+                                                arrangement2.DisplayUniqueCount(uniqueArrangements);
+
+
+
+
+                                                ///////////////////PORTION OF CODE TO DISPLAY ALL ARRANGEMENTS///////////////////////////////////
+
+                                                if (uniqueArrangements.Count > 0)
+                                                {
+                                  
+                                                    for (int i = 0; i < uniqueArrangements.Count; i++)
+                                                    {
+                                                        var arr = uniqueArrangements[i];
+                                                        int moduleCount1 = arr.PlacedModules.Count;
+
+                                                        // Draw modules
+                                                        List<ElementId> drawnIds1 = arrangement2.DrawArrangement(doc, arr);
+
+                                                        TaskDialog.Show(
+                                                            "Unique Arrangement",
+                                                            $"Arrangement {i + 1} of {uniqueArrangements.Count}\n" +
+                                                            $"Modules placed: {moduleCount1}\n\n" +
+                                                            "Click OK to see the next arrangement."
+                                                        );
+
+                                                        // Clear modules before next
+                                                        using (var t = new Transaction(doc, "Clear Modules"))
                                                         {
                                                             t.Start();
-                                                            doc.Delete(drawnElementIds);
+                                                            doc.Delete(drawnIds1);
                                                             t.Commit();
                                                         }
                                                     }
-                                                    arrangementCreated = true;
                                                 }
                                                 else
                                                 {
-                                                    TaskDialog.Show("Arrangement Error", "No valid arrangements were found. Please try another combination.");
+                                                    TaskDialog.Show("Arrangement Error", "No valid arrangements found. Please try another combination.");
                                                 }
 
+                                                ///////////////////PORTION OF CODE TO DISPLAY ALL ARRANGEMENTS///////////////////////////////////
 
 
 
 
 
 
+                                                // 7) Let the user pick one arrangement
+                                                var pickWin = new ArrangementSelectionWindow(uniqueArrangements);
 
+                                               
+                                                var helper = new WindowInteropHelper(pickWin);
+                                                helper.Owner = Process.GetCurrentProcess().MainWindowHandle;
 
+                                                bool? picked = pickWin.ShowDialog();
+                                                if (picked != true)
+                                                {
+                                                    // User cancelled selection
+                                                    return Result.Cancelled;
+                                                }
 
+                                                // 8) Draw only the chosen arrangement
+                                                chosen = pickWin.SelectedArrangement;
+                                                int moduleCount = chosen.PlacedModules.Count;
 
+                                                List<ElementId> drawnIds = arrangement2.DrawArrangement(doc, chosen);
 
 
 
 
 
-                                                //////////////////////////////////////////////////////////////////////////////////////
-                                                ////////////////////////////////////////////////////////////////////////////////////////
-                                                ////////////////////////////////////////////////////////////////////////////////////////
-                                                ///////////////////////////////////////////////////////////////////////////////////////
-                                                ////////////////////////////////////////////////////////////////////////////////////////
-                                                ///////////////////////////////////////////////////////////////////////////////////////
-                                                //MODULE COMBINATION STARTS HERE!!!!!!!///////////////////////////////////
 
 
-
-                                                //ModuleArrangement1 arranger1 = new ModuleArrangement1();
-                                                //arranger1.ExecuteArrangement(doc, moduleTypes, selectedCombination);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                                                //ArrangementsWindow arrWindow = new ArrangementsWindow(doc, moduleTypes, selectedCombination);
-                                                //bool? dialogResult1 = arrWindow.ShowDialog();
-                                                //if (dialogResult1 == true)
-                                                //{
-                                                //    // The user selected an arrangement and it has been drawn in red.
-                                                //    // You can also retrieve the selected arrangement if needed:
-                                                //    List<XYZ[]> selectedArrangement = arrWindow.SelectedArrangement;
-                                                //    // Continue with further processing if necessary.
-                                                //}
-
-
-
-
-
-                                                //BELOW IS TO DISPLAY ALL MODULES, BUT THIS IS BEFORE USING LEILA DOC
-
-
-                                                //ModuleArrangement arrangementHelper = new ModuleArrangement();
-
-                                                //List<List<XYZ[]>> allArrangements = arrangementHelper.CreateAllSquareLikeArrangements(doc, selectedCombination, moduleTypes);
-
-
-
-
-                                                //TaskDialog.Show("count", allArrangements.Count.ToString());
-                                                //// Loop through each arrangement.
-                                                //foreach (List<XYZ[]> arrangement in allArrangements)
-                                                //{
-                                                //    // Create red detail curves for each rectangle in the arrangement.
-                                                //    List<ElementId> detailCurveIds = new List<ElementId>();
-                                                //    using (Transaction trans1 = new Transaction(doc, "Display Arrangement"))
-                                                //    {
-                                                //        trans1.Start();
-                                                //        foreach (XYZ[] rect in arrangement)
-                                                //        {
-                                                //            // Create 4 edges for the module rectangle.
-                                                //            DetailCurve dc1 = doc.Create.NewDetailCurve(doc.ActiveView, Line.CreateBound(rect[0], rect[1]));
-                                                //            DetailCurve dc2 = doc.Create.NewDetailCurve(doc.ActiveView, Line.CreateBound(rect[1], rect[2]));
-                                                //            DetailCurve dc3 = doc.Create.NewDetailCurve(doc.ActiveView, Line.CreateBound(rect[2], rect[3]));
-                                                //            DetailCurve dc4 = doc.Create.NewDetailCurve(doc.ActiveView, Line.CreateBound(rect[3], rect[0]));
-
-                                                //            detailCurveIds.Add(dc1.Id);
-                                                //            detailCurveIds.Add(dc2.Id);
-                                                //            detailCurveIds.Add(dc3.Id);
-                                                //            detailCurveIds.Add(dc4.Id);
-
-                                                //            // Set each detail curve's line color to red.
-                                                //            OverrideGraphicSettings ogs = new OverrideGraphicSettings();
-                                                //            ogs.SetProjectionLineColor(new Autodesk.Revit.DB.Color(255, 0, 0));
-                                                //            doc.ActiveView.SetElementOverrides(dc1.Id, ogs);
-                                                //            doc.ActiveView.SetElementOverrides(dc2.Id, ogs);
-                                                //            doc.ActiveView.SetElementOverrides(dc3.Id, ogs);
-                                                //            doc.ActiveView.SetElementOverrides(dc4.Id, ogs);
-                                                //        }
-                                                //        trans1.Commit();
-                                                //    }
-
-                                                //    // Prompt user to review the current arrangement.
-                                                //    TaskDialog td = new TaskDialog("Arrangement Display");
-                                                //    td.MainInstruction = "Review current arrangement.";
-                                                //    td.MainContent = "Click OK to proceed to the next arrangement.";
-                                                //    td.Show();
-
-                                                //    // Delete the displayed detail curves before showing the next arrangement.
-                                                //    using (Transaction trans1 = new Transaction(doc, "Remove Arrangement Display"))
-                                                //    {
-                                                //        trans1.Start();
-                                                //        foreach (ElementId id in detailCurveIds)
-                                                //        {
-                                                //            try { doc.Delete(id); }
-                                                //            catch (Exception) { /* In case element is already deleted */ }
-                                                //        }
-                                                //        trans1.Commit();
-                                                //    }
-                                                //}
-
-                                                //TaskDialog.Show("Complete", "All arrangements have been displayed.");
-
-
-
-                                                //ABOVE IS BEFORE LEILA DOC
-
-
-
-
-
-
-                                                //ArrangementsWindow arr1 = new ArrangementsWindow(doc, moduleTypes, selectedCombination, 10);
-                                                //bool? dialogResult1 = arr1.ShowDialog();
-
-                                                //// If the user clicked OK and made a selection:
-                                                //if (dialogResult1 == true)
-                                                //{
-                                                //    // Retrieve the selected arrangement (module rectangles).
-                                                //    List<XYZ[]> selectedArrangement = arr1.SelectedArrangement;
-                                                //    // Optionally, perform further processing with the selection.
-
-
-                                                //}
 
 
                                                 arrangementCreated = true;
@@ -599,8 +544,8 @@ namespace PanelizedAndModularFinal
                                             {
                                                 tx.Start();
 
-                                                XYZ overallBoundaryCenter = arranger.OverallCenter;
-                                                CenterLayoutOnOverallBoundary(savedSpaces, overallBoundaryCenter);
+                                                //XYZ overallBoundaryCenter = arranger.OverallCenter;
+                                                //CenterLayoutOnOverallBoundary(savedSpaces, overallBoundaryCenter);
 
 
                                                 // Create circles for each saved space
@@ -637,6 +582,29 @@ namespace PanelizedAndModularFinal
                                             GlobalData.Step1Elements.Clear();
 
                                             // --- STEP 3: Create Trimmed Square Arrangement (SquareArrangementOnly) ---
+
+
+
+
+
+
+
+
+
+
+                                            // Overlay the square grid inside each module and get cell areas
+                                            List<double> cellAreas;
+                                            List<ElementId> gridLines = arrangement2.DrawModuleGrids(doc, chosen, out cellAreas);
+
+                                            // 8) Inform the user
+                                            TaskDialog.Show(
+                                                "Grid Overlay",
+                                                $"Each cell area: {cellAreas.First():F2} sq units."
+                                            );
+
+
+
+
 
 
 
@@ -692,37 +660,41 @@ namespace PanelizedAndModularFinal
                                             /////////////////////////////////////////////////////////////////////////////////
                                             ///
 
+
+
+
+
                                             // Get the polygon loop from your boundary lines
-                                            List<Line> boundaryLines = arranger.GetPerimeterOutline();
-                                            List<Line> orderedLines = ReorderLines(boundaryLines);
-                                            CurveLoop polygonLoop = new CurveLoop();
-                                            foreach (Line line in orderedLines)
-                                            {
-                                                polygonLoop.Append(line);
-                                            }
+                                            //List<Line> boundaryLines = arranger.GetPerimeterOutline();
+                                            //List<Line> orderedLines = ReorderLines(boundaryLines);
+                                            //CurveLoop polygonLoop = new CurveLoop();
+                                            //foreach (Line line in orderedLines)
+                                            //{
+                                            //    polygonLoop.Append(line);
+                                            //}
 
-                                            // Start a transaction to create detail curves in the active view
-                                            using (Transaction tx = new Transaction(doc, "Draw Green Polygon"))
-                                            {
-                                                tx.Start();
-                                                // Create a sketch plane (using the XY plane in this example)
-                                                SketchPlane sketchPlane = SketchPlane.Create(doc, Plane.CreateByNormalAndOrigin(XYZ.BasisZ, XYZ.Zero));
+                                            //// Start a transaction to create detail curves in the active view
+                                            //using (Transaction tx = new Transaction(doc, "Draw Green Polygon"))
+                                            //{
+                                            //    tx.Start();
+                                            //    // Create a sketch plane (using the XY plane in this example)
+                                            //    SketchPlane sketchPlane = SketchPlane.Create(doc, Plane.CreateByNormalAndOrigin(XYZ.BasisZ, XYZ.Zero));
 
-                                                // For each curve in the polygon, create a detail curve and set its color
-                                                foreach (Curve curve in polygonLoop)
-                                                {
-                                                    DetailCurve detailCurve = doc.Create.NewDetailCurve(doc.ActiveView, curve);
+                                            //    // For each curve in the polygon, create a detail curve and set its color
+                                            //    foreach (Curve curve in polygonLoop)
+                                            //    {
+                                            //        DetailCurve detailCurve = doc.Create.NewDetailCurve(doc.ActiveView, curve);
 
-                                                    // Setup override settings for green color (RGB: 0,255,0)
-                                                    OverrideGraphicSettings ogs = new OverrideGraphicSettings();
-                                                    ogs.SetProjectionLineColor(new Autodesk.Revit.DB.Color(0, 255, 0));
+                                            //        // Setup override settings for green color (RGB: 0,255,0)
+                                            //        OverrideGraphicSettings ogs = new OverrideGraphicSettings();
+                                            //        ogs.SetProjectionLineColor(new Autodesk.Revit.DB.Color(0, 255, 0));
 
 
-                                                    // Apply the override to the detail curve
-                                                    doc.ActiveView.SetElementOverrides(detailCurve.Id, ogs);
-                                                }
-                                                tx.Commit();
-                                            }
+                                            //        // Apply the override to the detail curve
+                                            //        doc.ActiveView.SetElementOverrides(detailCurve.Id, ogs);
+                                            //    }
+                                            //    tx.Commit();
+                                            //}
 
                                             // 3. Trim squares and display the resulting shapes.
                                             //SquareTrimmer2 trimmer = new SquareTrimmer2(doc, polygonLoop);
