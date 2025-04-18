@@ -28,6 +28,8 @@ namespace PanelizedAndModularFinal
 
         public double SquareArea { get; set; }
 
+        public double SquareTrimmedArea { get; set; }
+
         // Constructor to initialize the space node with provided values.
         public SpaceNode(string name, string function, double area, XYZ position, System.Windows.Media.Color wpfColor)
         {

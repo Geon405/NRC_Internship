@@ -32,6 +32,10 @@
 	  <EmbeddedResource Remove="Resources\**" />
 	  <None Remove="Resources\**" />
 	  <Page Remove="Resources\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="clipper_standard" Version="0.0.1" />
 	</ItemGroup>	
 
 	<ItemGroup>

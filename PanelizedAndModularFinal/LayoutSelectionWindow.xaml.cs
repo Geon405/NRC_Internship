@@ -47,7 +47,7 @@ namespace PanelizedAndModularFinal
             {
                 SelectedLayout = selectedPreview.Layout;
 
-             
+
 
                 DialogResult = true;
                 Close();
@@ -141,6 +141,3 @@ namespace PanelizedAndModularFinal
         }
     }
 }
-
-
-

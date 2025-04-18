@@ -10,6 +10,8 @@ namespace PanelizedAndModularFinal
         // Public property to store module types for access in other classes.
         public List<string> ModuleTypeList { get; private set; }
 
+
+       
         // Change the property type to hold ModuleType objects.
         public List<ModuleType> ModuleTypes { get; private set; }
 
@@ -22,6 +24,10 @@ namespace PanelizedAndModularFinal
             {
                 MessageBox.Show("Maximum height must be at least equal to the minimum width.",
                                 "Input Error", MessageBoxButton.OK, MessageBoxImage.Error);
+
+
+
+
                 this.Close();
                 return;
             }

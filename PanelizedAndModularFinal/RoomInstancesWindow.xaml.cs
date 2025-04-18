@@ -169,8 +169,8 @@ namespace PanelizedAndModularFinal
         private void BackButton_Click(object sender, RoutedEventArgs e)
         {
             UserWentBack = true;
-            this.DialogResult = false; 
-            Close(); 
+            this.DialogResult = false;
+            Close();
         }
     }
 }

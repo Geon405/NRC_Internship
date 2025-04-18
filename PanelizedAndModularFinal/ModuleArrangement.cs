@@ -35,14 +35,11 @@ namespace PanelizedAndModularFinal
 
 
 
-        public void CreateSquareLikeArrangement(Document doc, string selectedCombination, List<ModuleType> moduleTypes)
+        public List<List<XYZ[]>> CreateAllSquareLikeArrangements(Document doc, string selectedCombination, List<ModuleType> moduleTypes)
         {
-            // 1. Parse combination and collect modules
+            // Parse combination and collect modules.
             Dictionary<int, int> typeCounts = ParseCombination(selectedCombination);
             List<ModuleType> modulesToPlace = new List<ModuleType>();
-            double landWidth = GlobalData.landWidth;
-            double landHeight = GlobalData.landHeight;
-
             foreach (var kvp in typeCounts)
             {
                 int moduleTypeIndex = kvp.Key;
@@ -51,131 +48,118 @@ namespace PanelizedAndModularFinal
                 for (int i = 0; i < count; i++)
                     modulesToPlace.Add(modType);
             }
+            // Place bigger modules first.
+            modulesToPlace = modulesToPlace.OrderByDescending(mod => mod.Length * mod.Width).ToList();
 
-            // 2. Prepare placement
-            double offsetX = 0.0, offsetY = 0.0, currentRowHeight = 0.0;
-            List<XYZ[]> placedRectangles = new List<XYZ[]>();
+            double landWidth = GlobalData.landWidth;
+            double landHeight = GlobalData.landHeight;
+            List<List<XYZ[]>> solutions = new List<List<XYZ[]>>();
+            HashSet<string> uniqueSignatures = new HashSet<string>();
+            List<XYZ[]> currentArrangement = new List<XYZ[]>();
 
-            // 3. Place modules
-            foreach (var mod in modulesToPlace)
+            // Create a unique signature for each arrangement.
+            string GetArrangementSignature(List<XYZ[]> arrangement)
             {
-                double dimX1 = mod.Length, dimY1 = mod.Width;
-                double dimX2 = mod.Width, dimY2 = mod.Length;
-                bool placed = false;
-                double chosenX = 0, chosenY = 0;
-
-                bool FitsInRow(double testX, double testY)
+                List<string> rectSignatures = new List<string>();
+                foreach (XYZ[] rect in arrangement)
                 {
-                    if (offsetX + testX > landWidth) return false;
-                    if (currentRowHeight > 0 && Math.Abs(testY - currentRowHeight) > 1e-9) return false;
-                    if (offsetY + testY > landHeight) return false;
-                    return true;
+                    string sig = string.Format("{0:F4},{1:F4};{2:F4},{3:F4};{4:F4},{5:F4};{6:F4},{7:F4}",
+                        rect[0].X, rect[0].Y,
+                        rect[1].X, rect[1].Y,
+                        rect[2].X, rect[2].Y,
+                        rect[3].X, rect[3].Y);
+                    rectSignatures.Add(sig);
                 }
+                rectSignatures.Sort();
+                return string.Join("|", rectSignatures);
+            }
 
-                // Default orientation
-                if (!placed && FitsInRow(dimX1, dimY1))
+            // Recursive method to place modules.
+            void PlaceModule(int index, double offsetX, double offsetY, double currentRowHeight)
+            {
+                if (index == modulesToPlace.Count)
                 {
-                    chosenX = dimX1;
-                    chosenY = dimY1;
-                    placed = true;
-                }
-                // Rotated orientation
-                if (!placed && FitsInRow(dimX2, dimY2))
-                {
-                    chosenX = dimX2;
-                    chosenY = dimY2;
-                    placed = true;
-                }
-
-                // Start new row if needed
-                if (!placed)
-                {
-                    offsetY += currentRowHeight;
-                    offsetX = 0.0;
-                    currentRowHeight = 0.0;
-
-                    if (FitsInRow(dimX1, dimY1))
+                    if (offsetY + currentRowHeight <= landHeight)
                     {
-                        chosenX = dimX1;
-                        chosenY = dimY1;
-                        placed = true;
+                        var arrangementCopy = currentArrangement
+                            .Select(rect => rect.Select(pt => new XYZ(pt.X, pt.Y, pt.Z)).ToArray())
+                            .ToList();
+                        CenterFinalOutputInViewBox(arrangementCopy, doc.ActiveView.CropBox);
+                        string signature = GetArrangementSignature(arrangementCopy);
+                        if (!uniqueSignatures.Contains(signature))
+                        {
+                            uniqueSignatures.Add(signature);
+                            solutions.Add(arrangementCopy);
+                        }
                     }
-                    else if (FitsInRow(dimX2, dimY2))
-                    {
-                        chosenX = dimX2;
-                        chosenY = dimY2;
-                        placed = true;
-                    }
-                    else
-                        throw new Exception("Module doesn't fit in new row.");
+                    return;
                 }
 
-                // Record rectangle corners
-                XYZ p1 = new XYZ(offsetX, offsetY, 0);
-                XYZ p2 = new XYZ(offsetX + chosenX, offsetY, 0);
-                XYZ p3 = new XYZ(offsetX + chosenX, offsetY + chosenY, 0);
-                XYZ p4 = new XYZ(offsetX, offsetY + chosenY, 0);
-                placedRectangles.Add(new XYZ[] { p1, p2, p3, p4 });
+                ModuleType mod = modulesToPlace[index];
+                double[] dimsX = { mod.Length, mod.Width };
+                double[] dimsY = { mod.Width, mod.Length };
 
-                offsetX += chosenX;
-                if (Math.Abs(currentRowHeight) < 1e-9)
-                    currentRowHeight = chosenY;
-            }
-
-            // 4. Center the layout in the active view’s crop box
-            BoundingBoxXYZ cropBox = doc.ActiveView.CropBox;
-            CenterFinalOutputInViewBox(placedRectangles, cropBox);
-
-            // 4a. Compute arrangement boundary after centering
-            double overallMinX = double.MaxValue;
-            double overallMinY = double.MaxValue;
-            double overallMaxX = double.MinValue;
-            double overallMaxY = double.MinValue;
-
-            foreach (XYZ[] rect in placedRectangles)
-            {
-                double minX = Math.Min(rect[0].X, rect[2].X);
-                double minY = Math.Min(rect[0].Y, rect[2].Y);
-                double maxX = Math.Max(rect[0].X, rect[2].X);
-                double maxY = Math.Max(rect[0].Y, rect[2].Y);
-
-                overallMinX = Math.Min(overallMinX, minX);
-                overallMinY = Math.Min(overallMinY, minY);
-                overallMaxX = Math.Max(overallMaxX, maxX);
-                overallMaxY = Math.Max(overallMaxY, maxY);
-            }
-            _overallMinX = overallMinX;
-            _overallMinY = overallMinY;
-            _overallMaxX = overallMaxX;
-            _overallMaxY = overallMaxY;
-
-            // ** Store these rectangles so we can compute perimeter later **
-            _placedRectangles = placedRectangles;
-
-            // 5. Create module solids + grid in a transaction
-            using (Transaction trans = new Transaction(doc, "Create Modules + Grid"))
-            {
-                trans.Start();
-
-                // Create each module solid
-                foreach (var rect in placedRectangles)
+                // Try to place the module in the current row in both orientations.
+                for (int orientation = 0; orientation < 2; orientation++)
                 {
-                    CreateModuleSolid(doc, rect[0], rect[1], rect[2], rect[3], 1.0);
+                    double chosenX = dimsX[orientation];
+                    double chosenY = dimsY[orientation];
+                    bool fitsHorizontally = (offsetX + chosenX <= landWidth);
+                    // Allow different module heights by taking the max of currentRowHeight and chosenY.
+                    bool fitsVertically = (offsetY + Math.Max(currentRowHeight, chosenY) <= landHeight);
+
+                    if (fitsHorizontally && fitsVertically)
+                    {
+                        // Create rectangle at current row.
+                        XYZ p1 = new XYZ(offsetX, offsetY, 0);
+                        XYZ p2 = new XYZ(offsetX + chosenX, offsetY, 0);
+                        XYZ p3 = new XYZ(offsetX + chosenX, offsetY + chosenY, 0);
+                        XYZ p4 = new XYZ(offsetX, offsetY + chosenY, 0);
+                        currentArrangement.Add(new XYZ[] { p1, p2, p3, p4 });
+
+                        double newOffsetX = offsetX + chosenX;
+                        double newCurrentRowHeight = Math.Max(currentRowHeight, chosenY);
+                        PlaceModule(index + 1, newOffsetX, offsetY, newCurrentRowHeight);
+                        currentArrangement.RemoveAt(currentArrangement.Count - 1);
+                    }
                 }
 
-                // (Optional) Create boundary or any other geometry you need
-                // double gap = 1;
-                // SavedBoundaryElementIds = CreateOrthogonalBoundary(doc, placedRectangles, gap, 0, 0);
+                // If current row isn't empty, try starting a new row.
+                if (offsetX > 0)
+                {
+                    double newOffsetY = offsetY + currentRowHeight;
+                    if (newOffsetY < landHeight)
+                    {
+                        for (int orientation = 0; orientation < 2; orientation++)
+                        {
+                            double chosenX = dimsX[orientation];
+                            double chosenY = dimsY[orientation];
+                            bool fitsHorizontallyNew = (chosenX <= landWidth);
+                            bool fitsVerticallyNew = (newOffsetY + chosenY <= landHeight);
 
-                // Create grid cells
-                SavedGridElementIds = CreateGridCellsInsideModules(doc, placedRectangles);
-
-                trans.Commit();
+                            if (fitsHorizontallyNew && fitsVerticallyNew)
+                            {
+                                // Place module at new row starting at x = 0.
+                                XYZ p1 = new XYZ(0, newOffsetY, 0);
+                                XYZ p2 = new XYZ(chosenX, newOffsetY, 0);
+                                XYZ p3 = new XYZ(chosenX, newOffsetY + chosenY, 0);
+                                XYZ p4 = new XYZ(0, newOffsetY + chosenY, 0);
+                                currentArrangement.Add(new XYZ[] { p1, p2, p3, p4 });
+                                PlaceModule(index + 1, chosenX, newOffsetY, chosenY);
+                                currentArrangement.RemoveAt(currentArrangement.Count - 1);
+                            }
+                        }
+                    }
+                }
             }
 
-            // 6. Compute center of the final output
-            OverallCenter = ComputeFinalOutputCenter(placedRectangles);
+            PlaceModule(0, 0.0, 0.0, 0.0);
+            return solutions;
         }
+
+
+
+
 
 
         // <summary>
@@ -288,21 +272,7 @@ namespace PanelizedAndModularFinal
             return new XYZ(centerX, centerY, 0);
         }
 
-        //private double ComputeCellSize(List<XYZ[]> placedRectangles)
-        //{
-        //    double minDimension = double.MaxValue;
-        //    foreach (var rect in placedRectangles)
-        //    {
-        //        double width = Math.Abs(rect[1].X - rect[0].X);
-        //        double height = Math.Abs(rect[3].Y - rect[0].Y);
-        //        double localMin = Math.Min(width, height);
-        //        if (localMin < minDimension)
-        //            minDimension = localMin;
-
-        //    }
-        //    return minDimension / 3.0;
-        //}
-
+  
         private List<ElementId> CreateGridCellsInsideModules(Document doc, List<XYZ[]> placedRectangles)
         {
             List<ElementId> gridElementIds = new List<ElementId>();
@@ -369,23 +339,7 @@ namespace PanelizedAndModularFinal
 
 
 
-        //private bool IsCellFullyInsideAnyModule(double cellMinX, double cellMinY, double cellMaxX, double cellMaxY, List<XYZ[]> placedRectangles)
-        //{
-        //    foreach (XYZ[] rect in placedRectangles)
-        //    {
-        //        double minX = Math.Min(rect[0].X, rect[2].X);
-        //        double minY = Math.Min(rect[0].Y, rect[2].Y);
-        //        double maxX = Math.Max(rect[0].X, rect[2].X);
-        //        double maxY = Math.Max(rect[0].Y, rect[2].Y);
-
-        //        if (cellMinX >= minX && cellMaxX <= maxX &&
-        //            cellMinY >= minY && cellMaxY <= maxY)
-        //        {
-        //            return true;
-        //        }
-        //    }
-        //    return false;
-        //}
+      
 
         private void CreateModuleSolid(Document doc, XYZ p1, XYZ p2, XYZ p3, XYZ p4, double height)
         {
@@ -431,88 +385,8 @@ namespace PanelizedAndModularFinal
             return result;
         }
 
-        //private List<ElementId> CreateOrthogonalBoundary(Document doc, List<XYZ[]> placedRectangles, double gap, double shiftX, double shiftY)
-        //{
-        //    List<Segment> allEdges = new List<Segment>();
-        //    foreach (var rect in placedRectangles)
-        //    {
-        //        XYZ p1 = rect[0].Add(new XYZ(shiftX, shiftY, 0));
-        //        XYZ p2 = rect[1].Add(new XYZ(shiftX, shiftY, 0));
-        //        XYZ p3 = rect[2].Add(new XYZ(shiftX, shiftY, 0));
-        //        XYZ p4 = rect[3].Add(new XYZ(shiftX, shiftY, 0));
 
-        //        double minX = Math.Min(p1.X, p3.X);
-        //        double maxX = Math.Max(p1.X, p3.X);
-        //        double minY = Math.Min(p1.Y, p3.Y);
-        //        double maxY = Math.Max(p1.Y, p3.Y);
 
-        //        allEdges.Add(new Segment(new XYZ(minX, minY, 0), new XYZ(maxX, minY, 0)));
-        //        allEdges.Add(new Segment(new XYZ(minX, maxY, 0), new XYZ(maxX, maxY, 0)));
-        //        allEdges.Add(new Segment(new XYZ(minX, minY, 0), new XYZ(minX, maxY, 0)));
-        //        allEdges.Add(new Segment(new XYZ(maxX, minY, 0), new XYZ(maxX, maxY, 0)));
-        //    }
-
-        //    List<Segment> boundarySegments = SubtractOverlaps(allEdges);
-        //    List<Segment> offsetSegments = new List<Segment>();
-        //    double shortTol = doc.Application.ShortCurveTolerance;
-
-        //    foreach (Segment seg in boundarySegments)
-        //    {
-        //        bool horizontal = Math.Abs(seg.Start.Y - seg.End.Y) < 1e-9;
-        //        XYZ mid = (seg.Start + seg.End) / 2.0;
-        //        XYZ normal = horizontal ? new XYZ(0, 1, 0) : new XYZ(1, 0, 0);
-
-        //        if (IsPointInsideAnyRect(mid + normal * 0.01, placedRectangles, shiftX, shiftY))
-        //            normal = normal.Negate();
-
-        //        XYZ offStart = seg.Start + normal * gap;
-        //        XYZ offEnd = seg.End + normal * gap;
-
-        //        if ((offEnd - offStart).GetLength() > shortTol)
-        //            offsetSegments.Add(new Segment(offStart, offEnd));
-        //    }
-
-        //    Plane boundaryPlane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, XYZ.Zero);
-        //    SketchPlane boundarySketch = SketchPlane.Create(doc, boundaryPlane);
-        //    OverrideGraphicSettings ogs = new OverrideGraphicSettings();
-        //    ogs.SetProjectionLineColor(new Autodesk.Revit.DB.Color(255, 0, 0));
-
-        //    List<ElementId> boundaryDetailCurveIds = new List<ElementId>();
-        //    foreach (Segment seg in offsetSegments)
-        //    {
-        //        double length = (seg.End - seg.Start).GetLength();
-        //        if (length < shortTol) continue;
-
-        //        Line line = Line.CreateBound(seg.Start, seg.End);
-        //        if (line.Length < shortTol) continue;
-
-        //        DetailCurve dc = doc.Create.NewDetailCurve(doc.ActiveView, line);
-        //        doc.ActiveView.SetElementOverrides(dc.Id, ogs);
-        //        boundaryDetailCurveIds.Add(dc.Id);
-        //    }
-        //    return boundaryDetailCurveIds;
-        //}
-
-        private bool IsPointInsideAnyRect(XYZ pt, List<XYZ[]> rects, double shiftX, double shiftY)
-        {
-            foreach (var rect in rects)
-            {
-                XYZ p1 = rect[0].Add(new XYZ(shiftX, shiftY, 0));
-                XYZ p3 = rect[2].Add(new XYZ(shiftX, shiftY, 0));
-
-                double minX = Math.Min(p1.X, p3.X);
-                double maxX = Math.Max(p1.X, p3.X);
-                double minY = Math.Min(p1.Y, p3.Y);
-                double maxY = Math.Max(p1.Y, p3.Y);
-
-                if (pt.X >= minX - 1e-9 && pt.X <= maxX + 1e-9 &&
-                    pt.Y >= minY - 1e-9 && pt.Y <= maxY + 1e-9)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
 
         private List<Segment> SubtractOverlaps(List<Segment> allEdges)
         {
