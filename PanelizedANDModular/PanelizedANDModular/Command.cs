@@ -63,6 +63,7 @@ namespace PanelizedAndModularFinal
                 {
                     // --- Step 1: Land Area Input and Crop Region Update ---
                     LandInputWindow landWindow = new LandInputWindow();
+
                     bool? landResult = landWindow.ShowDialog();
                     if (landResult != true)
                     {
@@ -109,12 +110,18 @@ namespace PanelizedAndModularFinal
                         trans.Commit();
                     }
 
+                    List<RoomTypeRow> userSelections = null;
+                    List<RoomInstanceRow> instanceRows = null;
+
                     while (true)
                     {
                         double availableLayoutArea = userWidth * userHeight;
                         GlobalData.LandArea = availableLayoutArea;
                         // --- Step 1: Room Input and Room Instances Creation ---
-                        RoomInputWindow firstWindow = new RoomInputWindow();
+                        RoomInputWindow firstWindow = userSelections == null 
+                            ? new RoomInputWindow() 
+                            : new RoomInputWindow(userSelections);
+
                         bool? firstResult = firstWindow.ShowDialog();
                         if (firstResult != true)
                         {
@@ -126,23 +133,21 @@ namespace PanelizedAndModularFinal
                             return Result.Cancelled;
                         }
 
-                        List<RoomTypeRow> userSelections = firstWindow.RoomTypes;
-                        List<RoomInstanceRow> instanceRows = new List<RoomInstanceRow>();
+                        userSelections = firstWindow.RoomTypes;
+                        instanceRows = new List<RoomInstanceRow>();
 
                         foreach (var row in userSelections)
                         {
                             if (row.Quantity <= 0) continue;
                             for (int i = 0; i < row.Quantity; i++)
                             {
-                                string instanceName = $"{row.Name} {i + 1}";
-                                var instance = new RoomInstanceRow
+                                instanceRows.Add(new RoomInstanceRow
                                 {
                                     RoomType = row.Name,
-                                    Name = instanceName,
+                                    Name = $"{row.Name} {i + 1}",
                                     WpfColor = row.Color,
-                                    Area = 0.0 // Default area
-                                };
-                                instanceRows.Add(instance);
+                                    Area = 0.0
+                                });
                             }
                         }
 
