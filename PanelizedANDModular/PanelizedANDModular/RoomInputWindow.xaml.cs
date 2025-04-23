@@ -47,6 +47,13 @@ namespace PanelizedAndModularFinal
             RoomsDataGrid.ItemsSource = RoomTypes;
         }
 
+        // Overloaded constructor: reuse existing list when coming back 
+        public RoomInputWindow(List<RoomTypeRow> existing) : this()
+        {
+            RoomTypes = existing;
+            RoomsDataGrid.ItemsSource = RoomTypes;
+        }
+
         private void OkButton_Click(object sender, RoutedEventArgs e)
         {
             this.DialogResult = true; // user clicked OK

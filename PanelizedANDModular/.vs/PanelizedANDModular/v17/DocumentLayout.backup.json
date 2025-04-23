@@ -1,24 +1,24 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\CRR_Internship\\PanelizedANDModular\\",
+  "WorkspaceRootPath": "C:\\Users\\martinchan\\source\\repos\\CRR1\\CRR_Internship\\PanelizedANDModular\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{2E481EBD-BDA0-4F8E-A9FD-1B070EAB5E28}|PanelizedANDModular\\PanelizedANDModular.csproj|c:\\crr_internship\\panelizedandmodular\\panelizedandmodular\\command.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{2E481EBD-BDA0-4F8E-A9FD-1B070EAB5E28}|PanelizedANDModular\\PanelizedANDModular.csproj|c:\\users\\martinchan\\source\\repos\\crr1\\crr_internship\\panelizedandmodular\\panelizedandmodular\\command.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{2E481EBD-BDA0-4F8E-A9FD-1B070EAB5E28}|PanelizedANDModular\\PanelizedANDModular.csproj|solutionrelative:panelizedandmodular\\command.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{2E481EBD-BDA0-4F8E-A9FD-1B070EAB5E28}|PanelizedANDModular\\PanelizedANDModular.csproj|c:\\crr_internship\\panelizedandmodular\\panelizedandmodular\\app.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{2E481EBD-BDA0-4F8E-A9FD-1B070EAB5E28}|PanelizedANDModular\\PanelizedANDModular.csproj|c:\\users\\martinchan\\source\\repos\\crr1\\crr_internship\\panelizedandmodular\\panelizedandmodular\\app.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{2E481EBD-BDA0-4F8E-A9FD-1B070EAB5E28}|PanelizedANDModular\\PanelizedANDModular.csproj|solutionrelative:panelizedandmodular\\app.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{2E481EBD-BDA0-4F8E-A9FD-1B070EAB5E28}|PanelizedANDModular\\PanelizedANDModular.csproj|c:\\crr_internship\\panelizedandmodular\\panelizedandmodular\\panelizedandmodular.addin||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
+      "AbsoluteMoniker": "D:0:0:{2E481EBD-BDA0-4F8E-A9FD-1B070EAB5E28}|PanelizedANDModular\\PanelizedANDModular.csproj|c:\\users\\martinchan\\source\\repos\\crr1\\crr_internship\\panelizedandmodular\\panelizedandmodular\\panelizedandmodular.addin||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
       "RelativeMoniker": "D:0:0:{2E481EBD-BDA0-4F8E-A9FD-1B070EAB5E28}|PanelizedANDModular\\PanelizedANDModular.csproj|solutionrelative:panelizedandmodular\\panelizedandmodular.addin||{FA3CD31E-987B-443A-9B81-186104E8DAC1}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{2E481EBD-BDA0-4F8E-A9FD-1B070EAB5E28}|PanelizedANDModular\\PanelizedANDModular.csproj|c:\\crr_internship\\panelizedandmodular\\panelizedandmodular\\panelizedandmodular.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|",
+      "AbsoluteMoniker": "D:0:0:{2E481EBD-BDA0-4F8E-A9FD-1B070EAB5E28}|PanelizedANDModular\\PanelizedANDModular.csproj|c:\\users\\martinchan\\source\\repos\\crr1\\crr_internship\\panelizedandmodular\\panelizedandmodular\\panelizedandmodular.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|",
       "RelativeMoniker": "D:0:0:{2E481EBD-BDA0-4F8E-A9FD-1B070EAB5E28}|PanelizedANDModular\\PanelizedANDModular.csproj|solutionrelative:panelizedandmodular\\panelizedandmodular.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
     }
   ],
@@ -36,33 +36,31 @@
               "DocumentIndex": 1,
               "Title": "Microsoft.Common.CurrentVersion.targets",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets",
-              "RelativeDocumentMoniker": "..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets",
               "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets",
-              "RelativeToolTip": "..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets",
+              "RelativeToolTip": "..\\..\\..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets",
               "ViewState": "AgIAAE0JAAAAAAAAAAAMwGwJAAAEAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003801|",
-              "WhenOpened": "2025-02-12T18:53:47.613Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-12T18:53:47.613Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 4,
               "Title": "PanelizedANDModular",
-              "DocumentMoniker": "C:\\CRR_Internship\\PanelizedANDModular\\PanelizedANDModular\\PanelizedANDModular.csproj",
+              "DocumentMoniker": "C:\\Users\\martinchan\\source\\repos\\CRR1\\CRR_Internship\\PanelizedANDModular\\PanelizedANDModular\\PanelizedANDModular.csproj",
               "RelativeDocumentMoniker": "PanelizedANDModular\\PanelizedANDModular.csproj",
-              "ToolTip": "C:\\CRR_Internship\\PanelizedANDModular\\PanelizedANDModular\\PanelizedANDModular.csproj",
+              "ToolTip": "C:\\Users\\martinchan\\source\\repos\\CRR1\\CRR_Internship\\PanelizedANDModular\\PanelizedANDModular\\PanelizedANDModular.csproj",
               "RelativeToolTip": "PanelizedANDModular\\PanelizedANDModular.csproj",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2025-02-11T16:43:39.526Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-11T16:43:39.526Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 3,
               "Title": "PanelizedANDModular.addin",
-              "DocumentMoniker": "C:\\CRR_Internship\\PanelizedANDModular\\PanelizedANDModular\\PanelizedANDModular.addin",
+              "DocumentMoniker": "C:\\Users\\martinchan\\source\\repos\\CRR1\\CRR_Internship\\PanelizedANDModular\\PanelizedANDModular\\PanelizedANDModular.addin",
               "RelativeDocumentMoniker": "PanelizedANDModular\\PanelizedANDModular.addin",
-              "ToolTip": "C:\\CRR_Internship\\PanelizedANDModular\\PanelizedANDModular\\PanelizedANDModular.addin",
+              "ToolTip": "C:\\Users\\martinchan\\source\\repos\\CRR1\\CRR_Internship\\PanelizedANDModular\\PanelizedANDModular\\PanelizedANDModular.addin",
               "RelativeToolTip": "PanelizedANDModular\\PanelizedANDModular.addin",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAOAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000072|",
@@ -72,11 +70,11 @@
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "Command.cs",
-              "DocumentMoniker": "C:\\CRR_Internship\\PanelizedANDModular\\PanelizedANDModular\\Command.cs",
+              "DocumentMoniker": "C:\\Users\\martinchan\\source\\repos\\CRR1\\CRR_Internship\\PanelizedANDModular\\PanelizedANDModular\\Command.cs",
               "RelativeDocumentMoniker": "PanelizedANDModular\\Command.cs",
-              "ToolTip": "C:\\CRR_Internship\\PanelizedANDModular\\PanelizedANDModular\\Command.cs",
+              "ToolTip": "C:\\Users\\martinchan\\source\\repos\\CRR1\\CRR_Internship\\PanelizedANDModular\\PanelizedANDModular\\Command.cs",
               "RelativeToolTip": "PanelizedANDModular\\Command.cs",
-              "ViewState": "AgIAACkAAAAAAAAAAAAAAD0AAAANAAAAAAAAAA==",
+              "ViewState": "AgIAAEgAAAAAZmZmZiYgwFYAAAApAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-02-11T14:47:13.731Z",
               "EditorCaption": ""
@@ -85,9 +83,9 @@
               "$type": "Document",
               "DocumentIndex": 2,
               "Title": "App.cs",
-              "DocumentMoniker": "C:\\CRR_Internship\\PanelizedANDModular\\PanelizedANDModular\\App.cs",
+              "DocumentMoniker": "C:\\Users\\martinchan\\source\\repos\\CRR1\\CRR_Internship\\PanelizedANDModular\\PanelizedANDModular\\App.cs",
               "RelativeDocumentMoniker": "PanelizedANDModular\\App.cs",
-              "ToolTip": "C:\\CRR_Internship\\PanelizedANDModular\\PanelizedANDModular\\App.cs",
+              "ToolTip": "C:\\Users\\martinchan\\source\\repos\\CRR1\\CRR_Internship\\PanelizedANDModular\\PanelizedANDModular\\App.cs",
               "RelativeToolTip": "PanelizedANDModular\\App.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",

@@ -63,6 +63,7 @@ namespace PanelizedAndModularFinal
                 {
                     // --- Step 1: Land Area Input and Crop Region Update ---
                     LandInputWindow landWindow = new LandInputWindow();
+
                     bool? landResult = landWindow.ShowDialog();
                     if (landResult != true)
                     {
@@ -109,12 +110,18 @@ namespace PanelizedAndModularFinal
                         trans.Commit();
                     }
 
+                    List<RoomTypeRow> userSelections = null;
+                    List<RoomInstanceRow> instanceRows = null;
+
                     while (true)
                     {
                         double availableLayoutArea = userWidth * userHeight;
                         GlobalData.LandArea = availableLayoutArea;
                         // --- Step 1: Room Input and Room Instances Creation ---
-                        RoomInputWindow firstWindow = new RoomInputWindow();
+                        RoomInputWindow firstWindow = userSelections == null
+                            ? new RoomInputWindow()
+                            : new RoomInputWindow(userSelections);
+
                         bool? firstResult = firstWindow.ShowDialog();
                         if (firstResult != true)
                         {
@@ -126,23 +133,21 @@ namespace PanelizedAndModularFinal
                             return Result.Cancelled;
                         }
 
-                        List<RoomTypeRow> userSelections = firstWindow.RoomTypes;
-                        List<RoomInstanceRow> instanceRows = new List<RoomInstanceRow>();
+                        userSelections = firstWindow.RoomTypes;
+                        instanceRows = new List<RoomInstanceRow>();
 
                         foreach (var row in userSelections)
                         {
                             if (row.Quantity <= 0) continue;
                             for (int i = 0; i < row.Quantity; i++)
                             {
-                                string instanceName = $"{row.Name} {i + 1}";
-                                var instance = new RoomInstanceRow
+                                instanceRows.Add(new RoomInstanceRow
                                 {
                                     RoomType = row.Name,
-                                    Name = instanceName,
+                                    Name = $"{row.Name} {i + 1}",
                                     WpfColor = row.Color,
-                                    Area = 0.0 // Default area
-                                };
-                                instanceRows.Add(instance);
+                                    Area = 0.0
+                                });
                             }
                         }
 
@@ -388,43 +393,50 @@ namespace PanelizedAndModularFinal
 
 
 
-                                                double boundaryWidth = cropBox.Max.X - cropBox.Min.X;
-                                                double boundaryLength = cropBox.Max.Y - cropBox.Min.Y;
+                                                BoundingBoxXYZ updatedCrop = activeView.CropBox;
+
+                                                // Compute its width & height
+                                                double updatedWidth = updatedCrop.Max.X - updatedCrop.Min.X;
+                                                double updatedHeight = updatedCrop.Max.Y - updatedCrop.Min.Y;
+
+                                                // Store and show the true dimensions
+                                                GlobalData.landWidth = updatedWidth;
+                                                GlobalData.landHeight = updatedHeight;
+
+            
 
                                                 // 3) Hide Revit’s crop‐box outline
                                                 using (var tx = new Transaction(doc, "Hide Crop Region"))
                                                 {
                                                     tx.Start();
-                                                    var view = doc.ActiveView;
-                                                    view.CropBoxActive = false;
-                                                    view.CropBoxVisible = false;
+                                                    activeView.CropBoxActive = false;
+                                                    activeView.CropBoxVisible = false;
                                                     tx.Commit();
-                                                }
+                                                } 
 
-                                                // 4) Draw your own land boundary
+                                                // 4) Draw your own land boundary using the updatedCrop
                                                 var corners = new List<XYZ>
-                                                {
-                                                new XYZ(cropBox.Min.X, cropBox.Min.Y, 0),
-                                                new XYZ(cropBox.Max.X, cropBox.Min.Y, 0),
-                                                 new XYZ(cropBox.Max.X, cropBox.Max.Y, 0),
-                                                new XYZ(cropBox.Min.X, cropBox.Max.Y, 0),
-                                                new XYZ(cropBox.Min.X, cropBox.Min.Y, 0),
-                                                };
+{
+                                                new XYZ(updatedCrop.Min.X, updatedCrop.Min.Y, 0),
+                                                new XYZ(updatedCrop.Max.X, updatedCrop.Min.Y, 0),
+                                                new XYZ(updatedCrop.Max.X, updatedCrop.Max.Y, 0),
+                                                new XYZ(updatedCrop.Min.X, updatedCrop.Max.Y, 0),
+                                                 new XYZ(updatedCrop.Min.X, updatedCrop.Min.Y, 0),
+};
 
                                                 using (var tx2 = new Transaction(doc, "Draw Land Boundary"))
                                                 {
                                                     tx2.Start();
-                                                    var view = doc.ActiveView;
                                                     foreach (var pair in corners.Zip(corners.Skip(1), Tuple.Create))
                                                     {
                                                         Line edge = Line.CreateBound(pair.Item1, pair.Item2);
-                                                        doc.Create.NewDetailCurve(view, edge);
+                                                        doc.Create.NewDetailCurve(activeView, edge);
                                                     }
                                                     tx2.Commit();
                                                 }
 
-                                                // 5) Generate unique arrangements
-                                                 arrangement2 = new ModuleArrangement2(moduleTypes, selectedCombination, cropBox);
+                                                // 5) Pass the updatedCrop into your arrangement logic
+                                                arrangement2 = new ModuleArrangement2(moduleTypes, selectedCombination, updatedCrop);
                                                 List<ModuleArrangementResult> uniqueArrangements = arrangement2.GetValidArrangements();
 
                                                 if (uniqueArrangements.Count == 0)
@@ -444,7 +456,7 @@ namespace PanelizedAndModularFinal
 
                                                 if (uniqueArrangements.Count > 0)
                                                 {
-                                  
+
                                                     for (int i = 0; i < uniqueArrangements.Count; i++)
                                                     {
                                                         var arr = uniqueArrangements[i];
@@ -484,7 +496,7 @@ namespace PanelizedAndModularFinal
                                                 // 7) Let the user pick one arrangement
                                                 var pickWin = new ArrangementSelectionWindow(uniqueArrangements);
 
-                                               
+
                                                 var helper = new WindowInteropHelper(pickWin);
                                                 helper.Owner = Process.GetCurrentProcess().MainWindowHandle;
 

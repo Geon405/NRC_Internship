@@ -8,17 +8,9 @@ using Autodesk.Revit.UI;
 namespace PanelizedAndModularFinal
 {
     /// <summary>
-    /// ModuleArrangement2 arranges modules using every possible orientation assignment (2^n scenarios).
-    /// Each module can be either:
-    ///   - Not rotated: effective horizontal = Module.Length, effective vertical = Module.Width.
-    ///   - Rotated (flipped): effective horizontal = Module.Width, effective vertical = Module.Length.
-    /// Modules are first sorted from biggest to smallest.
-    /// Then, for every orientation combination, the modules are partitioned into rows (left-to-right)
-    /// and stacked (bottom-to-top) so that the overall arrangement fits within the land.
-    /// Definitions:
-    ///   - Land width: the horizontal part of the land (CropBox width).
-    ///   - Land length: the vertical part of the land (CropBox height).
-    ///   - For modules: Module length is the horizontal line and module width is the vertical line (when not rotated).
+    /// ModuleArrangement2 arranges modules using every possible orientation assignment (2^n scenarios),
+    /// then places them inside the boundary by recursive adjacency backtracking,
+    /// collecting ALL valid adjacency-based layouts.
     /// </summary>
     public class ModuleArrangement2
     {
@@ -26,9 +18,7 @@ namespace PanelizedAndModularFinal
         private string _selectedCombination;
         private BoundingBoxXYZ _cropBox;
 
-        // Holds logs summarizing each orientation scenario (as a binary string) and its valid arrangement count.
         public List<string> ScenarioLogs { get; private set; }
-
 
         public ModuleArrangement2(List<ModuleType> moduleTypes, string selectedCombination, BoundingBoxXYZ cropBox)
         {
@@ -37,117 +27,198 @@ namespace PanelizedAndModularFinal
             _cropBox = cropBox;
         }
 
-        /// <summary>
-        /// Generates all valid arrangements by considering every possible orientation assignment.
-        /// Also builds a log (ScenarioLogs) that records for each orientation combination (bitmask)
-        /// the orientation string and the number of valid arrangements from that scenario.
-        /// </summary>
         public List<ModuleArrangementResult> GetValidArrangements()
         {
-            // 1. Parse the selected combination into counts per module type
-            Dictionary<int, int> typeCounts = ParseCombinationString(_selectedCombination);
+            // 1) Unroll your counts into a flat list
+            var typeCounts = ParseCombinationString(_selectedCombination);
+            var flat = new List<ModuleType>();
+            foreach (var kv in typeCounts)
+                for (int i = 0; i < kv.Value; i++)
+                    flat.Add(_moduleTypes[kv.Key]);
 
-            // 2. "Unroll" into a flat list of ModuleType instances
-            List<ModuleType> modulesToPlace = new List<ModuleType>();
-            foreach (var kvp in typeCounts)
-            {
-                int typeIndex = kvp.Key;
-                int count = kvp.Value;
-                for (int i = 0; i < count; i++)
-                    modulesToPlace.Add(_moduleTypes[typeIndex]);
-            }
-
-            // 3. Sort from biggest to smallest (by length then width)
-            modulesToPlace = modulesToPlace
-                .OrderByDescending(m => m.Length)
-                .ThenByDescending(m => m.Width)
-                .ToList();
-
-            // 4. Compute land dimensions
-            double availableWidth = _cropBox.Max.X - _cropBox.Min.X;
-            double availableHeight = _cropBox.Max.Y - _cropBox.Min.Y;
-
-            // 5. Prepare collections
-            var allValid = new List<ModuleArrangementResult>();
+            int n = flat.Count;
+            int totalScenarios = 1 << n;
+            var allResults = new List<ModuleArrangementResult>();
             ScenarioLogs = new List<string>();
 
-            int n = modulesToPlace.Count;
-            int totalScenarios = 1 << n; // 2^n orientation combinations
-
-            // 6. Enumerate every orientation combination
-            for (int bitmask = 0; bitmask < totalScenarios; bitmask++)
+            // 2) For each orientation bitmask
+            for (int mask = 0; mask < totalScenarios; mask++)
             {
-                // build human‑readable binary string
-                string orientationStr = ToBinaryString(bitmask, n);
-                int validCountForScenario = 0;
+                string bits = ToBinaryString(mask, n);
 
-                // create oriented instances
-                var instances = new List<ModuleInstance>();
-                for (int j = 0; j < n; j++)
+                // 2a) Build the oriented instances in flat order
+                var baseInstances = new List<ModuleInstance>();
+                for (int i = 0; i < n; i++)
                 {
-                    bool isRotated = ((bitmask >> j) & 1) == 1;
-                    instances.Add(new ModuleInstance
+                    bool rot = ((mask >> i) & 1) == 1;
+                    baseInstances.Add(new ModuleInstance
                     {
-                        Module = modulesToPlace[j],
-                        IsRotated = isRotated
+                        Module = flat[i],
+                        IsRotated = rot
                     });
                 }
 
-                // partition into rows
-                var partitions = new List<List<List<ModuleInstance>>>();
-                PartitionIntoRows(instances, 0,
-                                 availableWidth,
-                                 availableHeight,
-                                 new List<List<ModuleInstance>>(),
-                                 partitions);
+                // 2b) Permute those n instances into every possible placement order
+                var allOrders = Permute(baseInstances);
 
-                // for each row‑partition, attempt to build an arrangement
-                foreach (var part in partitions)
+                var layoutsThisScenario = new List<List<PlacedModule>>();
+                // 3) For each ordering, collect all adjacency‐based packings
+                foreach (var order in allOrders)
+                    CollectLayouts(order, layoutsThisScenario);
+
+                // 4) Log how many layouts we found under this bitmask
+                ScenarioLogs.Add(
+                    $"Scenario {bits}: {layoutsThisScenario.Count} valid layout(s)");
+
+                // 5) Push them all into the big results list
+                foreach (var layout in layoutsThisScenario)
                 {
-                    var arr = CreateArrangementFromRows(part, _cropBox.Min, availableWidth, availableHeight);
-                    if (arr != null)
+                    allResults.Add(new ModuleArrangementResult
                     {
-                        // carry forward the bit‐string
-                        arr.OrientationStr = orientationStr;
-                        arr.ModuleInstances = new List<ModuleInstance>(instances);  
-                        allValid.Add(arr);
-                        validCountForScenario++;
-                    }
+                        PlacedModules = layout,
+                        OrientationStr = bits,
+                        ModuleInstances = new List<ModuleInstance>(baseInstances)
+                    });
                 }
-
-                // log scenario results
-                ScenarioLogs.Add($"Scenario {orientationStr}: {validCountForScenario} valid arrangement(s).");
             }
 
-            // 7. Deduplicate identical layouts
-            var uniqueValid = allValid
-                .GroupBy(arr =>
-                    // fingerprint: for each placed module record X,Y,w,h
-                    string.Join("|", arr.PlacedModules
-                        .Select(pm =>
-                            $"{pm.Origin.X:F2},{pm.Origin.Y:F2}," +
-                            $"{pm.ModuleInstance.EffectiveHorizontal:F2}," +
-                            $"{pm.ModuleInstance.EffectiveVertical:F2}"))
-                )
-                .Select(g => g.First())
-                .ToList();
+            // 6) Finally dedupe identical layouts
+            var unique = allResults
+              .GroupBy(a => string.Join("|", a.PlacedModules
+                 .Select(pm => $"{pm.Origin.X:F2},{pm.Origin.Y:F2}," +
+                                $"{pm.ModuleInstance.EffectiveHorizontal:F2}," +
+                                $"{pm.ModuleInstance.EffectiveVertical:F2}")))
+              .Select(g => g.First())
+              .ToList();
 
-            return uniqueValid;
+            return unique;
         }
 
 
-
-        /// <summary>
-        /// After GetValidArrangements, call this to show how many unique layouts you have.
-        /// </summary>
-        public void DisplayUniqueCount(List<ModuleArrangementResult> uniqueArrangements)
+        // Helper to generate all permutations of a list
+        private IEnumerable<List<T>> Permute<T>(List<T> list)
         {
-            TaskDialog.Show(
-                "Unique Arrangements",
-                $"Found {uniqueArrangements.Count} unique valid arrangement" +
-                (uniqueArrangements.Count == 1 ? "" : "s") + "."
-            );
+            if (list.Count == 1)
+                yield return new List<T>(list);
+            else
+            {
+                for (int i = 0; i < list.Count; i++)
+                {
+                    // pick element i
+                    T elem = list[i];
+                    var remainder = new List<T>(list);
+                    remainder.RemoveAt(i);
+
+                    foreach (var perm in Permute(remainder))
+                    {
+                        var result = new List<T> { elem };
+                        result.AddRange(perm);
+                        yield return result;
+                    }
+                }
+            }
         }
+
+
+        private void CollectLayouts(List<ModuleInstance> insts, List<List<PlacedModule>> layouts)
+        {
+            var placed = new List<PlacedModule>();
+            var first = insts[0];
+
+            // compute its bottom-left so its top-edge touches cropBox.Max.Y
+            double x0 = _cropBox.Min.X;
+            double y0 = _cropBox.Max.Y - first.EffectiveVertical;
+
+            // NEW: reject if it wouldn’t lie entirely inside the boundary
+            double availW = _cropBox.Max.X - _cropBox.Min.X;
+            double availH = _cropBox.Max.Y - _cropBox.Min.Y;
+            if (first.EffectiveHorizontal > availW || first.EffectiveVertical > availH)
+            {
+                // no layout possible with this orientation
+                return;
+            }
+
+            placed.Add(new PlacedModule { ModuleInstance = first, Origin = new XYZ(x0, y0, 0) });
+            PlaceNextAll(insts, placed, 1, layouts);
+        }
+
+        private void PlaceNextAll(List<ModuleInstance> insts, List<PlacedModule> placed, int idx, List<List<PlacedModule>> layouts)
+        {
+            if (idx >= insts.Count)
+            {
+                layouts.Add(placed.Select(pm => new PlacedModule
+                {
+                    ModuleInstance = pm.ModuleInstance,
+                    Origin = pm.Origin
+                }).ToList());
+                return;
+            }
+            var cur = insts[idx];
+            var boundary = _cropBox;
+            foreach (var pm in placed.ToList())
+            {
+                var baseX = pm.Origin.X;
+                var baseY = pm.Origin.Y;
+                double w1 = pm.ModuleInstance.EffectiveHorizontal;
+                double h1 = pm.ModuleInstance.EffectiveVertical;
+                double w2 = cur.EffectiveHorizontal;
+                double h2 = cur.EffectiveVertical;
+                var candidates = new List<XYZ> {
+                    new XYZ(baseX + w1, baseY, 0),
+                    new XYZ(baseX - w2, baseY, 0),
+                    new XYZ(baseX, baseY + h1, 0),
+                    new XYZ(baseX, baseY - h2, 0)
+                };
+                foreach (var o in candidates)
+                {
+                    if (o.X < boundary.Min.X || o.Y < boundary.Min.Y) continue;
+                    if (o.X + w2 > boundary.Max.X || o.Y + h2 > boundary.Max.Y) continue;
+                    var rect2 = Tuple.Create(o, w2, h2);
+                    if (IsOverlapping(rect2, placed)) continue;
+                    if (!SharesSide(rect2, placed)) continue;
+                    placed.Add(new PlacedModule { ModuleInstance = cur, Origin = o });
+                    PlaceNextAll(insts, placed, idx + 1, layouts);
+                    placed.RemoveAt(placed.Count - 1);
+                }
+            }
+        }
+
+        private bool IsOverlapping(Tuple<XYZ, double, double> rect, List<PlacedModule> placed)
+        {
+            double x0 = rect.Item1.X, y0 = rect.Item1.Y;
+            double w = rect.Item2, h = rect.Item3;
+            foreach (var pm in placed)
+            {
+                double x1 = pm.Origin.X, y1 = pm.Origin.Y;
+                double w1 = pm.ModuleInstance.EffectiveHorizontal;
+                double h1 = pm.ModuleInstance.EffectiveVertical;
+                if (x0 < x1 + w1 && x0 + w > x1 && y0 < y1 + h1 && y0 + h > y1)
+                    return true;
+            }
+            return false;
+        }
+
+        private bool SharesSide(Tuple<XYZ, double, double> rect, List<PlacedModule> placed)
+        {
+            double x0 = rect.Item1.X, y0 = rect.Item1.Y;
+            double w = rect.Item2, h = rect.Item3;
+            foreach (var pm in placed)
+            {
+                double x1 = pm.Origin.X, y1 = pm.Origin.Y;
+                double w1 = pm.ModuleInstance.EffectiveHorizontal;
+                double h1 = pm.ModuleInstance.EffectiveVertical;
+                if (Math.Abs(x0 + w - x1) < 1e-6 || Math.Abs(x1 + w1 - x0) < 1e-6)
+                {
+                    if (y0 < y1 + h1 && y0 + h > y1) return true;
+                }
+                if (Math.Abs(y0 + h - y1) < 1e-6 || Math.Abs(y1 + h1 - y0) < 1e-6)
+                {
+                    if (x0 < x1 + w1 && x0 + w > x1) return true;
+                }
+            }
+            return false;
+        }
+
 
 
 
@@ -165,36 +236,46 @@ namespace PanelizedAndModularFinal
 
             lines.Add($"Out of {totalComb} combos, found {uniqueCount} unique arrangements.");
             lines.Add("");
-            lines.Add("Legend: 0 = Normal (length→horiz), 1 = Rotated (width→horiz)");
-            lines.Add(new string('-', 60));
+            //lines.Add("Legend: 0 = Normal (length→horiz), 1 = Rotated (width→horiz)");
+            //lines.Add(new string('-', 60));
 
-            for (int i = 0; i < uniqueArrangements.Count; i++)
-            {
-                var arr = uniqueArrangements[i];
-                // Reverse the bits so they line up with ModuleInstances[0]..[n-1]
-                string bits = arr.OrientationStr;
-                string displayBits = new string(bits.Reverse().ToArray());
+            //for (int i = 0; i < uniqueArrangements.Count; i++)
+            //{
+            //    var arr = uniqueArrangements[i];
+            //    // Reverse the bits so they line up with ModuleInstances[0]..[n-1]
+            //    string bits = arr.OrientationStr;
+            //    string displayBits = new string(bits.Reverse().ToArray());
 
-                lines.Add($"Arrangement #{i + 1}: Bits {displayBits}");
-                lines.Add($"{"Bit",3}  {"ModuleType",-12}  {"Ori"}");
-                lines.Add($"{"---",3}  {"------------",-12}  {"---"}");
+            //    lines.Add($"Arrangement #{i + 1}: Bits {displayBits}");
+            //    lines.Add($"{"Bit",3}  {"ModuleType",-12}  {"Ori"}");
+            //    lines.Add($"{"---",3}  {"------------",-12}  {"---"}");
 
-                for (int j = 0; j < arr.ModuleInstances.Count; j++)
-                {
-                    var mi = arr.ModuleInstances[j];
-                    var ori = mi.IsRotated ? "Rotated" : "Normal";
-                    var mt = $"Type{mi.Module.ID}";
-                    lines.Add($"{j + 1,3}  {mt,-12}  {ori}");
-                }
-                lines.Add("");
-            }
+            //    for (int j = 0; j < arr.ModuleInstances.Count; j++)
+            //    {
+            //        var mi = arr.ModuleInstances[j];
+            //        var ori = mi.IsRotated ? "Rotated" : "Normal";
+            //        var mt = $"Type{mi.Module.ID}";
+            //        lines.Add($"{j + 1,3}  {mt,-12}  {ori}");
+            //    }
+            //    lines.Add("");
+            //}
 
             TaskDialog.Show("Unique Arrangements Summary", string.Join("\n", lines));
         }
 
 
 
-
+        /// <summary>
+        /// After GetValidArrangements, call this to show how many unique layouts you have.
+        /// </summary>
+        public void DisplayUniqueCount(List<ModuleArrangementResult> uniqueArrangements)
+        {
+            TaskDialog.Show(
+                "Unique Arrangements",
+                $"Found {uniqueArrangements.Count} unique valid arrangement" +
+                (uniqueArrangements.Count == 1 ? "" : "s") + "."
+            );
+        }
 
 
 
