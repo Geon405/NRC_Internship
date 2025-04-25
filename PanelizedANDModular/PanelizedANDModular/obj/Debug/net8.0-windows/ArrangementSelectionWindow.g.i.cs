@@ -76,7 +76,7 @@ namespace PanelizedAndModularFinal {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/PanelizedAndModularFinal;component/arrangementselectionwindow.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/PanelizedAndModularFinal;V1.0.0.0;component/arrangementselectionwindow.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\ArrangementSelectionWindow.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

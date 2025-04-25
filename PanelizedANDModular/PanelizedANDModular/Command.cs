@@ -1,8 +1,5 @@
 ﻿#region Namespaces
-// These lines tell the program which libraries to use. 
-// "System" and "System.Collections.Generic" provide basic tools like lists and common functions.
-// The Autodesk.Revit.* libraries allow this code to interact with Revit's API (its programming interface).
-// "System.Windows.Media" is used for things like colors.
+
 using System;
 using System.Collections.Generic;
 using Autodesk.Revit.ApplicationServices;
@@ -17,6 +14,7 @@ using System.Windows;
 using PanelizedAndModularFinal;
 using System.Diagnostics;
 using System.Windows.Interop;
+using static PanelizedAndModularFinal.GridTrimmer;
 #endregion
 
 public static class GlobalData
@@ -33,28 +31,25 @@ public static class GlobalData
     public static List<SpaceNode> SavedSpaces { get; set; }
     public static List<ElementId> SavedConnectionLines { get; set; } = new List<ElementId>();
 
-    // New property to hold all elements created in Step 1
+   
     public static List<ElementId> Step1Elements { get; set; } = new List<ElementId>();
 }
 
-// The namespace groups related classes together. Here, "PanelizedAndModularFinal" is the container for our code.
+
 namespace PanelizedAndModularFinal
 {
-    // The Transaction attribute tells Revit that this command will make changes to the model,
-    // and that we want to control when those changes are applied.
+    
     [Transaction(TransactionMode.Manual)]
     public class Command : IExternalCommand
     {
-        // The Execute method is the entry point for the command.
-        // When you run the command in Revit, this method starts executing.
-        // It receives necessary data such as the current application, active document, etc.
+     
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
-            // Get a reference to the Revit application (uiapp) from the commandData.
+           
             UIApplication uiapp = commandData.Application;
-            // Get the active UI document (what the user sees) from the application.
+         
             UIDocument uidoc = uiapp.ActiveUIDocument;
-            // Get the active document (the actual Revit file with model data).
+          
             Document doc = uidoc.Document;
 
             try
@@ -177,7 +172,7 @@ namespace PanelizedAndModularFinal
 
                             foreach (var inst in secondWindow.Instances)
                             {
-                                double area = inst.Area < 10.0 ? 10.0 : inst.Area;
+                                double area = inst.Area < 10.0 ? 25.0 : inst.Area;
                                 View activeView1 = doc.ActiveView;
                                 BoundingBoxXYZ viewBox1 = activeView1.CropBoxActive && activeView1.CropBox != null
                                     ? activeView1.CropBox
@@ -372,7 +367,7 @@ namespace PanelizedAndModularFinal
                                             bool arrangementCreated = false;
 
 
-                                            ModuleArrangement2 arrangement2 = null;
+                                            ModuleArrangement arrangement = null;
                                             ModuleArrangementResult chosen = null;
                                             while (!arrangementCreated)
                                             {
@@ -436,8 +431,8 @@ namespace PanelizedAndModularFinal
                                                 }
 
                                                 // 5) Pass the updatedCrop into your arrangement logic
-                                                arrangement2 = new ModuleArrangement2(moduleTypes, selectedCombination, updatedCrop);
-                                                List<ModuleArrangementResult> uniqueArrangements = arrangement2.GetValidArrangements();
+                                                arrangement = new ModuleArrangement(moduleTypes, selectedCombination, updatedCrop);
+                                                List<ModuleArrangementResult> uniqueArrangements = arrangement.GetValidArrangements();
 
                                                 if (uniqueArrangements.Count == 0)
                                                 {
@@ -446,45 +441,45 @@ namespace PanelizedAndModularFinal
                                                 }
 
                                                 // 6) Show summary and unique count
-                                                arrangement2.DisplayScenarioSummary(uniqueArrangements);
-                                                arrangement2.DisplayUniqueCount(uniqueArrangements);
+                                                arrangement.DisplayScenarioSummary(uniqueArrangements);
+                                                arrangement.DisplayUniqueCount(uniqueArrangements);
 
 
 
 
                                                 ///////////////////PORTION OF CODE TO DISPLAY ALL ARRANGEMENTS///////////////////////////////////
 
-                                                if (uniqueArrangements.Count > 0)
-                                                {
+                                                //if (uniqueArrangements.Count > 0)
+                                                //{
 
-                                                    for (int i = 0; i < uniqueArrangements.Count; i++)
-                                                    {
-                                                        var arr = uniqueArrangements[i];
-                                                        int moduleCount1 = arr.PlacedModules.Count;
+                                                //    for (int i = 0; i < uniqueArrangements.Count; i++)
+                                                //    {
+                                                //        var arr = uniqueArrangements[i];
+                                                //        int moduleCount1 = arr.PlacedModules.Count;
 
-                                                        // Draw modules
-                                                        List<ElementId> drawnIds1 = arrangement2.DrawArrangement(doc, arr);
+                                                //        // Draw modules
+                                                //        List<ElementId> drawnIds1 = arrangement2.DrawArrangement(doc, arr);
 
-                                                        TaskDialog.Show(
-                                                            "Unique Arrangement",
-                                                            $"Arrangement {i + 1} of {uniqueArrangements.Count}\n" +
-                                                            $"Modules placed: {moduleCount1}\n\n" +
-                                                            "Click OK to see the next arrangement."
-                                                        );
+                                                //        TaskDialog.Show(
+                                                //            "Unique Arrangement",
+                                                //            $"Arrangement {i + 1} of {uniqueArrangements.Count}\n" +
+                                                //            $"Modules placed: {moduleCount1}\n\n" +
+                                                //            "Click OK to see the next arrangement."
+                                                //        );
 
-                                                        // Clear modules before next
-                                                        using (var t = new Transaction(doc, "Clear Modules"))
-                                                        {
-                                                            t.Start();
-                                                            doc.Delete(drawnIds1);
-                                                            t.Commit();
-                                                        }
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    TaskDialog.Show("Arrangement Error", "No valid arrangements found. Please try another combination.");
-                                                }
+                                                //        // Clear modules before next
+                                                //        using (var t = new Transaction(doc, "Clear Modules"))
+                                                //        {
+                                                //            t.Start();
+                                                //            doc.Delete(drawnIds1);
+                                                //            t.Commit();
+                                                //        }
+                                                //    }
+                                                //}
+                                                //else
+                                                //{
+                                                //    TaskDialog.Show("Arrangement Error", "No valid arrangements found. Please try another combination.");
+                                                //}
 
                                                 ///////////////////PORTION OF CODE TO DISPLAY ALL ARRANGEMENTS///////////////////////////////////
 
@@ -511,7 +506,7 @@ namespace PanelizedAndModularFinal
                                                 chosen = pickWin.SelectedArrangement;
                                                 int moduleCount = chosen.PlacedModules.Count;
 
-                                                List<ElementId> drawnIds = arrangement2.DrawArrangement(doc, chosen);
+                                                List<ElementId> drawnIds = arrangement.DrawArrangement(doc, chosen);
 
 
 
@@ -527,27 +522,7 @@ namespace PanelizedAndModularFinal
 
 
 
-                                            ////////////////////////////////////////////////////////////////////////////////////////
-                                            ///////////////////////////////////////////////////////////////////////////////////////
-                                            ////////////////////////////////////////////////////////////////////////////////////////
-                                            ///////////////////////////////////////////////////////////////////////////////////////
-                                            ////////////////////////////////////////////////////////////////////////////////////////
-                                            ///////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                  
 
 
                                             // --- Step 2: Re-Output Saved Layout (Connection Lines and Room Circles) ---
@@ -577,7 +552,6 @@ namespace PanelizedAndModularFinal
                                             outputDialog.Show();
 
                                             // Clear the output of CreateCircleNode for Step 2.
-                                            // Clear the output of CreateCircleNode for Step 2.
                                             using (Transaction tx = new Transaction(doc, "Clear Step 2 Output"))
                                             {
                                                 tx.Start();
@@ -593,20 +567,16 @@ namespace PanelizedAndModularFinal
                                             }
                                             GlobalData.Step1Elements.Clear();
 
-                                            // --- STEP 3: Create Trimmed Square Arrangement (SquareArrangementOnly) ---
-
-
-
-
-
-
-
-
+                                       
 
 
                                             // Overlay the square grid inside each module and get cell areas
                                             List<double> cellAreas;
-                                            List<ElementId> gridLines = arrangement2.DrawModuleGrids(doc, chosen, out cellAreas);
+                                            List<ElementId> gridLines = arrangement.DrawModuleGrids(doc, chosen, out cellAreas);
+
+
+
+
 
                                             // 8) Inform the user
                                             TaskDialog.Show(
@@ -619,51 +589,133 @@ namespace PanelizedAndModularFinal
 
 
 
+                                            /////////////////////////////////////////////////////////////////////
+                                            //DISPLAY COLORED SQUARE////////////////////////////////////////////////////
+                                            /////////////////////////////////////////////////////////////////
 
 
 
+                                            var fullGridIds = new List<ElementId>();
 
-
-
-                                            // 1. Build the room squares and their lines.
-                                            Transaction trans = new Transaction(doc, "Draw Colored Squares");
-                                            trans.Start();
-
-                                            foreach (var space in GlobalData.SavedSpaces)
+                                            // 1. Draw perfectly‐fitting 3×3 colored, semi‐transparent grid inside each saved space’s square
+                                            using (var trans = new Transaction(doc, "Draw Perfect 3x3 Grids"))
                                             {
-                                                // Calculate radius from area.
-                                                double radius = Math.Sqrt(space.Area / Math.PI);
-                                                XYZ pt1 = new XYZ(space.Position.X + radius, space.Position.Y + radius, space.Position.Z);
-                                                XYZ pt2 = new XYZ(space.Position.X - radius, space.Position.Y + radius, space.Position.Z);
-                                                XYZ pt3 = new XYZ(space.Position.X - radius, space.Position.Y - radius, space.Position.Z);
-                                                XYZ pt4 = new XYZ(space.Position.X + radius, space.Position.Y - radius, space.Position.Z);
+                                                trans.Start();
 
-                                                // Define the square points (closing the loop by adding the first point again).
-                                                List<XYZ> pts = new List<XYZ> { pt1, pt2, pt3, pt4, pt1 };
+                                                // 0a) Grab one FilledRegionType for the regions
+                                                var regionType = new FilteredElementCollector(doc)
+                                                    .OfClass(typeof(FilledRegionType))
+                                                    .Cast<FilledRegionType>()
+                                                    .First();
 
-                                                // Create a sketch plane. Here we use the first point to define a horizontal plane.
-                                                SketchPlane sp = SketchPlane.Create(doc, Plane.CreateByNormalAndOrigin(XYZ.BasisZ, pt1));
+                                                // 0b) Grab a solid drafting fill pattern for the overrides
+                                                var fillPattern = new FilteredElementCollector(doc)
+                                                    .OfClass(typeof(FillPatternElement))
+                                                    .Cast<FillPatternElement>()
+                                                    .First(fp =>
+                                                        fp.GetFillPattern().IsSolidFill &&
+                                                        fp.GetFillPattern().Target == FillPatternTarget.Drafting
+                                                    );
 
-                                                for (int i = 0; i < pts.Count - 1; i++)
+                                                var view = doc.ActiveView;
+
+                                                foreach (var space in GlobalData.SavedSpaces)
                                                 {
-                                                    Line line = Line.CreateBound(pts[i], pts[i + 1]);
-                                                    ModelCurve curve = doc.Create.NewModelCurve(line, sp);
+                                                    // 1) Compute the square bounds
+                                                    double radius = Math.Sqrt(space.Area / Math.PI);
+                                                    double cx = space.Position.X;
+                                                    double cy = space.Position.Y;
+                                                    double z = space.Position.Z;
+                                                    double side = 2 * radius;
+                                                    double minX = cx - radius;
+                                                    double minY = cy - radius;
 
-                                                    OverrideGraphicSettings ogs = new OverrideGraphicSettings();
-                                                    Autodesk.Revit.DB.Color revitColor = new Autodesk.Revit.DB.Color(space.WpfColor.R, space.WpfColor.G, space.WpfColor.B);
-                                                    ogs.SetProjectionLineColor(revitColor);
+                                                    // 2) Each square is broken into exactly 3×3 cells
+                                                    int nCols = 3;
+                                                    int nRows = 3;
+                                                    double cellSize = side / 3.0;    // fits perfectly
 
-                                                    // Set a thicker line weight.
-                                                    ogs.SetProjectionLineWeight(5);  // Adjust the value for desired thickness.
+                                                    // 3) Prepare sketch plane at bottom‐left corner
+                                                    var plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, new XYZ(minX, minY, z));
+                                                    var sp = SketchPlane.Create(doc, plane);
 
-                                                    doc.ActiveView.SetElementOverrides(curve.Id, ogs);
+                                                    // 4) Build one OverrideGraphicSettings for this space
+                                                    var ogs = new OverrideGraphicSettings()
+                                                        // fill color & transparency
+                                                        .SetSurfaceForegroundPatternColor(new Autodesk.Revit.DB.Color(
+                                                            space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
+                                                        .SetSurfaceBackgroundPatternColor(new Autodesk.Revit.DB.Color(
+                                                            space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
+                                                        .SetSurfaceForegroundPatternId(fillPattern.Id)
+                                                        .SetSurfaceBackgroundPatternId(fillPattern.Id)
+                                                        .SetSurfaceTransparency(50)  // 50% see‐through
+                                                                                     // outline color & weight
+                                                        .SetProjectionLineColor(new Autodesk.Revit.DB.Color(
+                                                            space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
+                                                        .SetProjectionLineWeight(5);
+
+                                                    // 5) Tile and draw each of the 3×3 cells
+                                                    for (int i = 0; i < nCols; i++)
+                                                    {
+                                                        for (int j = 0; j < nRows; j++)
+                                                        {
+                                                            double x0 = minX + i * cellSize;
+                                                            double y0 = minY + j * cellSize;
+                                                            double x1 = x0 + cellSize;
+                                                            double y1 = y0 + cellSize;
+
+                                                            // build a CurveLoop of 4 edges
+                                                            var loop = new CurveLoop();
+                                                            loop.Append(Line.CreateBound(new XYZ(x0, y0, z), new XYZ(x1, y0, z)));
+                                                            loop.Append(Line.CreateBound(new XYZ(x1, y0, z), new XYZ(x1, y1, z)));
+                                                            loop.Append(Line.CreateBound(new XYZ(x1, y1, z), new XYZ(x0, y1, z)));
+                                                            loop.Append(Line.CreateBound(new XYZ(x0, y1, z), new XYZ(x0, y0, z)));
+
+                                                            // create filled region using regionType
+                                                            var region = FilledRegion.Create(
+                                                                doc,
+                                                                regionType.Id,
+                                                                view.Id,
+                                                                new List<CurveLoop> { loop }
+                                                            );
+
+
+                                                       
+                                                            fullGridIds.Add(region.Id);
+                                                            view.SetElementOverrides(region.Id, ogs);
+
+
+                                                            // apply semi‐transparent color & outline
+                                                            view.SetElementOverrides(region.Id, ogs);
+
+                                                            // record each cell’s area if desired
+                                                            space.SquareArea = cellSize * cellSize;
+                                                        }
+                                                    }
                                                 }
 
-                                                // Optionally, store the square's area.
-                                                space.SquareArea = Math.Pow(2 * radius, 2);
+                                                trans.Commit();
                                             }
 
-                                            trans.Commit();
+                                            // 2) Let the user see it, then remove
+                                            TaskDialog.Show(
+                                                "Step 1 Complete",
+                                                "The full 3×3 colored grids are displayed.\nClick OK to trim off excess."
+                                            );
+
+                                            if (fullGridIds.Any())
+                                            {
+                                                using (var tx = new Transaction(doc, "Clear Full Grids"))
+                                                {
+                                                    tx.Start();
+                                                    doc.Delete(fullGridIds);
+                                                    tx.Commit();
+                                                }
+                                            }
+
+
+
+
 
 
 
@@ -676,75 +728,168 @@ namespace PanelizedAndModularFinal
 
 
 
-                                            // Get the polygon loop from your boundary lines
-                                            //List<Line> boundaryLines = arranger.GetPerimeterOutline();
-                                            //List<Line> orderedLines = ReorderLines(boundaryLines);
-                                            //CurveLoop polygonLoop = new CurveLoop();
-                                            //foreach (Line line in orderedLines)
-                                            //{
-                                            //    polygonLoop.Append(line);
-                                            //}
 
-                                            //// Start a transaction to create detail curves in the active view
-                                            //using (Transaction tx = new Transaction(doc, "Draw Green Polygon"))
-                                            //{
-                                            //    tx.Start();
-                                            //    // Create a sketch plane (using the XY plane in this example)
-                                            //    SketchPlane sketchPlane = SketchPlane.Create(doc, Plane.CreateByNormalAndOrigin(XYZ.BasisZ, XYZ.Zero));
+                                            var gridTrimmer = new GridTrimmer();
+                                            List<GridTrimmer.TrimResult> trims;
+                                            var trimmedIds = gridTrimmer.DrawTrimmedGrids(
+                                                doc,
+                                                chosen,                      //  chosen ModuleArrangementResult
+                                                GlobalData.SavedSpaces,
+                                                out trims
+                                            );
 
-                                            //    // For each curve in the polygon, create a detail curve and set its color
-                                            //    foreach (Curve curve in polygonLoop)
-                                            //    {
-                                            //        DetailCurve detailCurve = doc.Create.NewDetailCurve(doc.ActiveView, curve);
+                                            // 4) Show both the trimmed cells and the per‐space totals
+                                            var lines = new List<string>();
 
-                                            //        // Setup override settings for green color (RGB: 0,255,0)
-                                            //        OverrideGraphicSettings ogs = new OverrideGraphicSettings();
-                                            //        ogs.SetProjectionLineColor(new Autodesk.Revit.DB.Color(0, 255, 0));
-
-
-                                            //        // Apply the override to the detail curve
-                                            //        doc.ActiveView.SetElementOverrides(detailCurve.Id, ogs);
-                                            //    }
-                                            //    tx.Commit();
-                                            //}
-
-                                            // 3. Trim squares and display the resulting shapes.
-                                            //SquareTrimmer2 trimmer = new SquareTrimmer2(doc, polygonLoop);
-                                            //trimmer.TrimSquaresAndDisplay(roomSquares);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                                            // Now, open the space priority window to let the user assign raw priority values.
-
-                                            SpacePriorityWindow priorityWindow = new SpacePriorityWindow(GlobalData.SavedSpaces);
-                                            bool? priorityResult = priorityWindow.ShowDialog();
-
-                                            if (priorityResult != true)
+                                            // 4a) List each trimmed cell
+                                            lines.Add("Trimmed Cells:");
+                                            foreach (var t in trims)
                                             {
-                                                TaskDialog.Show("Canceled", "User canceled at the priority window.");
-                                                return Result.Cancelled;
+                                                lines.Add(
+                                                  $"  {t.Space.Name} – cell #{t.CellIndex + 1}: " +
+                                                  $"{t.TrimmedArea:F2} sq units trimmed"
+                                                );
                                             }
 
-                                            // At this point, each SpaceNode's Priority property has been normalized.
-                                            // You can now access these values for subsequent operations.
+
+
+
+                                            // 4b) Blank separator
+                                            lines.Add("");
+                                            // 4c) Totals per space
+                                            lines.Add("Total Trimmed per Space:");
+                                            double grandTotal = 0;
+                                            foreach (var space in GlobalData.SavedSpaces)
+                                            {
+                                                double trimmed = space.SquareTrimmedArea;
+                                                lines.Add($"  {space.Name}: {trimmed:F2} sq units");
+                                                grandTotal += trimmed;
+                                            }
+
+                                            // 4d) Grand total
+                                            lines.Add("");
+                                            lines.Add($"Grand Total Trimmed: {grandTotal:F2} sq units");
+
+                                            // Finally display
+                                            TaskDialog.Show(
+                                                "Trim Results",
+                                                string.Join("\n", lines)
+                                            );
+
+
+                                            // Optional: let the user review then clear the trimmed regions before assignment
+                                            TaskDialog.Show("Trim Complete", "The trimmed squares are drawn. Click OK to assign cells.");
+                                            using (var tx = new Transaction(doc, "Clear Trimmed Regions"))
+                                            {
+                                                tx.Start();
+                                                doc.Delete(trimmedIds);
+                                                tx.Commit();
+                                            }
+
+
+
+                                            /////////////////////////////////////////////////////////////////////////
+                                            //ASSIGNMENT OF CELLS STEP BELOW////////////////////////////////////////
+                                            ////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+                                           
+                                            var moduleCells = chosen.GridCells;
+
+
+                                            // 7) Run the CellAssigner
+                                            var assigner = new CellAssigner(
+                                                moduleCells,
+                                                cellAreas.ToArray(),
+                                                trims,
+                                                GlobalData.SavedSpaces
+                                            );
+                                            var assignments = assigner.AssignAll();
+                                            assigner.ShowAssignments(assignments);
+
+
+                                            // 8) Finally draw each assigned cell in its room’s color
+                                            using (var tx = new Transaction(doc, "Draw Assigned Cells"))
+                                            {
+                                                tx.Start();
+                                                var view = doc.ActiveView;
+
+                                                // pick your FilledRegionType & solid drafting pattern
+                                                var regionType = new FilteredElementCollector(doc)
+                                                    .OfClass(typeof(FilledRegionType))
+                                                    .Cast<FilledRegionType>()
+                                                    .First();
+                                                var fillPattern = new FilteredElementCollector(doc)
+                                                    .OfClass(typeof(FillPatternElement))
+                                                    .Cast<FillPatternElement>()
+                                                    .First(fp =>
+                                                        fp.GetFillPattern().IsSolidFill &&
+                                                        fp.GetFillPattern().Target == FillPatternTarget.Drafting
+                                                    );
+
+
+                                                foreach (var a in assignments)
+                                                {
+                                                    var region = FilledRegion.Create(
+                                                        doc,
+                                                        regionType.Id,
+                                                        view.Id,
+                                                        new List<CurveLoop> { a.Cell.Loop }
+                                                    );
+
+
+                                                    var c = a.Space.WpfColor;
+                                                    var ogs = new OverrideGraphicSettings()
+                                                        .SetSurfaceForegroundPatternColor(new Autodesk.Revit.DB.Color(c.R, c.G, c.B))
+                                                        .SetSurfaceBackgroundPatternColor(new Autodesk.Revit.DB.Color(c.R, c.G, c.B))
+                                                        .SetSurfaceForegroundPatternId(fillPattern.Id)
+                                                        .SetSurfaceBackgroundPatternId(fillPattern.Id)
+                                                        .SetSurfaceTransparency(0);    // opaque now that it’s assigned
+
+                                                    view.SetElementOverrides(region.Id, ogs);
+                                                }
+
+                                                tx.Commit();
+                                            }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                            //// Now, open the space priority window to let the user assign raw priority values.
+
+                                            //SpacePriorityWindow priorityWindow = new SpacePriorityWindow(GlobalData.SavedSpaces);
+                                            //bool? priorityResult = priorityWindow.ShowDialog();
+
+                                            //if (priorityResult != true)
+                                            //{
+                                            //    TaskDialog.Show("Canceled", "User canceled at the priority window.");
+                                            //    return Result.Cancelled;
+                                            //}
+
+                                            //// At this point, each SpaceNode's Priority property has been normalized.
+                                            //// You can now access these values for subsequent operations.
 
 
                                             return Result.Succeeded;
@@ -784,7 +929,7 @@ namespace PanelizedAndModularFinal
             GlobalData.Step1Elements.Add(circleCurve.Id);
 
             OverrideGraphicSettings ogs = new OverrideGraphicSettings();
-            ogs.SetProjectionLineWeight(9);
+            ogs.SetProjectionLineWeight(7);
             doc.ActiveView.SetElementOverrides(circleCurve.Id, ogs);
 
             // Create a square surrounding the circle.
@@ -1737,7 +1882,9 @@ namespace PanelizedAndModularFinal
         }
 
 
-
+       
 
     }
+   
+
 }
