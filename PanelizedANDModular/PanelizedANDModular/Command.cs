@@ -364,11 +364,12 @@ namespace PanelizedAndModularFinal
                                             ModuleTypesWindow typesWindow = new ModuleTypesWindow(minWidth, maxHeight);
                                             List<ModuleType> moduleTypes = typesWindow.ModuleTypes;
 
+                                            // inside your Step 2: Module Input and New Output block
+
                                             bool arrangementCreated = false;
-
-
                                             ModuleArrangement arrangement = null;
                                             ModuleArrangementResult chosen = null;
+
                                             while (!arrangementCreated)
                                             {
                                                 ModuleCombinationsWindow combWindow = new ModuleCombinationsWindow(moduleTypes, minWidth);
@@ -378,46 +379,33 @@ namespace PanelizedAndModularFinal
                                                     TaskDialog.Show("Canceled", "User canceled the module combination selection.");
                                                     return Result.Cancelled;
                                                 }
+
                                                 string selectedCombination = combWindow.SelectedCombination;
                                                 TaskDialog.Show("Selected Combination", selectedCombination);
 
-
-
-
-
-
-
-
                                                 BoundingBoxXYZ updatedCrop = activeView.CropBox;
-
-                                                // Compute its width & height
                                                 double updatedWidth = updatedCrop.Max.X - updatedCrop.Min.X;
                                                 double updatedHeight = updatedCrop.Max.Y - updatedCrop.Min.Y;
 
-                                                // Store and show the true dimensions
                                                 GlobalData.landWidth = updatedWidth;
                                                 GlobalData.landHeight = updatedHeight;
 
-            
-
-                                                // 3) Hide Revit’s crop‐box outline
                                                 using (var tx = new Transaction(doc, "Hide Crop Region"))
                                                 {
                                                     tx.Start();
                                                     activeView.CropBoxActive = false;
                                                     activeView.CropBoxVisible = false;
                                                     tx.Commit();
-                                                } 
+                                                }
 
-                                                // 4) Draw your own land boundary using the updatedCrop
                                                 var corners = new List<XYZ>
-{
-                                                new XYZ(updatedCrop.Min.X, updatedCrop.Min.Y, 0),
-                                                new XYZ(updatedCrop.Max.X, updatedCrop.Min.Y, 0),
-                                                new XYZ(updatedCrop.Max.X, updatedCrop.Max.Y, 0),
-                                                new XYZ(updatedCrop.Min.X, updatedCrop.Max.Y, 0),
-                                                 new XYZ(updatedCrop.Min.X, updatedCrop.Min.Y, 0),
-};
+    {
+        new XYZ(updatedCrop.Min.X, updatedCrop.Min.Y, 0),
+        new XYZ(updatedCrop.Max.X, updatedCrop.Min.Y, 0),
+        new XYZ(updatedCrop.Max.X, updatedCrop.Max.Y, 0),
+        new XYZ(updatedCrop.Min.X, updatedCrop.Max.Y, 0),
+        new XYZ(updatedCrop.Min.X, updatedCrop.Min.Y, 0),
+    };
 
                                                 using (var tx2 = new Transaction(doc, "Draw Land Boundary"))
                                                 {
@@ -430,99 +418,45 @@ namespace PanelizedAndModularFinal
                                                     tx2.Commit();
                                                 }
 
-                                                // 5) Pass the updatedCrop into your arrangement logic
                                                 arrangement = new ModuleArrangement(moduleTypes, selectedCombination, updatedCrop);
                                                 List<ModuleArrangementResult> uniqueArrangements = arrangement.GetValidArrangements();
 
                                                 if (uniqueArrangements.Count == 0)
                                                 {
-                                                    TaskDialog.Show("Arrangement Error", "No valid arrangements found. Please try another combination.");
-                                                    return Result.Cancelled;
+                                                    string message2 =
+                                                        $"No valid arrangements found. Module width or height may exceed land dimensions.\n" +
+                                                        $"Land Width: {GlobalData.landWidth:F2}, Land Height: {GlobalData.landHeight:F2}\n" +
+                                                        $"Module Width: {minWidth:F2}, Max Height: {maxHeight:F2}\n\n" +
+                                                        "Please try another combination.";
+
+                                                    TaskDialog.Show("Arrangement Error", message2);
+                                                    continue; // LOOP TO LET USER PICK AGAIN
                                                 }
 
-                                                // 6) Show summary and unique count
                                                 arrangement.DisplayScenarioSummary(uniqueArrangements);
                                                 arrangement.DisplayUniqueCount(uniqueArrangements);
 
-
-
-
-                                                ///////////////////PORTION OF CODE TO DISPLAY ALL ARRANGEMENTS///////////////////////////////////
-
-                                                //if (uniqueArrangements.Count > 0)
-                                                //{
-
-                                                //    for (int i = 0; i < uniqueArrangements.Count; i++)
-                                                //    {
-                                                //        var arr = uniqueArrangements[i];
-                                                //        int moduleCount1 = arr.PlacedModules.Count;
-
-                                                //        // Draw modules
-                                                //        List<ElementId> drawnIds1 = arrangement2.DrawArrangement(doc, arr);
-
-                                                //        TaskDialog.Show(
-                                                //            "Unique Arrangement",
-                                                //            $"Arrangement {i + 1} of {uniqueArrangements.Count}\n" +
-                                                //            $"Modules placed: {moduleCount1}\n\n" +
-                                                //            "Click OK to see the next arrangement."
-                                                //        );
-
-                                                //        // Clear modules before next
-                                                //        using (var t = new Transaction(doc, "Clear Modules"))
-                                                //        {
-                                                //            t.Start();
-                                                //            doc.Delete(drawnIds1);
-                                                //            t.Commit();
-                                                //        }
-                                                //    }
-                                                //}
-                                                //else
-                                                //{
-                                                //    TaskDialog.Show("Arrangement Error", "No valid arrangements found. Please try another combination.");
-                                                //}
-
-                                                ///////////////////PORTION OF CODE TO DISPLAY ALL ARRANGEMENTS///////////////////////////////////
-
-
-
-
-
-
-                                                // 7) Let the user pick one arrangement
                                                 var pickWin = new ArrangementSelectionWindow(uniqueArrangements);
-
-
                                                 var helper = new WindowInteropHelper(pickWin);
                                                 helper.Owner = Process.GetCurrentProcess().MainWindowHandle;
 
                                                 bool? picked = pickWin.ShowDialog();
                                                 if (picked != true)
                                                 {
-                                                    // User cancelled selection
                                                     return Result.Cancelled;
                                                 }
 
-                                                // 8) Draw only the chosen arrangement
                                                 chosen = pickWin.SelectedArrangement;
                                                 int moduleCount = chosen.PlacedModules.Count;
-
                                                 List<ElementId> drawnIds = arrangement.DrawArrangement(doc, chosen);
 
-
-
-
-
-
-
-
-
                                                 arrangementCreated = true;
-
                                             }
 
 
 
-                  
+
+
 
 
                                             // --- Step 2: Re-Output Saved Layout (Connection Lines and Room Circles) ---
@@ -764,6 +698,8 @@ namespace PanelizedAndModularFinal
                                                 double trimmed = space.SquareTrimmedArea;
                                                 lines.Add($"  {space.Name}: {trimmed:F2} sq units");
                                                 grandTotal += trimmed;
+
+                                            
                                             }
 
                                             // 4d) Grand total
@@ -799,65 +735,33 @@ namespace PanelizedAndModularFinal
 
 
 
-                                           
+
+                                            // 1) Draw your module grid cells as before
                                             var moduleCells = chosen.GridCells;
 
-
-                                            // 7) Run the CellAssigner
-                                            var assigner = new CellAssigner(
-                                                moduleCells,
-                                                cellAreas.ToArray(),
-                                                trims,
-                                                GlobalData.SavedSpaces
-                                            );
-                                            var assignments = assigner.AssignAll();
-                                            assigner.ShowAssignments(assignments);
-
-
-                                            // 8) Finally draw each assigned cell in its room’s color
-                                            using (var tx = new Transaction(doc, "Draw Assigned Cells"))
+                                            // 2) Phase 1: fill each space’s unique cells
+                                            var filler = new CellAssigner(doc, doc.ActiveView);
+                                            foreach (var space in GlobalData.SavedSpaces)
                                             {
-                                                tx.Start();
-                                                var view = doc.ActiveView;
+                                                FillResult result1 = filler.FillOverlappingCells(moduleCells, space);
 
-                                                // pick your FilledRegionType & solid drafting pattern
-                                                var regionType = new FilteredElementCollector(doc)
-                                                    .OfClass(typeof(FilledRegionType))
-                                                    .Cast<FilledRegionType>()
-                                                    .First();
-                                                var fillPattern = new FilteredElementCollector(doc)
-                                                    .OfClass(typeof(FillPatternElement))
-                                                    .Cast<FillPatternElement>()
-                                                    .First(fp =>
-                                                        fp.GetFillPattern().IsSolidFill &&
-                                                        fp.GetFillPattern().Target == FillPatternTarget.Drafting
-                                                    );
-
-
-                                                foreach (var a in assignments)
-                                                {
-                                                    var region = FilledRegion.Create(
-                                                        doc,
-                                                        regionType.Id,
-                                                        view.Id,
-                                                        new List<CurveLoop> { a.Cell.Loop }
-                                                    );
-
-
-                                                    var c = a.Space.WpfColor;
-                                                    var ogs = new OverrideGraphicSettings()
-                                                        .SetSurfaceForegroundPatternColor(new Autodesk.Revit.DB.Color(c.R, c.G, c.B))
-                                                        .SetSurfaceBackgroundPatternColor(new Autodesk.Revit.DB.Color(c.R, c.G, c.B))
-                                                        .SetSurfaceForegroundPatternId(fillPattern.Id)
-                                                        .SetSurfaceBackgroundPatternId(fillPattern.Id)
-                                                        .SetSurfaceTransparency(0);    // opaque now that it’s assigned
-
-                                                    view.SetElementOverrides(region.Id, ogs);
-                                                }
-
-                                                tx.Commit();
+                                                TaskDialog.Show(
+                                                    $"Filled “{space.Name}”",
+                                                    $"Cells colored: {result1.RegionIds.Count}\n" +
+                                                    $"Total overlap area: {result1.TotalOverlapArea:F2} ft²\n" +
+                                                    $"Extra allocated: {result1.TotalExtraArea:F2} ft²\n" +
+                                                    $"Remaining trimmed area: {space.SquareTrimmedArea:F2} ft²"
+                                                );
                                             }
 
+                                            // 3) Phase 2: handle any cells shared by ≥2 spaces
+                                            List<ElementId> contestedRegions = filler.ResolveContestedCells(moduleCells);
+
+                                            // (optional) report how many contested cells you ultimately colored
+                                            TaskDialog.Show(
+                                                "Contested Cells Resolved",
+                                                $"Cells filled in Phase 2: {contestedRegions.Count}"
+                                            );
 
 
 
@@ -876,6 +780,46 @@ namespace PanelizedAndModularFinal
 
 
 
+
+
+
+
+
+
+                                            //// 7) Run the CellAssigner
+                                            //var assigner = new CellAssigner1(
+                                            //    moduleCells,
+                                            //    cellAreas.ToArray(),
+                                            //    trims,
+                                            //    GlobalData.SavedSpaces
+                                            //);
+
+
+
+
+
+                                            //assigner.DrawAllAssignments(doc);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                            /////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                            //SPACE PRIORITY/////////////////////////////////////////////////////////////////////////////////////////
+                                            /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                                             //// Now, open the space priority window to let the user assign raw priority values.
 

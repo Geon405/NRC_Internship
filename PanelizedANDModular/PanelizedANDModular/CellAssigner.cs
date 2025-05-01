@@ -6,166 +6,270 @@ using Autodesk.Revit.UI;
 
 namespace PanelizedAndModularFinal
 {
+    /// <summary>
+    /// Info about one cell you filled for a space.
+    /// </summary>
+    public class CellFillInfo
+    {
+        public ModuleGridCell Cell { get; set; }
+        public double CellArea { get; set; }
+        public double OverlapArea { get; set; }
+        public double ExtraArea => CellArea - OverlapArea;
+        public ElementId RegionId { get; set; }
+    }
+
+    /// <summary>
+    /// Results of filling one space: 
+    /// which elements were created and the per-cell metrics.
+    /// </summary>
+    public class FillResult
+    {
+        public List<ElementId> RegionIds { get; } = new List<ElementId>();
+        public List<CellFillInfo> CellInfos { get; } = new List<CellFillInfo>();
+        public double TotalOverlapArea => CellInfos.Sum(i => i.OverlapArea);
+        public double TotalExtraArea => CellInfos.Sum(i => i.ExtraArea);
+    }
+
     public class CellAssigner
     {
-        public class CellAssignment
+        private readonly Document _doc;
+        private readonly View _view;
+        private readonly FilledRegionType _regionType;
+        private readonly FillPatternElement _fillPattern;
+
+        public CellAssigner(Document doc, View view)
         {
-            public ModuleGridCell Cell { get; set; }
-            public SpaceNode Space { get; set; }
-            public double CoveredArea { get; set; }
-        }
-
-        // maps cellIndex → list of (space, coveredArea)
-        private readonly Dictionary<int, List<(SpaceNode Space, double CoveredArea)>> _coverageMap;
-        private readonly double[] _cellAreas;
-        private readonly List<SpaceNode> _spaces;
-        private readonly List<ModuleGridCell> _cells;
-
-        public CellAssigner(
-            List<ModuleGridCell> cells,
-            double[] cellAreas,
-            List<GridTrimmer.TrimResult> trims,
-            List<SpaceNode> spaces)
-        {
-            _cells = cells;
-            _cellAreas = cellAreas;
-            _spaces = spaces;
-
-            // Build coverage map from trims:
-            // TrimmedArea = cellArea - insideArea
-            _coverageMap = new Dictionary<int, List<(SpaceNode, double)>>();
-            foreach (var t in trims)
-            {
-                double inside = _cellAreas[t.CellIndex] - t.TrimmedArea;
-                if (!_coverageMap.ContainsKey(t.CellIndex))
-                    _coverageMap[t.CellIndex] = new List<(SpaceNode, double)>();
-                _coverageMap[t.CellIndex].Add((t.Space, inside));
-            }
+            _doc = doc;
+            _view = view;
+            _regionType = new FilteredElementCollector(doc)
+                .OfClass(typeof(FilledRegionType))
+                .Cast<FilledRegionType>()
+                .First();
+            _fillPattern = new FilteredElementCollector(doc)
+                .OfClass(typeof(FillPatternElement))
+                .Cast<FillPatternElement>()
+                .First(fp =>
+                    fp.GetFillPattern().IsSolidFill &&
+                    fp.GetFillPattern().Target == FillPatternTarget.Drafting
+                );
         }
 
         /// <summary>
-        /// Runs Step 1 & Step 2 and returns a list of final assignments.
-        /// Also updates each SpaceNode.SquareTrimmedArea.
+        /// Fills module cells overlapping exactly one space (this space),
+        /// ordered by descending overlap area, with one allowed overdraft.
         /// </summary>
-        public List<CellAssignment> AssignAll()
+        public FillResult FillOverlappingCells(
+            List<ModuleGridCell> cells,
+            SpaceNode space)
         {
-            // track which cells still need assignment
-            var remaining = new HashSet<int>(_coverageMap.Keys);
-            // final cell→space assignments
-            var assignments = new Dictionary<int, (SpaceNode, double)>();
+            // compute this space's square bounds
+            double radius = Math.Sqrt(space.Area / Math.PI);
+            double side = 2 * radius;
+            double minX = space.Position.X - radius;
+            double minY = space.Position.Y - radius;
+            double maxX = minX + side;
+            double maxY = minY + side;
 
-            AssignSingleColorCells(remaining, assignments);
-            AssignMultiColorCells(remaining, assignments);
+            var result = new FillResult();
+            double remaining = space.SquareTrimmedArea;
+            bool usedOverdraft = false;
 
-            // build result list
-            return assignments
-                .Select(kv => new CellAssignment
-                {
-                    Cell = _cells[kv.Key],
-                    Space = kv.Value.Item1,
-                    CoveredArea = kv.Value.Item2
-                })
-                .ToList();
-        }
-
-        private void AssignSingleColorCells(
-            HashSet<int> remaining,
-            Dictionary<int, (SpaceNode, double)> assignments)
-        {
-            // cells with exactly one coverage source
-            var singleCells = _coverageMap
-                .Where(kvp => kvp.Value.Count == 1)
-                .Select(kvp => kvp.Key)
-                .ToList();
-
-            foreach (var space in _spaces)
+            // collect only cells overlapped by exactly this one space
+            var candidates = new List<(ModuleGridCell cell, double overlapArea, double cellArea, double extraArea)>();
+            foreach (var cell in cells)
             {
-                // while this space still has trimmedArea > 0
-                // and there remain single‐coverage cells for it:
-                bool changed;
-                do
-                {
-                    changed = false;
-                    // pick among remaining single cells that belong to this space
-                    var candidates = singleCells
-                        .Where(ci => remaining.Contains(ci))
-                        .Select(ci => (CellIndex: ci, Covered: _coverageMap[ci][0].CoveredArea))
-                        .Where(tuple => _coverageMap[tuple.CellIndex][0].Space == space
-                                        && tuple.Covered > 0
-                                        && tuple.Covered < _cellAreas[tuple.CellIndex])
-                        .OrderByDescending(tuple => tuple.Covered)
-                        .ToList();
+                double cminX = cell.OriginX;
+                double cminY = cell.OriginY;
+                double cmaxX = cminX + cell.Size;
+                double cmaxY = cminY + cell.Size;
 
-                    if (space.SquareTrimmedArea > 0 && candidates.Any())
+                // count overlapping spaces
+                int overlapCount = 0;
+                foreach (var sp in GlobalData.SavedSpaces)
+                {
+                    double sr = Math.Sqrt(sp.Area / Math.PI);
+                    double ss = 2 * sr;
+                    double smx = sp.Position.X - sr;
+                    double smy = sp.Position.Y - sr;
+                    double sMx = smx + ss;
+                    double sMy = smy + ss;
+                    double ox = Math.Max(0, Math.Min(cmaxX, sMx) - Math.Max(cminX, smx));
+                    double oy = Math.Max(0, Math.Min(cmaxY, sMy) - Math.Max(cminY, smy));
+                    if (ox > 0 && oy > 0)
                     {
-                        var best = candidates.First();
-                        // assign it
-                        assignments[best.CellIndex] = (space, best.Covered);
-                        remaining.Remove(best.CellIndex);
-                        space.SquareTrimmedArea -= best.Covered;
-                        changed = true;
+                        overlapCount++;
+                        if (overlapCount > 1) break;
                     }
                 }
-                while (changed);
-            }
-        }
+                if (overlapCount != 1) continue;
 
-        private void AssignMultiColorCells(
-            HashSet<int> remaining,
-            Dictionary<int, (SpaceNode, double)> assignments)
-        {
-            // cells with two or more coverage sources
-            while (true)
+                // compute overlap with this space
+                double overlapX = Math.Max(0, Math.Min(cmaxX, maxX) - Math.Max(cminX, minX));
+                double overlapY = Math.Max(0, Math.Min(cmaxY, maxY) - Math.Max(cminY, minY));
+                if (overlapX <= 0 || overlapY <= 0) continue;
+
+                double overlapArea = overlapX * overlapY;
+                double cellArea = cell.Size * cell.Size;
+                double extraArea = cellArea - overlapArea;
+
+                candidates.Add((cell, overlapArea, cellArea, extraArea));
+            }
+
+            // sort candidates by largest overlap first
+            var sorted = candidates.OrderByDescending(c => c.overlapArea).ToList();
+
+            using (var tx = new Transaction(_doc, "Fill Ordered Cells"))
             {
-                var multi = remaining
-                    .Where(ci => _coverageMap[ci].Count >= 2)
-                    .FirstOrDefault();
+                tx.Start();
 
-                if (multi == 0 && !remaining.Any(ci => _coverageMap[ci].Count >= 2))
-                    break;
+                var ogs = new OverrideGraphicSettings()
+                    .SetSurfaceForegroundPatternColor(new Color(space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
+                    .SetSurfaceBackgroundPatternColor(new Color(space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
+                    .SetSurfaceForegroundPatternId(_fillPattern.Id)
+                    .SetSurfaceBackgroundPatternId(_fillPattern.Id)
+                    .SetSurfaceTransparency(50)
+                    .SetProjectionLineColor(new Color(space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
+                    .SetProjectionLineWeight(5);
 
-                // choose that cell
-                var coverList = _coverageMap[multi];
-                // if any space still has trimmedArea>0, pick the one with largest trimmedArea
-                var withLeft = coverList.Where(c => c.Space.SquareTrimmedArea > 0).ToList();
-                (SpaceNode Space, double CoveredArea) chosen;
-
-                if (withLeft.Any())
+                foreach (var entry in sorted)
                 {
-                    chosen = withLeft
-                        .OrderByDescending(c => c.Space.SquareTrimmedArea)
-                        .First();
-                }
-                else
-                {
-                    // otherwise pick the one covering most of that cell
-                    chosen = coverList
-                        .OrderByDescending(c => c.CoveredArea)
-                        .First();
+                    var cell = entry.cell;
+                    var overlapArea = entry.overlapArea;
+                    var cellArea = entry.cellArea;
+                    var extraArea = entry.extraArea;
+
+                    // full-cell fill while budget allows
+                    if (remaining > 0)
+                    {
+                        var region = FilledRegion.Create(
+                            _doc, _regionType.Id, _view.Id,
+                            new List<CurveLoop> { cell.Loop });
+                        _view.SetElementOverrides(region.Id, ogs);
+                        result.RegionIds.Add(region.Id);
+                        result.CellInfos.Add(new CellFillInfo
+                        {
+                            Cell = cell,
+                            CellArea = cellArea,
+                            OverlapArea = overlapArea,
+                            RegionId = region.Id
+                        });
+                        remaining -= extraArea;
+                        space.SquareTrimmedArea = remaining;
+                        if (remaining <= 0) usedOverdraft = true;
+                    }
+                    // one overdraft: partial overlap fill then stop
+                    else if (usedOverdraft)
+                    {
+                        var loop = new CurveLoop();
+                        double ix0 = Math.Max(cell.OriginX, minX);
+                        double iy0 = Math.Max(cell.OriginY, minY);
+                        double ix1 = Math.Min(cell.OriginX + cell.Size, maxX);
+                        double iy1 = Math.Min(cell.OriginY + cell.Size, maxY);
+                        loop.Append(Line.CreateBound(new XYZ(ix0, iy0, 0), new XYZ(ix1, iy0, 0)));
+                        loop.Append(Line.CreateBound(new XYZ(ix1, iy0, 0), new XYZ(ix1, iy1, 0)));
+                        loop.Append(Line.CreateBound(new XYZ(ix1, iy1, 0), new XYZ(ix0, iy1, 0)));
+                        loop.Append(Line.CreateBound(new XYZ(ix0, iy1, 0), new XYZ(ix0, iy0, 0)));
+                        var region = FilledRegion.Create(
+                            _doc, _regionType.Id, _view.Id,
+                            new List<CurveLoop> { loop });
+                        _view.SetElementOverrides(region.Id, ogs);
+                        result.RegionIds.Add(region.Id);
+                        result.CellInfos.Add(new CellFillInfo
+                        {
+                            Cell = cell,
+                            CellArea = cellArea,
+                            OverlapArea = overlapArea,
+                            RegionId = region.Id
+                        });
+                        break;
+                    }
                 }
 
-                // assign
-                assignments[multi] = (chosen.Space, chosen.CoveredArea);
-                chosen.Space.SquareTrimmedArea -= chosen.CoveredArea;
-                remaining.Remove(multi);
+                tx.Commit();
             }
+
+            return result;
         }
+
+
 
         /// <summary>
-        /// Pops up a TaskDialog showing for each cell which space it ended up in.
+        /// Phase 2: Resolve cells contested by multiple spaces.
+        /// For each cell overlapped by ≥2 spaces, finds the space with the highest
+        /// SquareTrimmedArea, fills the full cell in that color, deducts its extraArea,
+        /// and refunds each loser by their overlapArea.
         /// </summary>
-        public void ShowAssignments(List<CellAssignment> result)
+        public List<ElementId> ResolveContestedCells(List<ModuleGridCell> cells)
         {
-            var lines = new List<string>();
-            lines.Add("Cell Assignments:");
-            foreach (var a in result)
+            var regionIds = new List<ElementId>();
+            using (var tx = new Transaction(_doc, "Resolve Contested Cells"))
             {
-                lines.Add(
-                    $" Cell #{a.Cell.GlobalIndex}: " +
-                    $"{a.Space.Name} (covered {a.CoveredArea:F2})"
-                );
+                tx.Start();
+
+                foreach (var cell in cells)
+                {
+                    // cell bounds
+                    double x0 = cell.OriginX, y0 = cell.OriginY;
+                    double x1 = x0 + cell.Size, y1 = y0 + cell.Size;
+
+                    // find all spaces overlapping this cell
+                    var overlaps = new List<(SpaceNode space, double area)>();
+                    foreach (var sp in GlobalData.SavedSpaces)
+                    {
+                        double r = Math.Sqrt(sp.Area / Math.PI);
+                        double minX = sp.Position.X - r, minY = sp.Position.Y - r;
+                        double maxX = minX + 2 * r, maxY = minY + 2 * r;
+
+                        double ox = Math.Max(0, Math.Min(x1, maxX) - Math.Max(x0, minX));
+                        double oy = Math.Max(0, Math.Min(y1, maxY) - Math.Max(y0, minY));
+                        if (ox > 0 && oy > 0)
+                            overlaps.Add((sp, ox * oy));
+                    }
+                    if (overlaps.Count < 2) continue;  // only contested cells
+
+                    // pick winner by highest remaining trimmed area
+                    var winner = overlaps.OrderByDescending(o => o.space.SquareTrimmedArea).First();
+                    var losers = overlaps.Where(o => o.space != winner.space).ToList();
+
+                    // fill full cell for winner
+                    var region = FilledRegion.Create(
+                        _doc, _regionType.Id, _view.Id,
+                        new List<CurveLoop> { cell.Loop });
+                    var ogs = new OverrideGraphicSettings()
+                        .SetSurfaceForegroundPatternColor(new Color(
+                            winner.space.WpfColor.R,
+                            winner.space.WpfColor.G,
+                            winner.space.WpfColor.B))
+                        .SetSurfaceBackgroundPatternColor(new Color(
+                            winner.space.WpfColor.R,
+                            winner.space.WpfColor.G,
+                            winner.space.WpfColor.B))
+                        .SetSurfaceForegroundPatternId(_fillPattern.Id)
+                        .SetSurfaceBackgroundPatternId(_fillPattern.Id)
+                        .SetSurfaceTransparency(50)
+                        .SetProjectionLineColor(new Color(
+                            winner.space.WpfColor.R,
+                            winner.space.WpfColor.G,
+                            winner.space.WpfColor.B))
+                        .SetProjectionLineWeight(5);
+                    _view.SetElementOverrides(region.Id, ogs);
+                    regionIds.Add(region.Id);
+
+                    // adjust trimmed areas
+                    double cellArea = cell.Size * cell.Size;
+                    double extraArea = cellArea - winner.area;
+                    winner.space.SquareTrimmedArea -= extraArea;
+                    foreach (var loser in losers)
+                        loser.space.SquareTrimmedArea += loser.area;
+                }
+
+                tx.Commit();
             }
-            TaskDialog.Show("Cell Assigner Results", string.Join("\n", lines));
+            return regionIds;
         }
+
+
     }
+
+
 }
