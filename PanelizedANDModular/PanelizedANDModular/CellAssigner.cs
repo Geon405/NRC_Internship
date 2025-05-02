@@ -194,79 +194,113 @@ namespace PanelizedAndModularFinal
 
 
         /// <summary>
-        /// Phase 2: Resolve cells contested by multiple spaces.
-        /// For each cell overlapped by ≥2 spaces, finds the space with the highest
-        /// SquareTrimmedArea, fills the full cell in that color, deducts its extraArea,
-        /// and refunds each loser by their overlapArea.
+        /// Phase 2: Assign contested cells in descending‐budget order:
+        /// repeatedly pick the space with the highest remaining trimmed area,
+        /// give it any cell it contests where it still leads the budget,
+        /// update all budgets, and remove that cell from contention.
         /// </summary>
         public List<ElementId> ResolveContestedCells(List<ModuleGridCell> cells)
         {
             var regionIds = new List<ElementId>();
-            using (var tx = new Transaction(_doc, "Resolve Contested Cells"))
+
+            // 1) Build map of only the cells overlapped by >=2 spaces
+            var contested = new Dictionary<ModuleGridCell, List<(SpaceNode space, double overlapArea)>>();
+            foreach (var cell in cells)
+            {
+                double x0 = cell.OriginX, y0 = cell.OriginY;
+                double x1 = x0 + cell.Size, y1 = y0 + cell.Size;
+                var overlaps = new List<(SpaceNode, double)>();
+                foreach (var sp in GlobalData.SavedSpaces)
+                {
+                    double r = Math.Sqrt(sp.Area / Math.PI);
+                    double sx0 = sp.Position.X - r, sy0 = sp.Position.Y - r;
+                    double sx1 = sx0 + 2 * r, sy1 = sy0 + 2 * r;
+                    double ox = Math.Max(0, Math.Min(x1, sx1) - Math.Max(x0, sx0));
+                    double oy = Math.Max(0, Math.Min(y1, sy1) - Math.Max(y0, sy0));
+                    if (ox > 0 && oy > 0)
+                        overlaps.Add((sp, ox * oy));
+                }
+                if (overlaps.Count >= 2)
+                    contested[cell] = overlaps;
+            }
+
+            using (var tx = new Transaction(_doc, "Resolve Contested Cells by Budget"))
             {
                 tx.Start();
 
-                foreach (var cell in cells)
+                // 2) While any contested remain:
+                while (contested.Count > 0)
                 {
-                    // cell bounds
-                    double x0 = cell.OriginX, y0 = cell.OriginY;
-                    double x1 = x0 + cell.Size, y1 = y0 + cell.Size;
+                    bool didAssign = false;
 
-                    // find all spaces overlapping this cell
-                    var overlaps = new List<(SpaceNode space, double area)>();
-                    foreach (var sp in GlobalData.SavedSpaces)
+                    // sort spaces by descending budget
+                    var spacesByBudget = GlobalData.SavedSpaces
+                        .OrderByDescending(s => s.SquareTrimmedArea)
+                        .ToList();
+
+                    foreach (var space in spacesByBudget)
                     {
-                        double r = Math.Sqrt(sp.Area / Math.PI);
-                        double minX = sp.Position.X - r, minY = sp.Position.Y - r;
-                        double maxX = minX + 2 * r, maxY = minY + 2 * r;
+                        // cells this space still contests
+                        var myCells = contested
+                            .Where(kv => kv.Value.Any(o => o.space == space))
+                            .ToList();
 
-                        double ox = Math.Max(0, Math.Min(x1, maxX) - Math.Max(x0, minX));
-                        double oy = Math.Max(0, Math.Min(y1, maxY) - Math.Max(y0, minY));
-                        if (ox > 0 && oy > 0)
-                            overlaps.Add((sp, ox * oy));
+                        foreach (var kv in myCells)
+                        {
+                            var cell = kv.Key;
+                            var overlaps = kv.Value;
+
+                            // only assign if this space leads all others here
+                            if (overlaps.All(o => space.SquareTrimmedArea >= o.space.SquareTrimmedArea))
+                            {
+                                // compute extra area
+                                double cellArea = cell.Size * cell.Size;
+                                double overlapArea = overlaps.First(o => o.space == space).overlapArea;
+                                double extraArea = cellArea - overlapArea;
+
+                                // draw full‐cell for winner
+                                var region = FilledRegion.Create(
+                                    _doc, _regionType.Id, _view.Id,
+                                    new List<CurveLoop> { cell.Loop });
+                                var ogs = new OverrideGraphicSettings()
+                                    .SetSurfaceForegroundPatternColor(new Color(
+                                        space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
+                                    .SetSurfaceBackgroundPatternColor(new Color(
+                                        space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
+                                    .SetSurfaceForegroundPatternId(_fillPattern.Id)
+                                    .SetSurfaceBackgroundPatternId(_fillPattern.Id)
+                                    .SetSurfaceTransparency(50)
+                                    .SetProjectionLineColor(new Color(
+                                        space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
+                                    .SetProjectionLineWeight(5);
+                                _view.SetElementOverrides(region.Id, ogs);
+                                regionIds.Add(region.Id);
+
+                                // update budgets
+                                space.SquareTrimmedArea -= extraArea;
+                                foreach (var loser in overlaps.Where(o => o.space != space))
+                                    loser.space.SquareTrimmedArea += loser.overlapArea;
+
+                                // remove cell from further contest
+                                contested.Remove(cell);
+                                didAssign = true;
+                                break;
+                            }
+                        }
+                        if (didAssign) break;
                     }
-                    if (overlaps.Count < 2) continue;  // only contested cells
 
-                    // pick winner by highest remaining trimmed area
-                    var winner = overlaps.OrderByDescending(o => o.space.SquareTrimmedArea).First();
-                    var losers = overlaps.Where(o => o.space != winner.space).ToList();
-
-                    // fill full cell for winner
-                    var region = FilledRegion.Create(
-                        _doc, _regionType.Id, _view.Id,
-                        new List<CurveLoop> { cell.Loop });
-                    var ogs = new OverrideGraphicSettings()
-                        .SetSurfaceForegroundPatternColor(new Color(
-                            winner.space.WpfColor.R,
-                            winner.space.WpfColor.G,
-                            winner.space.WpfColor.B))
-                        .SetSurfaceBackgroundPatternColor(new Color(
-                            winner.space.WpfColor.R,
-                            winner.space.WpfColor.G,
-                            winner.space.WpfColor.B))
-                        .SetSurfaceForegroundPatternId(_fillPattern.Id)
-                        .SetSurfaceBackgroundPatternId(_fillPattern.Id)
-                        .SetSurfaceTransparency(50)
-                        .SetProjectionLineColor(new Color(
-                            winner.space.WpfColor.R,
-                            winner.space.WpfColor.G,
-                            winner.space.WpfColor.B))
-                        .SetProjectionLineWeight(5);
-                    _view.SetElementOverrides(region.Id, ogs);
-                    regionIds.Add(region.Id);
-
-                    // adjust trimmed areas
-                    double cellArea = cell.Size * cell.Size;
-                    double extraArea = cellArea - winner.area;
-                    winner.space.SquareTrimmedArea -= extraArea;
-                    foreach (var loser in losers)
-                        loser.space.SquareTrimmedArea += loser.area;
+                    if (!didAssign)
+                        break; // no further assignments possible
                 }
 
                 tx.Commit();
             }
+
             return regionIds;
         }
+
+
 
 
     }

@@ -453,9 +453,6 @@ namespace PanelizedAndModularFinal
 
 
 
-
-
-
         // Recursively partitions the list of module instances into rows.
         // Each row's total effective horizontal dimensions (sum) must not exceed availableRowWidth,
         // and the total height (sum of the max effective vertical in each row) must not exceed availableTotalHeight.
@@ -489,6 +486,105 @@ namespace PanelizedAndModularFinal
                 currentPartition.RemoveAt(currentPartition.Count - 1);
             }
         }
+
+
+
+
+
+
+        /// <summary>
+        /// Keeps only one arrangement per distinct outer-perimeter shape.
+        /// </summary>
+        public static List<ModuleArrangementResult> FilterUniqueByPerimeter(
+            IEnumerable<ModuleArrangementResult> arrs)
+        {
+            const double tol = 1e-6;
+
+            string PerimeterKey(ModuleArrangementResult arr)
+            {
+                var edges = new List<Tuple<double, double, double, double>>();
+
+                foreach (var pm in arr.PlacedModules)
+                {
+                    double x0 = pm.Origin.X, y0 = pm.Origin.Y;
+                    double w = pm.ModuleInstance.EffectiveHorizontal;
+                    double h = pm.ModuleInstance.EffectiveVertical;
+
+                    // candidate sides: bottom, top, left, right
+                    var sides = new[]
+                    {
+                Tuple.Create(x0,     y0,     x0 + w, y0),     // bottom
+                Tuple.Create(x0,     y0 + h, x0 + w, y0 + h), // top
+                Tuple.Create(x0,     y0,     x0,     y0 + h), // left
+                Tuple.Create(x0 + w, y0,     x0 + w, y0 + h)  // right
+            };
+
+                    foreach (var e in sides)
+                    {
+                        double ax = e.Item1, ay = e.Item2;
+                        double bx = e.Item3, by = e.Item4;
+
+                        // check if any other module shares this exact side
+                        bool shared = arr.PlacedModules.Any(other =>
+                        {
+                            if (other == pm) return false;
+                            double ox = other.Origin.X, oy = other.Origin.Y;
+                            double ow = other.ModuleInstance.EffectiveHorizontal;
+                            double oh = other.ModuleInstance.EffectiveVertical;
+
+                            // vertical side?
+                            if (Math.Abs(ax - bx) < tol && Math.Abs(ox - ax) < tol)
+                            {
+                                double oy0 = oy, oy1 = oy + oh;
+                                double overlap = Math.Min(by, oy1) - Math.Max(ay, oy0);
+                                return overlap > tol;
+                            }
+                            // horizontal side?
+                            if (Math.Abs(ay - by) < tol && Math.Abs(oy - ay) < tol)
+                            {
+                                double ox0 = ox, ox1 = ox + ow;
+                                double overlap = Math.Min(bx, ox1) - Math.Max(ax, ox0);
+                                return overlap > tol;
+                            }
+                            return false;
+                        });
+
+                        if (!shared)
+                        {
+                            // normalize endpoint order
+                            if (ax > bx || (Math.Abs(ax - bx) < tol && ay > by))
+                                (ax, ay, bx, by) = (bx, by, ax, ay);
+
+                            edges.Add(Tuple.Create(ax, ay, bx, by));
+                        }
+                    }
+                }
+
+                // build a stable key from sorted, unique segments
+                var key = string.Join(";", edges
+                    .Distinct()
+                    .OrderBy(t => t.Item1).ThenBy(t => t.Item2)
+                    .ThenBy(t => t.Item3).ThenBy(t => t.Item4)
+                    .Select(t => $"{t.Item1:F2},{t.Item2:F2}-{t.Item3:F2},{t.Item4:F2}"));
+
+                return key;
+            }
+
+            return arrs
+                .GroupBy(a => PerimeterKey(a))
+                .Select(g => g.First())
+                .ToList();
+        }
+
+
+
+
+
+
+
+
+
+
 
         // Converts a valid partition of rows into an arrangement with explicit placements.
         // Modules are placed starting at the bottom-left corner (origin) of the land.
@@ -528,6 +624,138 @@ namespace PanelizedAndModularFinal
         }
         #endregion
     }
+
+
+
+
+
+
+    public static class ArrangementEvaluator
+    {
+        const double tol = 1e-6;
+
+        // 1) Compute total shared‐edge length
+        public static double CalculateAttachmentLength(ModuleArrangementResult arr)
+        {
+            double al = 0;
+            var mods = arr.PlacedModules;
+            for (int i = 0; i < mods.Count; i++)
+            {
+                var a = mods[i];
+                double x0 = a.Origin.X, y0 = a.Origin.Y;
+                double w0 = a.ModuleInstance.EffectiveHorizontal;
+                double h0 = a.ModuleInstance.EffectiveVertical;
+                for (int j = i + 1; j < mods.Count; j++)
+                {
+                    var b = mods[j];
+                    double x1 = b.Origin.X, y1 = b.Origin.Y;
+                    double w1 = b.ModuleInstance.EffectiveHorizontal;
+                    double h1 = b.ModuleInstance.EffectiveVertical;
+
+                    // vertical contact?
+                    if (Math.Abs(x0 + w0 - x1) < tol || Math.Abs(x1 + w1 - x0) < tol)
+                    {
+                        double yOverlap = Math.Max(0,
+                            Math.Min(y0 + h0, y1 + h1) - Math.Max(y0, y1));
+                        al += yOverlap;
+                    }
+
+                    // horizontal contact?
+                    if (Math.Abs(y0 + h0 - y1) < tol || Math.Abs(y1 + h1 - y0) < tol)
+                    {
+                        double xOverlap = Math.Max(0,
+                            Math.Min(x0 + w0, x1 + w1) - Math.Max(x0, x1));
+                        al += xOverlap;
+                    }
+                }
+            }
+            return al;
+        }
+
+        // 2) Union perimeter = sum(individual perimeters) − 2×AL
+        public static double CalculatePerimeter(ModuleArrangementResult arr)
+        {
+            double sumPerim = arr.PlacedModules
+                .Sum(pm => 2 * (pm.ModuleInstance.EffectiveHorizontal + pm.ModuleInstance.EffectiveVertical));
+            double al = CalculateAttachmentLength(arr);
+            return sumPerim - 2 * al;
+        }
+
+
+        /// <summary>
+        /// Keep only one arrangement for each unique outer‐boundary shape,
+        /// regardless of how the modules inside are swapped or shifted.
+        /// </summary>
+        public static List<ModuleArrangementResult> FilterUniqueByPerimeterShape(
+            IEnumerable<ModuleArrangementResult> arrangements)
+        {
+            return arrangements
+                .GroupBy(arr => BuildPerimeterKey(arr))
+                .Select(g => g.First())
+                .ToList();
+        }
+
+        private static string BuildPerimeterKey(ModuleArrangementResult arr)
+        {
+            // Count every rectangle edge; matching interior edges cancel out,
+            // leaving only the outer boundary segments.
+            var edgeCounts = new Dictionary<string, int>();
+            foreach (var pm in arr.PlacedModules)
+            {
+                double x0 = pm.Origin.X, y0 = pm.Origin.Y;
+                double w = pm.ModuleInstance.EffectiveHorizontal;
+                double h = pm.ModuleInstance.EffectiveVertical;
+                var segs = new[] {
+            Tuple.Create(x0,     y0,     x0 + w, y0),     // bottom
+            Tuple.Create(x0,     y0 + h, x0 + w, y0 + h), // top
+            Tuple.Create(x0,     y0,     x0,     y0 + h), // left
+            Tuple.Create(x0 + w, y0,     x0 + w, y0 + h)  // right
+        };
+                foreach (var s in segs)
+                {
+                    string fwd = $"{s.Item1:F3},{s.Item2:F3},{s.Item3:F3},{s.Item4:F3}";
+                    string rev = $"{s.Item3:F3},{s.Item4:F3},{s.Item1:F3},{s.Item2:F3}";
+                    if (edgeCounts.TryGetValue(rev, out var c) && c > 0)
+                        edgeCounts[rev] = c - 1;
+                    else
+                        edgeCounts[fwd] = edgeCounts.GetValueOrDefault(fwd) + 1;
+                }
+            }
+
+            // All keys left with count>0 are outer edges.
+            var outer = edgeCounts
+                .Where(kvp => kvp.Value > 0)
+                .Select(kvp => kvp.Key)
+                .OrderBy(s => s);
+
+            return string.Join("|", outer);
+        }
+
+
+
+
+
+
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     /// <summary>
     /// Represents one grid cell inside a placed module,

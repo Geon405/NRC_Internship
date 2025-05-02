@@ -419,9 +419,9 @@ namespace PanelizedAndModularFinal
                                                 }
 
                                                 arrangement = new ModuleArrangement(moduleTypes, selectedCombination, updatedCrop);
-                                                List<ModuleArrangementResult> uniqueArrangements = arrangement.GetValidArrangements();
+                                                List<ModuleArrangementResult> allArrangements = arrangement.GetValidArrangements();
 
-                                                if (uniqueArrangements.Count == 0)
+                                                if (allArrangements.Count == 0)
                                                 {
                                                     string message2 =
                                                         $"No valid arrangements found. Module width or height may exceed land dimensions.\n" +
@@ -433,8 +433,98 @@ namespace PanelizedAndModularFinal
                                                     continue; // LOOP TO LET USER PICK AGAIN
                                                 }
 
+
+                                                var bestByAL = allArrangements
+         .Select(a => new { a, AL = ArrangementEvaluator.CalculateAttachmentLength(a) })
+         .GroupBy(x => x.AL)
+         .OrderByDescending(g => g.Key)
+         .First()
+         .Select(x => x.a);
+
+                                                // 3) among those, filter to minimal perimeter
+                                                var optimal = bestByAL
+                                                    .Select(a => new { a, P = ArrangementEvaluator.CalculatePerimeter(a) })
+                                                    .GroupBy(x => x.P)
+                                                    .OrderBy(g => g.Key)
+                                                    .First()
+                                                    .Select(x => x.a)
+                                                    .ToList();
+
+                                                // 4) drop any layouts with the same outer-perimeter shape
+                                                List<ModuleArrangementResult> uniqueArrangements =
+                                                    ModuleArrangement.FilterUniqueByPerimeter(optimal);
+
+
+
+
+
+
+
                                                 arrangement.DisplayScenarioSummary(uniqueArrangements);
                                                 arrangement.DisplayUniqueCount(uniqueArrangements);
+
+
+
+
+
+
+
+                                                ////////////////////////////DISPLAY ALL ARANGEMENTS////////////////////////////
+                                                ////////////////////////////DISPLAY ALL ARANGEMENTS////////////////////////////
+
+                                                //if (uniqueArrangements.Count > 0)
+                                                //{
+
+                                                //    for (int i = 0; i < uniqueArrangements.Count; i++)
+                                                //    {
+                                                //        var arr = uniqueArrangements[i];
+                                                //        int moduleCount1 = arr.PlacedModules.Count;
+
+                                                //        // Draw modules
+                                                //        List<ElementId> drawnIds1 = arrangement.DrawArrangement(doc, arr);
+
+                                                //        TaskDialog.Show(
+                                                //            "Unique Arrangement",
+                                                //            $"Arrangement {i + 1} of {uniqueArrangements.Count}\n" +
+                                                //            $"Modules placed: {moduleCount1}\n\n" +
+                                                //            "Click OK to see the next arrangement."
+                                                //        );
+
+                                                //        // Clear modules before next
+                                                //        using (var t = new Transaction(doc, "Clear Modules"))
+                                                //        {
+                                                //            t.Start();
+                                                //            doc.Delete(drawnIds1);
+                                                //            t.Commit();
+                                                //        }
+                                                //    }
+                                                //}
+                                                //else
+                                                //{
+                                                //    TaskDialog.Show("Arrangement Error", "No valid arrangements found. Please try another combination.");
+                                                //}
+
+                                                ////////////////////////////DISPLAY ALL ARANGEMENTS////////////////////////////
+                                                ////////////////////////////DISPLAY ALL ARANGEMENTS////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
                                                 var pickWin = new ArrangementSelectionWindow(uniqueArrangements);
                                                 var helper = new WindowInteropHelper(pickWin);
