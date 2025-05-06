@@ -492,130 +492,133 @@ namespace PanelizedAndModularFinal
 
 
 
+
+
         /// <summary>
-        /// Keeps only one arrangement per distinct outer-perimeter shape.
+        /// From a set of arrangements, keep one per unique outer‐perimeter shape,
+        /// and output for each the *convex‐hull* corner list (only the extreme corners).
         /// </summary>
         public static List<ModuleArrangementResult> FilterUniqueByPerimeter(
-            IEnumerable<ModuleArrangementResult> arrs)
+            IEnumerable<ModuleArrangementResult> arrs,
+            out List<List<XYZ>> cornersList)
         {
             const double tol = 1e-6;
+            var uniqueMap = new Dictionary<string, ModuleArrangementResult>();
+            var cornersMap = new Dictionary<string, List<XYZ>>();
 
-            string PerimeterKey(ModuleArrangementResult arr)
+            foreach (var arr in arrs)
             {
-                var edges = new List<Tuple<double, double, double, double>>();
-
+                // 1) count & cancel interior edges
+                var edgeCounts = new Dictionary<string, int>();
                 foreach (var pm in arr.PlacedModules)
                 {
                     double x0 = pm.Origin.X, y0 = pm.Origin.Y;
                     double w = pm.ModuleInstance.EffectiveHorizontal;
                     double h = pm.ModuleInstance.EffectiveVertical;
-
-                    // candidate sides: bottom, top, left, right
-                    var sides = new[]
-                    {
-                Tuple.Create(x0,     y0,     x0 + w, y0),     // bottom
-                Tuple.Create(x0,     y0 + h, x0 + w, y0 + h), // top
-                Tuple.Create(x0,     y0,     x0,     y0 + h), // left
-                Tuple.Create(x0 + w, y0,     x0 + w, y0 + h)  // right
+                    var segs = new[]{
+                Tuple.Create(x0,     y0,     x0 + w, y0),
+                Tuple.Create(x0,     y0 + h, x0 + w, y0 + h),
+                Tuple.Create(x0,     y0,     x0,     y0 + h),
+                Tuple.Create(x0 + w, y0,     x0 + w, y0 + h)
             };
-
-                    foreach (var e in sides)
+                    foreach (var s in segs)
                     {
-                        double ax = e.Item1, ay = e.Item2;
-                        double bx = e.Item3, by = e.Item4;
-
-                        // check if any other module shares this exact side
-                        bool shared = arr.PlacedModules.Any(other =>
-                        {
-                            if (other == pm) return false;
-                            double ox = other.Origin.X, oy = other.Origin.Y;
-                            double ow = other.ModuleInstance.EffectiveHorizontal;
-                            double oh = other.ModuleInstance.EffectiveVertical;
-
-                            // vertical side?
-                            if (Math.Abs(ax - bx) < tol && Math.Abs(ox - ax) < tol)
-                            {
-                                double oy0 = oy, oy1 = oy + oh;
-                                double overlap = Math.Min(by, oy1) - Math.Max(ay, oy0);
-                                return overlap > tol;
-                            }
-                            // horizontal side?
-                            if (Math.Abs(ay - by) < tol && Math.Abs(oy - ay) < tol)
-                            {
-                                double ox0 = ox, ox1 = ox + ow;
-                                double overlap = Math.Min(bx, ox1) - Math.Max(ax, ox0);
-                                return overlap > tol;
-                            }
-                            return false;
-                        });
-
-                        if (!shared)
-                        {
-                            // normalize endpoint order
-                            if (ax > bx || (Math.Abs(ax - bx) < tol && ay > by))
-                                (ax, ay, bx, by) = (bx, by, ax, ay);
-
-                            edges.Add(Tuple.Create(ax, ay, bx, by));
-                        }
+                        string fwd = $"{s.Item1:F6},{s.Item2:F6},{s.Item3:F6},{s.Item4:F6}";
+                        string rev = $"{s.Item3:F6},{s.Item4:F6},{s.Item1:F6},{s.Item2:F6}";
+                        if (edgeCounts.TryGetValue(rev, out var c) && c > 0)
+                            edgeCounts[rev] = c - 1;
+                        else
+                            edgeCounts[fwd] = edgeCounts.GetValueOrDefault(fwd) + 1;
                     }
                 }
 
-                // build a stable key from sorted, unique segments
-                var key = string.Join(";", edges
-                    .Distinct()
-                    .OrderBy(t => t.Item1).ThenBy(t => t.Item2)
-                    .ThenBy(t => t.Item3).ThenBy(t => t.Item4)
-                    .Select(t => $"{t.Item1:F2},{t.Item2:F2}-{t.Item3:F2},{t.Item4:F2}"));
-
-                return key;
-            }
-
-            return arrs
-                .GroupBy(a => PerimeterKey(a))
-                .Select(g => g.First())
-                .ToList();
-        }
-
-
-
-
-
-
-
-
-
-
-
-        // Converts a valid partition of rows into an arrangement with explicit placements.
-        // Modules are placed starting at the bottom-left corner (origin) of the land.
-        // Returns null if any placement would exceed the land boundaries.
-        private ModuleArrangementResult CreateArrangementFromRows(List<List<ModuleInstance>> rows, XYZ origin,
-            double availableWidth, double availableHeight)
-        {
-            List<PlacedModule> placements = new List<PlacedModule>();
-            double currentY = origin.Y;
-
-            foreach (var row in rows)
-            {
-                double rowHeight = row.Max(m => m.EffectiveVertical);
-                double currentX = origin.X;
-                foreach (var mi in row)
+                // 2) gather only outer‐boundary segment endpoints
+                var pts = new List<XYZ>();
+                foreach (var kv in edgeCounts.Where(kvp => kvp.Value > 0))
                 {
-                    if (currentX + mi.EffectiveHorizontal > origin.X + availableWidth)
-                        return null;
-                    placements.Add(new PlacedModule
-                    {
-                        ModuleInstance = mi,
-                        Origin = new XYZ(currentX, currentY, 0)
-                    });
-                    currentX += mi.EffectiveHorizontal;
+                    var p = kv.Key.Split(',');
+                    double x1 = double.Parse(p[0]), y1 = double.Parse(p[1]);
+                    double x2 = double.Parse(p[2]), y2 = double.Parse(p[3]);
+                    pts.Add(new XYZ(x1, y1, 0));
+                    pts.Add(new XYZ(x2, y2, 0));
                 }
-                currentY += rowHeight;
-                if (currentY > origin.Y + availableHeight)
-                    return null;
+
+                // 3) convex hull (Monotone Chain)
+                var hull = ConvexHull2D(pts, tol);
+
+                // 4) canonical key for dedupe
+                var key = string.Join("|",
+                    hull.Select(pt => $"{pt.X:F3},{pt.Y:F3}")
+                );
+
+                if (!uniqueMap.ContainsKey(key))
+                {
+                    uniqueMap[key] = arr;
+                    cornersMap[key] = hull;
+                }
             }
-            return new ModuleArrangementResult { PlacedModules = placements };
+
+            cornersList = cornersMap.Values.ToList();
+            return uniqueMap.Values.ToList();
         }
+
+        // Monotone‐chain convex hull in XY
+        static List<XYZ> ConvexHull2D(List<XYZ> pts, double tol)
+        {
+            var points = pts
+                .Distinct(new XYZComparer(tol))
+                .OrderBy(p => p.X).ThenBy(p => p.Y)
+                .ToList();
+            if (points.Count < 3) return new List<XYZ>(points);
+
+            List<XYZ> lower = new(), upper = new();
+            foreach (var p in points)
+            {
+                while (lower.Count >= 2 &&
+                       Cross(lower[lower.Count - 2], lower[^1], p) <= tol)
+                    lower.RemoveAt(lower.Count - 1);
+                lower.Add(p);
+            }
+            for (int i = points.Count - 1; i >= 0; i--)
+            {
+                var p = points[i];
+                while (upper.Count >= 2 &&
+                       Cross(upper[upper.Count - 2], upper[^1], p) <= tol)
+                    upper.RemoveAt(upper.Count - 1);
+                upper.Add(p);
+            }
+
+            lower.RemoveAt(lower.Count - 1);
+            upper.RemoveAt(upper.Count - 1);
+            lower.AddRange(upper);
+            return lower;
+        }
+
+        static double Cross(XYZ a, XYZ b, XYZ c)
+            => (b.X - a.X) * (c.Y - a.Y)
+             - (b.Y - a.Y) * (c.X - a.X);
+
+        class XYZComparer : IEqualityComparer<XYZ>
+        {
+            double _tol;
+            public XYZComparer(double tol) => _tol = tol;
+            public bool Equals(XYZ a, XYZ b)
+                => Math.Abs(a.X - b.X) < _tol && Math.Abs(a.Y - b.Y) < _tol;
+            public int GetHashCode(XYZ a)
+                => a.X.GetHashCode() ^ a.Y.GetHashCode();
+        }
+
+
+
+
+
+
+
+
+
+
+
+
 
         // Converts an integer to a binary string with a fixed number of bits.
         private string ToBinaryString(int value, int bits)
@@ -680,61 +683,6 @@ namespace PanelizedAndModularFinal
             double al = CalculateAttachmentLength(arr);
             return sumPerim - 2 * al;
         }
-
-
-        /// <summary>
-        /// Keep only one arrangement for each unique outer‐boundary shape,
-        /// regardless of how the modules inside are swapped or shifted.
-        /// </summary>
-        public static List<ModuleArrangementResult> FilterUniqueByPerimeterShape(
-            IEnumerable<ModuleArrangementResult> arrangements)
-        {
-            return arrangements
-                .GroupBy(arr => BuildPerimeterKey(arr))
-                .Select(g => g.First())
-                .ToList();
-        }
-
-        private static string BuildPerimeterKey(ModuleArrangementResult arr)
-        {
-            // Count every rectangle edge; matching interior edges cancel out,
-            // leaving only the outer boundary segments.
-            var edgeCounts = new Dictionary<string, int>();
-            foreach (var pm in arr.PlacedModules)
-            {
-                double x0 = pm.Origin.X, y0 = pm.Origin.Y;
-                double w = pm.ModuleInstance.EffectiveHorizontal;
-                double h = pm.ModuleInstance.EffectiveVertical;
-                var segs = new[] {
-            Tuple.Create(x0,     y0,     x0 + w, y0),     // bottom
-            Tuple.Create(x0,     y0 + h, x0 + w, y0 + h), // top
-            Tuple.Create(x0,     y0,     x0,     y0 + h), // left
-            Tuple.Create(x0 + w, y0,     x0 + w, y0 + h)  // right
-        };
-                foreach (var s in segs)
-                {
-                    string fwd = $"{s.Item1:F3},{s.Item2:F3},{s.Item3:F3},{s.Item4:F3}";
-                    string rev = $"{s.Item3:F3},{s.Item4:F3},{s.Item1:F3},{s.Item2:F3}";
-                    if (edgeCounts.TryGetValue(rev, out var c) && c > 0)
-                        edgeCounts[rev] = c - 1;
-                    else
-                        edgeCounts[fwd] = edgeCounts.GetValueOrDefault(fwd) + 1;
-                }
-            }
-
-            // All keys left with count>0 are outer edges.
-            var outer = edgeCounts
-                .Where(kvp => kvp.Value > 0)
-                .Select(kvp => kvp.Key)
-                .OrderBy(s => s);
-
-            return string.Join("|", outer);
-        }
-
-
-
-
-
 
 
     }

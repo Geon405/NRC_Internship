@@ -442,7 +442,7 @@ namespace PanelizedAndModularFinal
          .Select(x => x.a);
 
                                                 // 3) among those, filter to minimal perimeter
-                                                var optimal = bestByAL
+                                                var uniqueArrangements = bestByAL
                                                     .Select(a => new { a, P = ArrangementEvaluator.CalculatePerimeter(a) })
                                                     .GroupBy(x => x.P)
                                                     .OrderBy(g => g.Key)
@@ -451,12 +451,14 @@ namespace PanelizedAndModularFinal
                                                     .ToList();
 
                                                 // 4) drop any layouts with the same outer-perimeter shape
-                                                List<ModuleArrangementResult> uniqueArrangements =
-                                                    ModuleArrangement.FilterUniqueByPerimeter(optimal);
+                                                //  List<ModuleArrangementResult> uniqueArrangements = ModuleArrangement.FilterUniqueByPerimeter(optimal);
 
 
 
 
+                                                //List<List<XYZ>> perimeterCorners;
+                                                //var uniqueArrangements = ModuleArrangement
+                                                //    .FilterUniqueByPerimeter(optimal, out perimeterCorners);
 
 
 
@@ -506,6 +508,37 @@ namespace PanelizedAndModularFinal
 
                                                 ////////////////////////////DISPLAY ALL ARANGEMENTS////////////////////////////
                                                 ////////////////////////////DISPLAY ALL ARANGEMENTS////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
