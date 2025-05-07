@@ -508,7 +508,7 @@ namespace PanelizedAndModularFinal
                                                 ////////////////////////////DISPLAY ALL ARANGEMENTS////////////////////////////
                                                 ////////////////////////////DISPLAY ALL ARANGEMENTS////////////////////////////
                                                 ///
-
+                                                //
 
                                                 var pickWin = new ArrangementSelectionWindow(uniqueArrangements);
                                                 var helper = new WindowInteropHelper(pickWin);
