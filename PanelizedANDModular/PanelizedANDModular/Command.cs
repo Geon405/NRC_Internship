@@ -442,7 +442,7 @@ namespace PanelizedAndModularFinal
          .Select(x => x.a);
 
                                                 // 3) among those, filter to minimal perimeter
-                                                var uniqueArrangements = bestByAL
+                                                var optimal = bestByAL
                                                     .Select(a => new { a, P = ArrangementEvaluator.CalculatePerimeter(a) })
                                                     .GroupBy(x => x.P)
                                                     .OrderBy(g => g.Key)
@@ -450,19 +450,18 @@ namespace PanelizedAndModularFinal
                                                     .Select(x => x.a)
                                                     .ToList();
 
-                                                // 4) drop any layouts with the same outer-perimeter shape
-                                                //  List<ModuleArrangementResult> uniqueArrangements = ModuleArrangement.FilterUniqueByPerimeter(optimal);
+                                     
 
 
 
 
-                                                //List<List<XYZ>> perimeterCorners;
-                                                //var uniqueArrangements = ModuleArrangement
-                                                //    .FilterUniqueByPerimeter(optimal, out perimeterCorners);
+                                                List<List<XYZ>> perimeterCorners;
+                                                var uniqueArrangements = ModuleArrangement
+                                                    .FilterUniqueByPerimeter(optimal, out perimeterCorners);
 
 
 
-                                                arrangement.DisplayScenarioSummary(uniqueArrangements);
+                                              //  arrangement.DisplayScenarioSummary(uniqueArrangements);
                                                 arrangement.DisplayUniqueCount(uniqueArrangements);
 
 
@@ -508,55 +507,7 @@ namespace PanelizedAndModularFinal
 
                                                 ////////////////////////////DISPLAY ALL ARANGEMENTS////////////////////////////
                                                 ////////////////////////////DISPLAY ALL ARANGEMENTS////////////////////////////
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                                                ///
 
 
                                                 var pickWin = new ArrangementSelectionWindow(uniqueArrangements);
@@ -570,6 +521,9 @@ namespace PanelizedAndModularFinal
                                                 }
 
                                                 chosen = pickWin.SelectedArrangement;
+
+                                                arrangement.CenterArrangement(chosen);
+
                                                 int moduleCount = chosen.PlacedModules.Count;
                                                 List<ElementId> drawnIds = arrangement.DrawArrangement(doc, chosen);
 
@@ -588,8 +542,9 @@ namespace PanelizedAndModularFinal
                                             {
                                                 tx.Start();
 
-                                                //XYZ overallBoundaryCenter = arranger.OverallCenter;
-                                                //CenterLayoutOnOverallBoundary(savedSpaces, overallBoundaryCenter);
+                                                XYZ overallBoundaryCenter = arrangement.OverallCenter(chosen);
+
+                                                CenterLayoutOnOverallBoundary(savedSpaces, overallBoundaryCenter);
 
 
                                                 // Create circles for each saved space
@@ -1897,56 +1852,6 @@ namespace PanelizedAndModularFinal
 
 
 
-        // Helper method to reorder and orient the lines into a continuous loop.
-        List<Line> ReorderLines(List<Line> lines)
-        {
-            // Create a working copy.
-            List<Line> remaining = new List<Line>(lines);
-            List<Line> ordered = new List<Line>();
-
-            if (remaining.Count == 0)
-                return ordered;
-
-            // Start with the first line.
-            ordered.Add(remaining[0]);
-            remaining.RemoveAt(0);
-
-            // Loop until all lines are connected.
-            while (remaining.Count > 0)
-            {
-                // Get the end point of the last added line.
-                XYZ lastPoint = ordered.Last().GetEndPoint(1);
-                bool foundMatch = false;
-
-                // Try to find a line whose start or end matches the last point.
-                for (int i = 0; i < remaining.Count; i++)
-                {
-                    Line candidate = remaining[i];
-                    if (lastPoint.IsAlmostEqualTo(candidate.GetEndPoint(0)))
-                    {
-                        ordered.Add(candidate);
-                        remaining.RemoveAt(i);
-                        foundMatch = true;
-                        break;
-                    }
-                    else if (lastPoint.IsAlmostEqualTo(candidate.GetEndPoint(1)))
-                    {
-                        // Reverse the candidate so that its start matches the last point.
-                        Line reversed = Line.CreateBound(candidate.GetEndPoint(1), candidate.GetEndPoint(0));
-                        ordered.Add(reversed);
-                        remaining.RemoveAt(i);
-                        foundMatch = true;
-                        break;
-                    }
-                }
-
-                if (!foundMatch)
-                {
-                    throw new Exception("Cannot form a continuous loop with the provided lines.");
-                }
-            }
-            return ordered;
-        }
 
 
        

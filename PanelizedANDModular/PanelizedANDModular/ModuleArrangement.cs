@@ -625,6 +625,150 @@ namespace PanelizedAndModularFinal
         {
             return Convert.ToString(value, 2).PadLeft(bits, '0');
         }
+
+
+
+        /// <summary>
+        /// Compute the centroid of a layout’s outer‐boundary.
+        /// </summary>
+        public XYZ OverallCenter(ModuleArrangementResult arr)
+        {
+            const double tol = 1e-6;
+            // 1) Count & cancel interior edges
+            var edgeCounts = new Dictionary<string, int>();
+            foreach (var pm in arr.PlacedModules)
+            {
+                double x0 = pm.Origin.X, y0 = pm.Origin.Y;
+                double w = pm.ModuleInstance.EffectiveHorizontal;
+                double h = pm.ModuleInstance.EffectiveVertical;
+                var segs = new[]{
+            Tuple.Create(x0,     y0,     x0 + w, y0),
+            Tuple.Create(x0,     y0 + h, x0 + w, y0 + h),
+            Tuple.Create(x0,     y0,     x0,     y0 + h),
+            Tuple.Create(x0 + w, y0,     x0 + w, y0 + h)
+        };
+                foreach (var s in segs)
+                {
+                    string fwd = $"{s.Item1:F6},{s.Item2:F6},{s.Item3:F6},{s.Item4:F6}";
+                    string rev = $"{s.Item3:F6},{s.Item4:F6},{s.Item1:F6},{s.Item2:F6}";
+                    if (edgeCounts.TryGetValue(rev, out var c) && c > 0)
+                        edgeCounts[rev] = c - 1;
+                    else
+                        edgeCounts[fwd] = edgeCounts.GetValueOrDefault(fwd) + 1;
+                }
+            }
+
+            // 2) Gather only the remaining (outer) endpoints
+            var pts = new List<XYZ>();
+            foreach (var kv in edgeCounts.Where(k => k.Value > 0))
+            {
+                var p = kv.Key.Split(',');
+                double x1 = double.Parse(p[0]), y1 = double.Parse(p[1]);
+                double x2 = double.Parse(p[2]), y2 = double.Parse(p[3]);
+                pts.Add(new XYZ(x1, y1, 0));
+                pts.Add(new XYZ(x2, y2, 0));
+            }
+
+            // 3) Compute convex hull of those points
+            var hull = ConvexHull2D(pts, tol);
+
+            // 4) Compute polygon centroid (standard formula)
+            double area = 0, cx = 0, cy = 0;
+            int n = hull.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var p0 = hull[i];
+                var p1 = hull[(i + 1) % n];
+                double cross = p0.X * p1.Y - p1.X * p0.Y;
+                area += cross;
+                cx += (p0.X + p1.X) * cross;
+                cy += (p0.Y + p1.Y) * cross;
+            }
+            area *= 0.5;
+            if (Math.Abs(area) < tol)
+            {
+                // fallback: average of hull points
+                cx = hull.Sum(p => p.X) / n;
+                cy = hull.Sum(p => p.Y) / n;
+            }
+            else
+            {
+                cx /= (6 * area);
+                cy /= (6 * area);
+            }
+
+            return new XYZ(cx, cy, 0);
+        }
+
+
+
+
+
+
+        /// <summary>
+        /// Returns the geometric center of the land (crop box).
+        /// </summary>
+        public XYZ GetLandCenter()
+        {
+            double cx = (_cropBox.Min.X + _cropBox.Max.X) * 0.5;
+            double cy = (_cropBox.Min.Y + _cropBox.Max.Y) * 0.5;
+            return new XYZ(cx, cy, 0);
+        }
+
+    
+        /// <summary>
+        /// Attempts to translate every placed module in <paramref name="arr"/> so that its
+        /// bounding‐box is centered in the land.  If *any* module would end up outside
+        /// the cropBox, the arrangement is left unchanged.
+        /// </summary>
+        public void CenterArrangement(ModuleArrangementResult arr)
+        {
+            // Land bounds
+            double landMinX = _cropBox.Min.X, landMaxX = _cropBox.Max.X;
+            double landMinY = _cropBox.Min.Y, landMaxY = _cropBox.Max.Y;
+
+            // 1) Compute current layout bounds
+            double minX = arr.PlacedModules.Min(pm => pm.Origin.X);
+            double minY = arr.PlacedModules.Min(pm => pm.Origin.Y);
+            double maxX = arr.PlacedModules.Max(pm => pm.Origin.X + pm.ModuleInstance.EffectiveHorizontal);
+            double maxY = arr.PlacedModules.Max(pm => pm.Origin.Y + pm.ModuleInstance.EffectiveVertical);
+
+            // 2) Find layout center vs. land center
+            var layoutCenter = new XYZ((minX + maxX) * 0.5, (minY + maxY) * 0.5, 0);
+            var landCenter = GetLandCenter();
+            double dx = landCenter.X - layoutCenter.X;
+            double dy = landCenter.Y - layoutCenter.Y;
+
+            // 3) Test fit: would every module remain inside?
+            foreach (var pm in arr.PlacedModules)
+            {
+                double newX = pm.Origin.X + dx;
+                double newY = pm.Origin.Y + dy;
+                double w = pm.ModuleInstance.EffectiveHorizontal;
+                double h = pm.ModuleInstance.EffectiveVertical;
+
+                if (newX < landMinX || newX + w > landMaxX ||
+                    newY < landMinY || newY + h > landMaxY)
+                {
+                    // one or more modules would stick out → abort centering
+                    return;
+                }
+            }
+
+            // 4) Safe to apply: shift every module
+            foreach (var pm in arr.PlacedModules)
+            {
+                pm.Origin = new XYZ(pm.Origin.X + dx, pm.Origin.Y + dy, pm.Origin.Z);
+            }
+        }
+
+
+
+
+
+
+
+
         #endregion
     }
 
