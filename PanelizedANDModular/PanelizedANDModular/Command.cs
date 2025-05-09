@@ -15,6 +15,7 @@ using PanelizedAndModularFinal;
 using System.Diagnostics;
 using System.Windows.Interop;
 using static PanelizedAndModularFinal.GridTrimmer;
+using Autodesk.Revit.DB.Mechanical;
 #endregion
 
 public static class GlobalData
@@ -609,8 +610,10 @@ namespace PanelizedAndModularFinal
 
                                             var fullGridIds = new List<ElementId>();
 
-                                            // 1. Draw perfectly‐fitting 3×3 colored, semi‐transparent grid inside each saved space’s square
-                                            using (var trans = new Transaction(doc, "Draw Perfect 3x3 Grids"))
+                               
+
+                                            // 1. Draw perfectly‑fitting colored, semi‑transparent square inside each saved space’s square
+                                            using (var trans = new Transaction(doc, "Draw Perfect Squares"))
                                             {
                                                 trans.Start();
 
@@ -642,72 +645,49 @@ namespace PanelizedAndModularFinal
                                                     double minX = cx - radius;
                                                     double minY = cy - radius;
 
-                                                    // 2) Each square is broken into exactly 3×3 cells
-                                                    int nCols = 3;
-                                                    int nRows = 3;
-                                                    double cellSize = side / 3.0;    // fits perfectly
-
-                                                    // 3) Prepare sketch plane at bottom‐left corner
+                                                    // 2) Prepare sketch plane at bottom‑left corner
                                                     var plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, new XYZ(minX, minY, z));
-                                                    var sp = SketchPlane.Create(doc, plane);
+                                                    SketchPlane.Create(doc, plane);
 
-                                                    // 4) Build one OverrideGraphicSettings for this space
+                                                    // 3) Build override settings
                                                     var ogs = new OverrideGraphicSettings()
-                                                        // fill color & transparency
-                                                        .SetSurfaceForegroundPatternColor(new Autodesk.Revit.DB.Color(
-                                                            space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
-                                                        .SetSurfaceBackgroundPatternColor(new Autodesk.Revit.DB.Color(
-                                                            space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
+                                                        .SetSurfaceForegroundPatternColor(new Autodesk.Revit.DB.Color(space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
+                                                        .SetSurfaceBackgroundPatternColor(new Autodesk.Revit.DB.Color(space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
                                                         .SetSurfaceForegroundPatternId(fillPattern.Id)
                                                         .SetSurfaceBackgroundPatternId(fillPattern.Id)
-                                                        .SetSurfaceTransparency(50)  // 50% see‐through
-                                                                                     // outline color & weight
-                                                        .SetProjectionLineColor(new Autodesk.Revit.DB.Color(
-                                                            space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
-                                                        .SetProjectionLineWeight(5);
+                                                        .SetSurfaceTransparency(50)
+                                                        .SetProjectionLineWeight(OverrideGraphicSettings.InvalidPenNumber);
 
-                                                    // 5) Tile and draw each of the 3×3 cells
-                                                    for (int i = 0; i < nCols; i++)
-                                                    {
-                                                        for (int j = 0; j < nRows; j++)
-                                                        {
-                                                            double x0 = minX + i * cellSize;
-                                                            double y0 = minY + j * cellSize;
-                                                            double x1 = x0 + cellSize;
-                                                            double y1 = y0 + cellSize;
+                                                    // 4) Draw one big square
+                                                    double x0 = minX;
+                                                    double y0 = minY;
+                                                    double x1 = minX + side;
+                                                    double y1 = minY + side;
 
-                                                            // build a CurveLoop of 4 edges
-                                                            var loop = new CurveLoop();
-                                                            loop.Append(Line.CreateBound(new XYZ(x0, y0, z), new XYZ(x1, y0, z)));
-                                                            loop.Append(Line.CreateBound(new XYZ(x1, y0, z), new XYZ(x1, y1, z)));
-                                                            loop.Append(Line.CreateBound(new XYZ(x1, y1, z), new XYZ(x0, y1, z)));
-                                                            loop.Append(Line.CreateBound(new XYZ(x0, y1, z), new XYZ(x0, y0, z)));
+                                                    var outerLoop = new CurveLoop();
+                                                    outerLoop.Append(Line.CreateBound(new XYZ(x0, y0, z), new XYZ(x1, y0, z)));
+                                                    outerLoop.Append(Line.CreateBound(new XYZ(x1, y0, z), new XYZ(x1, y1, z)));
+                                                    outerLoop.Append(Line.CreateBound(new XYZ(x1, y1, z), new XYZ(x0, y1, z)));
+                                                    outerLoop.Append(Line.CreateBound(new XYZ(x0, y1, z), new XYZ(x0, y0, z)));
 
-                                                            // create filled region using regionType
-                                                            var region = FilledRegion.Create(
-                                                                doc,
-                                                                regionType.Id,
-                                                                view.Id,
-                                                                new List<CurveLoop> { loop }
-                                                            );
+                                                    var region = FilledRegion.Create(
+                                                        doc,
+                                                        regionType.Id,
+                                                        view.Id,
+                                                        new List<CurveLoop> { outerLoop }
+                                                    );
 
+                                                    fullGridIds.Add(region.Id);
+                                                    view.SetElementOverrides(region.Id, ogs);
 
-                                                       
-                                                            fullGridIds.Add(region.Id);
-                                                            view.SetElementOverrides(region.Id, ogs);
-
-
-                                                            // apply semi‐transparent color & outline
-                                                            view.SetElementOverrides(region.Id, ogs);
-
-                                                            // record each cell’s area if desired
-                                                            space.SquareArea = cellSize * cellSize;
-                                                        }
-                                                    }
+                                                    // record the area of the full square
+                                                    space.SquareArea = side * side;
                                                 }
 
                                                 trans.Commit();
                                             }
+
+
 
                                             // 2) Let the user see it, then remove
                                             TaskDialog.Show(
@@ -750,22 +730,26 @@ namespace PanelizedAndModularFinal
                                                 out trims
                                             );
 
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                                             // 4) Show both the trimmed cells and the per‐space totals
                                             var lines = new List<string>();
 
-                                            // 4a) List each trimmed cell
-                                            lines.Add("Trimmed Cells:");
-                                            foreach (var t in trims)
-                                            {
-                                                lines.Add(
-                                                  $"  {t.Space.Name} – cell #{t.CellIndex + 1}: " +
-                                                  $"{t.TrimmedArea:F2} sq units trimmed"
-                                                );
-                                            }
-
-
-
-
+      
                                             // 4b) Blank separator
                                             lines.Add("");
                                             // 4c) Totals per space
@@ -791,15 +775,6 @@ namespace PanelizedAndModularFinal
                                             );
 
 
-                                            // Optional: let the user review then clear the trimmed regions before assignment
-                                            TaskDialog.Show("Trim Complete", "The trimmed squares are drawn. Click OK to assign cells.");
-                                            using (var tx = new Transaction(doc, "Clear Trimmed Regions"))
-                                            {
-                                                tx.Start();
-                                                doc.Delete(trimmedIds);
-                                                tx.Commit();
-                                            }
-
 
 
                                             /////////////////////////////////////////////////////////////////////////
@@ -813,33 +788,98 @@ namespace PanelizedAndModularFinal
 
 
 
+                                            // grab one solid drafting pattern
+                                            var fillPattern2 = new FilteredElementCollector(doc)
+                                                .OfClass(typeof(FillPatternElement))
+                                                .Cast<FillPatternElement>()
+                                                .First(fp =>
+                                                    fp.GetFillPattern().IsSolidFill &&
+                                                    fp.GetFillPattern().Target == FillPatternTarget.Drafting
+                                                );
+
+                                            var view2 = doc.ActiveView;
+
+                                            // 3) Recolor, grouping by Space so each room keeps its own color
+                                            using (var tx = new Transaction(doc, "Recolor Trimmed Regions"))
+                                            {
+                                                tx.Start();
+
+                                                foreach (var group in trims.GroupBy(t => t.Space))
+                                                {
+                                                    var space = group.Key;
+                                                    var ogs = new OverrideGraphicSettings()
+                                                        .SetSurfaceForegroundPatternColor(new Autodesk.Revit.DB.Color(
+                                                            space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
+                                                        .SetSurfaceBackgroundPatternColor(new Autodesk.Revit.DB.Color(
+                                                            space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
+                                                        .SetSurfaceForegroundPatternId(fillPattern2.Id)
+                                                        .SetSurfaceBackgroundPatternId(fillPattern2.Id)
+                                                        .SetSurfaceTransparency(0)  // fully opaque
+                                                        .SetProjectionLineColor(new Autodesk.Revit.DB.Color(
+                                                            space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
+                                                        .SetProjectionLineWeight(1);
+
+                                                    foreach (var trim in group)
+                                                        view2.SetElementOverrides(trim.RegionId, ogs);
+                                                }
+
+                                                tx.Commit();
+                                            }
+
+
+
+
+
 
                                             // 1) Draw your module grid cells as before
                                             var moduleCells = chosen.GridCells;
+                                            var filler = new CellAssigner(doc, doc.ActiveView);
+
+
+
+
+                                            var phase0Ids = filler.Phase0ResolveMultiOverlaps(moduleCells);
+                                            TaskDialog.Show(
+                                                "Phase 0 Complete",
+                                                $"Trimmed + Phase 0 overlays are displayed together. Click OK to continue."
+                                            );
+
+                                            //// now clear *both* sets of overlays in one go:
+                                            //if (trimmedIds.Any() || phase0Ids.Any())
+                                            //{
+                                            //    using (var tx = new Transaction(doc, "Clear Trim & Phase0 Regions"))
+                                            //    {
+                                            //        tx.Start();
+                                            //        doc.Delete(trimmedIds.Concat(phase0Ids).ToList());
+                                            //        tx.Commit();
+                                            //    }
+                                            //}
+
+
 
                                             // 2) Phase 1: fill each space’s unique cells
-                                            var filler = new CellAssigner(doc, doc.ActiveView);
-                                            foreach (var space in GlobalData.SavedSpaces)
-                                            {
-                                                FillResult result1 = filler.FillOverlappingCells(moduleCells, space);
 
-                                                TaskDialog.Show(
-                                                    $"Filled “{space.Name}”",
-                                                    $"Cells colored: {result1.RegionIds.Count}\n" +
-                                                    $"Total overlap area: {result1.TotalOverlapArea:F2} ft²\n" +
-                                                    $"Extra allocated: {result1.TotalExtraArea:F2} ft²\n" +
-                                                    $"Remaining trimmed area: {space.SquareTrimmedArea:F2} ft²"
-                                                );
-                                            }
+                                            //foreach (var space in GlobalData.SavedSpaces)
+                                            //{
+                                            //    FillResult result1 = filler.FillOverlappingCells(moduleCells, space);
 
-                                            // 3) Phase 2: handle any cells shared by ≥2 spaces
-                                            List<ElementId> contestedRegions = filler.ResolveContestedCells(moduleCells);
+                                            //    TaskDialog.Show(
+                                            //        $"Filled “{space.Name}”",
+                                            //        $"Cells colored: {result1.RegionIds.Count}\n" +
+                                            //        $"Total overlap area: {result1.TotalOverlapArea:F2} ft²\n" +
+                                            //        $"Extra allocated: {result1.TotalExtraArea:F2} ft²\n" +
+                                            //        $"Remaining trimmed area: {space.SquareTrimmedArea:F2} ft²"
+                                            //    );
+                                            //}
 
-                                            // (optional) report how many contested cells you ultimately colored
-                                            TaskDialog.Show(
-                                                "Contested Cells Resolved",
-                                                $"Cells filled in Phase 2: {contestedRegions.Count}"
-                                            );
+                                            //// 3) Phase 2: handle any cells shared by ≥2 spaces
+                                            //List<ElementId> contestedRegions = filler.ResolveContestedCells(moduleCells);
+
+                                            //// (optional) report how many contested cells you ultimately colored
+                                            //TaskDialog.Show(
+                                            //    "Contested Cells Resolved",
+                                            //    $"Cells filled in Phase 2: {contestedRegions.Count}"
+                                            //);
 
 
 

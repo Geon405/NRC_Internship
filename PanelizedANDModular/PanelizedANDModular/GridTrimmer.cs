@@ -13,12 +13,14 @@ namespace PanelizedAndModularFinal
             public SpaceNode Space;
             public int CellIndex;
             public double TrimmedArea;
+            public ElementId RegionId;    // ← added
         }
 
         /// <summary>
         /// Clips each space’s 3×3 grid cells against the module arrangement,
         /// draws only the inside pieces, and returns the trimmed‐off areas per cell.
         /// Also accumulates each space’s total trimmed area into SpaceNode.SquareTrimmedArea.
+        /// Now records each FilledRegion’s ElementId in the TrimResult.
         /// </summary>
         public List<ElementId> DrawTrimmedGrids(
             Document doc,
@@ -73,9 +75,9 @@ namespace PanelizedAndModularFinal
                     double cellSize = side / 3.0;
                     double cellArea = cellSize * cellSize;
 
-                    // plane & overrides
+                    // sketch plane & initial OGS
                     var plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, new XYZ(minX, minY, z));
-                    var sp = SketchPlane.Create(doc, plane);
+                    SketchPlane.Create(doc, plane);
                     var ogs = new OverrideGraphicSettings()
                         .SetSurfaceForegroundPatternColor(new Autodesk.Revit.DB.Color(
                             space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
@@ -86,7 +88,7 @@ namespace PanelizedAndModularFinal
                         .SetSurfaceTransparency(50)
                         .SetProjectionLineColor(new Autodesk.Revit.DB.Color(
                             space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
-                        .SetProjectionLineWeight(5);
+                        .SetProjectionLineWeight(1);
 
                     int cellIndex = 0;
                     foreach (int i in Enumerable.Range(0, nCols))
@@ -97,10 +99,9 @@ namespace PanelizedAndModularFinal
                             double x1 = x0 + cellSize;
                             double y1 = y0 + cellSize;
 
-                            // find each overlap with modules
+                            // compute overlap loops
                             double insideArea = 0.0;
                             var loops = new List<CurveLoop>();
-
                             foreach (var m in modules)
                             {
                                 double ix0 = Math.Max(x0, m.MinX);
@@ -120,14 +121,8 @@ namespace PanelizedAndModularFinal
                             }
 
                             double trimmed = cellArea - insideArea;
-                            trimResults.Add(new TrimResult
-                            {
-                                Space = space,
-                                CellIndex = cellIndex,
-                                TrimmedArea = trimmed
-                            });
 
-                            // draw only the inside loops
+                            // draw & record each trimmed‐area region
                             foreach (var loop in loops)
                             {
                                 var region = FilledRegion.Create(
@@ -137,6 +132,15 @@ namespace PanelizedAndModularFinal
                                     new List<CurveLoop> { loop }
                                 );
                                 drawnIds.Add(region.Id);
+
+                                trimResults.Add(new TrimResult
+                                {
+                                    Space = space,
+                                    CellIndex = cellIndex,
+                                    TrimmedArea = trimmed,
+                                    RegionId = region.Id    // ← populated
+                                });
+
                                 view.SetElementOverrides(region.Id, ogs);
                             }
 
@@ -147,11 +151,9 @@ namespace PanelizedAndModularFinal
                 t.Commit();
             }
 
-         
+            // accumulate total trimmed per space
             foreach (var group in trimResults.GroupBy(r => r.Space))
-            {
                 group.Key.SquareTrimmedArea = group.Sum(r => r.TrimmedArea);
-            }
 
             return drawnIds;
         }
