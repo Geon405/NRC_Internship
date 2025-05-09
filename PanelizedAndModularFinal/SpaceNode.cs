@@ -39,7 +39,7 @@ namespace PanelizedAndModularFinal
             Position = position;
             WpfColor = wpfColor;
             Radius = 0.0;
-            Priority = 0.0; // default raw value
+           
 
             // Add this instance to the static list.
             _allSpaces.Add(this);

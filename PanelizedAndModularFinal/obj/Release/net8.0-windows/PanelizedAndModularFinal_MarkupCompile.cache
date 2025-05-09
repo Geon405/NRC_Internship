@@ -4,17 +4,17 @@
 library
 C#
 .cs
-C:\Users\martinchan\source\repos\CRR_Internship\PanelizedAndModularFinal\PanelizedAndModularFinal\obj\Release\net8.0-windows\
+C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Release\net8.0-windows\
 PanelizedAndModularFinal
 none
 false
 TRACE;RELEASE;NET;NET8_0;NETCOREAPP
 
-21719776367
+5-1117571302
 
-71971742914
+11-1816265680
 200805319329
-RoomInputWindow.xaml;RoomInstancesWindow.xaml;
+ConnectivityMatrixWindow.xaml;EdgeWeightsWindow.xaml;PreferredAdjacencyWindow.xaml;RoomInputWindow.xaml;RoomInstancesWindow.xaml;
 
 True
 

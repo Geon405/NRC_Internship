@@ -8,26 +8,35 @@
     ".NETCoreApp,Version=v8.0": {
       "PanelizedAndModularFinal/1.0.0": {
         "dependencies": {
-          "RevitAPI": "25.4.0.0",
-          "RevitAPIUI": "25.4.0.0"
+          "clipper_standard": "0.0.1",
+          "RevitAPI": "25.4.10.0",
+          "RevitAPIUI": "25.4.10.0"
         },
         "runtime": {
           "PanelizedAndModularFinal.dll": {}
         }
       },
-      "RevitAPI/25.4.0.0": {
+      "clipper_standard/0.0.1": {
         "runtime": {
-          "RevitAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+          "lib/netstandard2.0/clipper.dll": {
+            "assemblyVersion": "0.0.1.0",
+            "fileVersion": "0.0.1.0"
           }
         }
       },
-      "RevitAPIUI/25.4.0.0": {
+      "RevitAPI/25.4.10.0": {
+        "runtime": {
+          "RevitAPI.dll": {
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
+          }
+        }
+      },
+      "RevitAPIUI/25.4.10.0": {
         "runtime": {
           "RevitAPIUI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
@@ -39,11 +48,11 @@
           }
         }
       },
-      "AdskRcManaged/1.0.8772.32757": {
+      "AdskRcManaged/1.0.9203.7209": {
         "runtime": {
           "AdskRcManaged.dll": {
-            "assemblyVersion": "1.0.8772.32757",
-            "fileVersion": "25.1.0.60"
+            "assemblyVersion": "1.0.9203.7209",
+            "fileVersion": "25.1.2.3"
           }
         }
       },
@@ -63,307 +72,307 @@
           }
         }
       },
-      "RevitAPIFoundation/25.4.0.0": {
+      "RevitAPIFoundation/25.4.10.0": {
         "runtime": {
           "RevitAPIFoundation.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "RevitDBAPI/25.4.0.0": {
+      "RevitDBAPI/25.4.10.0": {
         "runtime": {
           "RevitDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "RevitDBCoreAPI/25.4.0.0": {
+      "RevitDBCoreAPI/25.4.10.0": {
         "runtime": {
           "RevitDBCoreAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "PersistenceDBAPI/25.4.0.0": {
+      "PersistenceDBAPI/25.4.10.0": {
         "runtime": {
           "PersistenceDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "UtilityAPI/25.4.0.0": {
+      "UtilityAPI/25.4.10.0": {
         "runtime": {
           "UtilityAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "APIDBAPI/25.4.0.0": {
+      "APIDBAPI/25.4.10.0": {
         "runtime": {
           "APIDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "GraphicsAPI/25.4.0.0": {
+      "GraphicsAPI/25.4.10.0": {
         "runtime": {
           "GraphicsAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "ElementGroupDBAPI/25.4.0.0": {
+      "ElementGroupDBAPI/25.4.10.0": {
         "runtime": {
           "ElementGroupDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "EssentialsDBAPI/25.4.0.0": {
+      "EssentialsDBAPI/25.4.10.0": {
         "runtime": {
           "EssentialsDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "GeomUtilAPI/25.4.0.0": {
+      "GeomUtilAPI/25.4.10.0": {
         "runtime": {
           "GeomUtilAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "FamilyDBAPI/25.4.0.0": {
+      "FamilyDBAPI/25.4.10.0": {
         "runtime": {
           "FamilyDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "DetailDBAPI/25.4.0.0": {
+      "DetailDBAPI/25.4.10.0": {
         "runtime": {
           "DetailDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "CurtainGridFamilyDBAPI/25.4.0.0": {
+      "CurtainGridFamilyDBAPI/25.4.10.0": {
         "runtime": {
           "CurtainGridFamilyDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "ArrayElemsDBAPI/25.4.0.0": {
+      "ArrayElemsDBAPI/25.4.10.0": {
         "runtime": {
           "ArrayElemsDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "EnergyAnalysisDBAPI/25.4.0.0": {
+      "EnergyAnalysisDBAPI/25.4.10.0": {
         "runtime": {
           "EnergyAnalysisDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "BuildingSystemsDBAPI/25.4.0.0": {
+      "BuildingSystemsDBAPI/25.4.10.0": {
         "runtime": {
           "BuildingSystemsDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "HostObjDBAPI/25.4.0.0": {
+      "HostObjDBAPI/25.4.10.0": {
         "runtime": {
           "HostObjDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "RoomAreaPlanDBAPI/25.4.0.0": {
+      "RoomAreaPlanDBAPI/25.4.10.0": {
         "runtime": {
           "RoomAreaPlanDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "SiteDBAPI/25.4.0.0": {
+      "SiteDBAPI/25.4.10.0": {
         "runtime": {
           "SiteDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "SculptingDBAPI/25.4.0.0": {
+      "SculptingDBAPI/25.4.10.0": {
         "runtime": {
           "SculptingDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "StructuralDBAPI/25.4.0.0": {
+      "StructuralDBAPI/25.4.10.0": {
         "runtime": {
           "StructuralDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "InterfaceAPI/25.4.0.0": {
+      "InterfaceAPI/25.4.10.0": {
         "runtime": {
           "InterfaceAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "InterfaceUtilAPI/25.4.0.0": {
+      "InterfaceUtilAPI/25.4.10.0": {
         "runtime": {
           "InterfaceUtilAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "RebarDBAPI/25.4.0.0": {
+      "RebarDBAPI/25.4.10.0": {
         "runtime": {
           "RebarDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "StructuralAnalysisDBAPI/25.4.0.0": {
+      "StructuralAnalysisDBAPI/25.4.10.0": {
         "runtime": {
           "StructuralAnalysisDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "MassingDBAPI/25.4.0.0": {
+      "MassingDBAPI/25.4.10.0": {
         "runtime": {
           "MassingDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "AssemblyDBAPI/25.4.0.0": {
+      "AssemblyDBAPI/25.4.10.0": {
         "runtime": {
           "AssemblyDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "DPartDBAPI/25.4.0.0": {
+      "DPartDBAPI/25.4.10.0": {
         "runtime": {
           "DPartDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "NumberingDBAPI/25.4.0.0": {
+      "NumberingDBAPI/25.4.10.0": {
         "runtime": {
           "NumberingDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "PointCloudAccessAPI/25.4.0.0": {
+      "PointCloudAccessAPI/25.4.10.0": {
         "runtime": {
           "PointCloudAccessAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "StairRampDBAPI/25.4.0.0": {
+      "StairRampDBAPI/25.4.10.0": {
         "runtime": {
           "StairRampDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "AnalysisAppsDBAPI/25.4.0.0": {
+      "AnalysisAppsDBAPI/25.4.10.0": {
         "runtime": {
           "AnalysisAppsDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "MaterialDBAPI/25.4.0.0": {
+      "MaterialDBAPI/25.4.10.0": {
         "runtime": {
           "MaterialDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "IntfATFAPI/25.4.0.0": {
+      "IntfATFAPI/25.4.10.0": {
         "runtime": {
           "IntfATFAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "TextEngineAPI/25.4.0.0": {
+      "TextEngineAPI/25.4.10.0": {
         "runtime": {
           "TextEngineAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "InfrastructureDBAPI/25.4.0.0": {
+      "InfrastructureDBAPI/25.4.10.0": {
         "runtime": {
           "InfrastructureDBAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "ATFRevitCoreAPI/25.4.0.0": {
+      "ATFRevitCoreAPI/25.4.10.0": {
         "runtime": {
           "ATFRevitCoreAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "DBManagedServices/25.4.0.0": {
+      "DBManagedServices/25.4.10.0": {
         "runtime": {
           "DBManagedServices.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
@@ -427,99 +436,99 @@
           }
         }
       },
-      "RevitAddInUtility/25.4.0.0": {
+      "RevitAddInUtility/25.4.10.0": {
         "runtime": {
           "RevitAddInUtility.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "APIInterop/25.4.0.0": {
+      "APIInterop/25.4.10.0": {
         "runtime": {
           "APIInterop.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "UIFramework/25.4.0.0": {
+      "UIFramework/25.4.10.0": {
         "runtime": {
           "UIFramework.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "AddInManager/25.4.0.0": {
+      "AddInManager/25.4.10.0": {
         "runtime": {
           "AddInManager.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "RevitUIAPI/25.4.0.0": {
+      "RevitUIAPI/25.4.10.0": {
         "runtime": {
           "RevitUIAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "BuildingSystemsUIAPI/25.4.0.0": {
+      "BuildingSystemsUIAPI/25.4.10.0": {
         "runtime": {
           "BuildingSystemsUIAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "DesktopMFCAPI/25.4.0.0": {
+      "DesktopMFCAPI/25.4.10.0": {
         "runtime": {
           "DesktopMFCAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "APIUIAPI/25.4.0.0": {
+      "APIUIAPI/25.4.10.0": {
         "runtime": {
           "APIUIAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "RevitMFCAPI/25.4.0.0": {
+      "RevitMFCAPI/25.4.10.0": {
         "runtime": {
           "RevitMFCAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "EssentialsUIAPI/25.4.0.0": {
+      "EssentialsUIAPI/25.4.10.0": {
         "runtime": {
           "EssentialsUIAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "DetailUIAPI/25.4.0.0": {
+      "DetailUIAPI/25.4.10.0": {
         "runtime": {
           "DetailUIAPI.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
-      "UIFrameworkServices/25.4.0.0": {
+      "UIFrameworkServices/25.4.10.0": {
         "runtime": {
           "UIFrameworkServices.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
@@ -531,11 +540,11 @@
           }
         }
       },
-      "SSONET/25.4.0.0": {
+      "SSONET/25.4.10.0": {
         "runtime": {
           "SSONET.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
@@ -543,7 +552,7 @@
         "runtime": {
           "Autodesk.UI.Windows.dll": {
             "assemblyVersion": "3.2.0.0",
-            "fileVersion": "3.2.45.0"
+            "fileVersion": "3.2.56.0"
           }
         }
       },
@@ -579,11 +588,11 @@
           }
         }
       },
-      "CompositionServices/25.4.0.0": {
+      "CompositionServices/25.4.10.0": {
         "runtime": {
           "CompositionServices.dll": {
-            "assemblyVersion": "25.4.0.0",
-            "fileVersion": "25.4.0.32"
+            "assemblyVersion": "25.4.10.0",
+            "fileVersion": "25.4.10.45"
           }
         }
       },
@@ -643,12 +652,19 @@
       "serviceable": false,
       "sha512": ""
     },
-    "RevitAPI/25.4.0.0": {
+    "clipper_standard/0.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-pHOqqncJWkB/tla4oGyosZMXboIWRk0Ac/cMeRC+TXVgU8SaPZYZMIw67EnUbjfW7s/V/DJDdgmnjjn+qZLBSw==",
+      "path": "clipper_standard/0.0.1",
+      "hashPath": "clipper_standard.0.0.1.nupkg.sha512"
+    },
+    "RevitAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "RevitAPIUI/25.4.0.0": {
+    "RevitAPIUI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
@@ -658,7 +674,7 @@
       "serviceable": false,
       "sha512": ""
     },
-    "AdskRcManaged/1.0.8772.32757": {
+    "AdskRcManaged/1.0.9203.7209": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
@@ -673,192 +689,192 @@
       "serviceable": false,
       "sha512": ""
     },
-    "RevitAPIFoundation/25.4.0.0": {
+    "RevitAPIFoundation/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "RevitDBAPI/25.4.0.0": {
+    "RevitDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "RevitDBCoreAPI/25.4.0.0": {
+    "RevitDBCoreAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "PersistenceDBAPI/25.4.0.0": {
+    "PersistenceDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "UtilityAPI/25.4.0.0": {
+    "UtilityAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "APIDBAPI/25.4.0.0": {
+    "APIDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "GraphicsAPI/25.4.0.0": {
+    "GraphicsAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "ElementGroupDBAPI/25.4.0.0": {
+    "ElementGroupDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "EssentialsDBAPI/25.4.0.0": {
+    "EssentialsDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "GeomUtilAPI/25.4.0.0": {
+    "GeomUtilAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "FamilyDBAPI/25.4.0.0": {
+    "FamilyDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "DetailDBAPI/25.4.0.0": {
+    "DetailDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "CurtainGridFamilyDBAPI/25.4.0.0": {
+    "CurtainGridFamilyDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "ArrayElemsDBAPI/25.4.0.0": {
+    "ArrayElemsDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "EnergyAnalysisDBAPI/25.4.0.0": {
+    "EnergyAnalysisDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "BuildingSystemsDBAPI/25.4.0.0": {
+    "BuildingSystemsDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "HostObjDBAPI/25.4.0.0": {
+    "HostObjDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "RoomAreaPlanDBAPI/25.4.0.0": {
+    "RoomAreaPlanDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "SiteDBAPI/25.4.0.0": {
+    "SiteDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "SculptingDBAPI/25.4.0.0": {
+    "SculptingDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "StructuralDBAPI/25.4.0.0": {
+    "StructuralDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "InterfaceAPI/25.4.0.0": {
+    "InterfaceAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "InterfaceUtilAPI/25.4.0.0": {
+    "InterfaceUtilAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "RebarDBAPI/25.4.0.0": {
+    "RebarDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "StructuralAnalysisDBAPI/25.4.0.0": {
+    "StructuralAnalysisDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "MassingDBAPI/25.4.0.0": {
+    "MassingDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "AssemblyDBAPI/25.4.0.0": {
+    "AssemblyDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "DPartDBAPI/25.4.0.0": {
+    "DPartDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "NumberingDBAPI/25.4.0.0": {
+    "NumberingDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "PointCloudAccessAPI/25.4.0.0": {
+    "PointCloudAccessAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "StairRampDBAPI/25.4.0.0": {
+    "StairRampDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "AnalysisAppsDBAPI/25.4.0.0": {
+    "AnalysisAppsDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "MaterialDBAPI/25.4.0.0": {
+    "MaterialDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "IntfATFAPI/25.4.0.0": {
+    "IntfATFAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "TextEngineAPI/25.4.0.0": {
+    "TextEngineAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "InfrastructureDBAPI/25.4.0.0": {
+    "InfrastructureDBAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "ATFRevitCoreAPI/25.4.0.0": {
+    "ATFRevitCoreAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "DBManagedServices/25.4.0.0": {
+    "DBManagedServices/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
@@ -873,62 +889,62 @@
       "serviceable": false,
       "sha512": ""
     },
-    "RevitAddInUtility/25.4.0.0": {
+    "RevitAddInUtility/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "APIInterop/25.4.0.0": {
+    "APIInterop/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "UIFramework/25.4.0.0": {
+    "UIFramework/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "AddInManager/25.4.0.0": {
+    "AddInManager/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "RevitUIAPI/25.4.0.0": {
+    "RevitUIAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "BuildingSystemsUIAPI/25.4.0.0": {
+    "BuildingSystemsUIAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "DesktopMFCAPI/25.4.0.0": {
+    "DesktopMFCAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "APIUIAPI/25.4.0.0": {
+    "APIUIAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "RevitMFCAPI/25.4.0.0": {
+    "RevitMFCAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "EssentialsUIAPI/25.4.0.0": {
+    "EssentialsUIAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "DetailUIAPI/25.4.0.0": {
+    "DetailUIAPI/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "UIFrameworkServices/25.4.0.0": {
+    "UIFrameworkServices/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
@@ -938,7 +954,7 @@
       "serviceable": false,
       "sha512": ""
     },
-    "SSONET/25.4.0.0": {
+    "SSONET/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
@@ -968,7 +984,7 @@
       "serviceable": false,
       "sha512": ""
     },
-    "CompositionServices/25.4.0.0": {
+    "CompositionServices/25.4.10.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""

@@ -1,15 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Windows;
 
 namespace PanelizedAndModularFinal
 {
-    /// <summary>
-    /// Interaction logic for ArrangementSelectionWindow.xaml
-    /// </summary>
     public partial class ArrangementSelectionWindow : Window
     {
-        // Public property to retrieve the user’s choice.
         public ModuleArrangementResult SelectedArrangement { get; private set; }
 
         // Internal helper to bind into the ListBox
@@ -22,11 +19,23 @@ namespace PanelizedAndModularFinal
             {
                 Arrangement = arr;
 
-                // Reverse the bit‐string so bit[0] matches ModuleInstances[0], etc.
+                // Reverse so bit[0] lines up with ModuleInstances[0]
                 string bits = arr.OrientationStr;
                 string displayBits = new string(bits.Reverse().ToArray());
 
-                DisplayText = $"#{index}: Bits={displayBits}, Modules={arr.PlacedModules.Count}";
+                // Build a mapping "M<typeID>:<bit>"
+                var sb = new StringBuilder();
+                sb.Append($"#{index}: ");
+                for (int j = 0; j < arr.ModuleInstances.Count; j++)
+                {
+                    var mi = arr.ModuleInstances[j];
+                    // M<TypeID> : 0 or 1
+                    sb.Append($"M{mi.Module.ID}:{displayBits[j]}");
+                    if (j < arr.ModuleInstances.Count - 1)
+                        sb.Append(", ");
+                }
+
+                DisplayText = sb.ToString();
             }
         }
 
@@ -34,7 +43,14 @@ namespace PanelizedAndModularFinal
         {
             InitializeComponent();
 
-            // Build display items
+            // Set total module count
+            if (uniqueArrangements.Any())
+            {
+                int moduleCount = uniqueArrangements[0].PlacedModules.Count;
+                tbModuleCount.Text = $"Total modules: {moduleCount}";
+            }
+
+            // Populate list
             var items = uniqueArrangements
                 .Select((arr, idx) => new DisplayItem(arr, idx + 1))
                 .ToList();
@@ -48,7 +64,12 @@ namespace PanelizedAndModularFinal
             var sel = lbArrangements.SelectedItem as DisplayItem;
             if (sel == null)
             {
-                MessageBox.Show("Please select an arrangement.", "Selection Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(
+                  "Please select an arrangement.",
+                  "Selection Required",
+                  MessageBoxButton.OK,
+                  MessageBoxImage.Warning
+                );
                 return;
             }
             SelectedArrangement = sel.Arrangement;

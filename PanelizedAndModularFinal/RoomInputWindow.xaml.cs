@@ -48,7 +48,7 @@ namespace PanelizedAndModularFinal
         }
 
         // Overloaded constructor: reuse existing list when coming back 
-        public RoomInputWindow(List<RoomTypeRow> existing): this()
+        public RoomInputWindow(List<RoomTypeRow> existing) : this()
         {
             RoomTypes = existing;
             RoomsDataGrid.ItemsSource = RoomTypes;

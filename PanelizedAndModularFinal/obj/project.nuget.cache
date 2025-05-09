@@ -1,8 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "DExjJpRD2FM=",
+  "dgSpecHash": "xMWPHq7pn+g=",
   "success": true,
   "projectFilePath": "C:\\CRR_Internship\\PanelizedAndModularFinal\\PanelizedAndModularFinal\\PanelizedAndModularFinal.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\Geon\\.nuget\\packages\\clipper_standard\\0.0.1\\clipper_standard.0.0.1.nupkg.sha512"
+  ],
   "logs": []
 }

@@ -1,11 +1,37 @@
 {
   "version": 3,
   "targets": {
-    "net8.0-windows7.0": {}
+    "net8.0-windows7.0": {
+      "clipper_standard/0.0.1": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/clipper.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/clipper.dll": {}
+        }
+      }
+    }
   },
-  "libraries": {},
+  "libraries": {
+    "clipper_standard/0.0.1": {
+      "sha512": "pHOqqncJWkB/tla4oGyosZMXboIWRk0Ac/cMeRC+TXVgU8SaPZYZMIw67EnUbjfW7s/V/DJDdgmnjjn+qZLBSw==",
+      "type": "package",
+      "path": "clipper_standard/0.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "clipper_standard.0.0.1.nupkg.sha512",
+        "clipper_standard.nuspec",
+        "lib/netstandard1.0/clipper.dll",
+        "lib/netstandard2.0/clipper.dll"
+      ]
+    }
+  },
   "projectFileDependencyGroups": {
-    "net8.0-windows7.0": []
+    "net8.0-windows7.0": [
+      "clipper_standard >= 0.0.1"
+    ]
   },
   "packageFolders": {
     "C:\\Users\\Geon\\.nuget\\packages\\": {},
@@ -56,6 +82,12 @@
     "frameworks": {
       "net8.0-windows7.0": {
         "targetAlias": "net8.0-windows",
+        "dependencies": {
+          "clipper_standard": {
+            "target": "Package",
+            "version": "[0.0.1, )"
+          }
+        },
         "imports": [
           "net461",
           "net462",

@@ -1,218 +1,599 @@
-﻿using Autodesk.Revit.DB;
-using Autodesk.Revit.UI;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Autodesk.Revit.DB;
+using Autodesk.Revit.UI;
 
 namespace PanelizedAndModularFinal
 {
+    /// <summary>
+    /// ModuleArrangement2 arranges modules using every possible orientation assignment (2^n scenarios),
+    /// then places them inside the boundary by recursive adjacency backtracking,
+    /// collecting ALL valid adjacency-based layouts.
+    /// </summary>
     public class ModuleArrangement
     {
-        public List<ElementId> SavedBoundaryElementIds { get; private set; }
-        public List<ElementId> SavedGridElementIds { get; private set; }
-        public XYZ OverallCenter { get; private set; }
+        private List<ModuleType> _moduleTypes;
+        private string _selectedCombination;
+        private BoundingBoxXYZ _cropBox;
 
+        public List<string> ScenarioLogs { get; private set; }
 
-        // Store the overall boundary of the placed modules
-        private double _overallMinX;
-        private double _overallMinY;
-        private double _overallMaxX;
-        private double _overallMaxY;
-
-        // Store all placed rectangles (each is an array of 4 XYZ corners)
-        private List<XYZ[]> _placedRectangles = new List<XYZ[]>();
-
-
-        public void GetArrangementBounds(out double minX, out double minY, out double maxX, out double maxY)
+        public ModuleArrangement(
+            List<ModuleType> moduleTypes,
+            string selectedCombination,
+            BoundingBoxXYZ cropBox)
         {
-            minX = _overallMinX;
-            minY = _overallMinY;
-            maxX = _overallMaxX;
-            maxY = _overallMaxY;
+            _moduleTypes = moduleTypes;
+            _selectedCombination = selectedCombination;
+            _cropBox = cropBox;
+        }
+
+        private static double ComputeASPL(ModuleArrangementResult arr)
+        {
+            var mods = arr.PlacedModules;
+            int n = mods.Count;
+            // build an adjacency‐list for “touching” modules
+            var adj = new List<int>[n];
+            for (int i = 0; i < n; i++) adj[i] = new List<int>();
+
+            const double tol = 1e-6;
+            for (int i = 0; i < n; i++)
+            {
+                for (int j = i + 1; j < n; j++)
+                {
+                    if (SharesSideBetween(mods[i], mods[j], tol))
+                    {
+                        adj[i].Add(j);
+                        adj[j].Add(i);
+                    }
+                }
+            }
+
+            // BFS from each node → sum distances
+            double total = 0;
+            for (int s = 0; s < n; s++)
+            {
+                var dist = Enumerable.Repeat(-1, n).ToArray();
+                var q = new Queue<int>();
+                dist[s] = 0; q.Enqueue(s);
+
+                while (q.Count > 0)
+                {
+                    int u = q.Dequeue();
+                    foreach (int v in adj[u])
+                    {
+                        if (dist[v] < 0)
+                        {
+                            dist[v] = dist[u] + 1;
+                            q.Enqueue(v);
+                        }
+                    }
+                }
+                // accumulate
+                for (int t = 0; t < n; t++)
+                    if (t != s && dist[t] >= 0)
+                        total += dist[t];
+            }
+
+            // normalize
+            return total / (n * (n - 1));
+        }
+
+        // ─── helper #2: density ───────────────────────────────────
+        private static double ComputeDensity(ModuleArrangementResult arr)
+        {
+            var mods = arr.PlacedModules;
+            int n = mods.Count, m = 0;
+            const double tol = 1e-6;
+            for (int i = 0; i < n; i++)
+            {
+                for (int j = i + 1; j < n; j++)
+                {
+                    if (SharesSideBetween(mods[i], mods[j], tol))
+                        m++;
+                }
+            }
+            return (2.0 * m) / (n * (n - 1));
+        }
+
+        // ─── helper #3: do two modules share a side? ───────────────
+        private static bool SharesSideBetween(
+            PlacedModule A, PlacedModule B, double tol)
+        {
+            double x0 = A.Origin.X, y0 = A.Origin.Y,
+                   w0 = A.ModuleInstance.EffectiveHorizontal,
+                   h0 = A.ModuleInstance.EffectiveVertical;
+            double x1 = B.Origin.X, y1 = B.Origin.Y,
+                   w1 = B.ModuleInstance.EffectiveHorizontal,
+                   h1 = B.ModuleInstance.EffectiveVertical;
+
+            // vertical side check
+            if ((Math.Abs(x0 + w0 - x1) < tol || Math.Abs(x1 + w1 - x0) < tol)
+                && (y0 < y1 + h1 && y0 + h0 > y1))
+                return true;
+
+            // horizontal side check
+            if ((Math.Abs(y0 + h0 - y1) < tol || Math.Abs(y1 + h1 - y0) < tol)
+                && (x0 < x1 + w1 && x0 + w0 > x1))
+                return true;
+
+            return false;
+        }
+
+        public List<ModuleArrangementResult> GetValidArrangements()
+        {
+            // 1) Unroll counts → flat list
+            var typeCounts = ParseCombinationString(_selectedCombination);
+            var flat = new List<ModuleType>();
+            foreach (var kv in typeCounts)
+                for (int i = 0; i < kv.Value; i++)
+                    flat.Add(_moduleTypes[kv.Key]);
+
+            int n = flat.Count;
+            int totalScenarios = 1 << n;
+            var allResults = new List<ModuleArrangementResult>();
+            ScenarioLogs = new List<string>();
+
+            // 2) For each orientation bitmask
+            for (int mask = 0; mask < totalScenarios; mask++)
+            {
+                string bits = ToBinaryString(mask, n);
+                // 2a) build oriented instances
+                var baseInstances = new List<ModuleInstance>();
+                for (int i = 0; i < n; i++)
+                {
+                    bool rot = ((mask >> i) & 1) == 1;
+                    baseInstances.Add(new ModuleInstance
+                    {
+                        Module = flat[i],
+                        IsRotated = rot
+                    });
+                }
+
+                // 2b) all permutations if mixed types
+                IEnumerable<List<ModuleInstance>> allOrders;
+                if (baseInstances.All(mi => mi.Module.ID == baseInstances[0].Module.ID))
+                    allOrders = new[] { baseInstances };
+                else
+                    allOrders = Permute(baseInstances);
+
+                // 3) adjacency‐based packings
+                var layoutsThisScenario = new List<List<PlacedModule>>();
+                foreach (var order in allOrders)
+                    CollectLayouts(order, layoutsThisScenario);
+
+                ScenarioLogs.Add($"Scenario {bits}: {layoutsThisScenario.Count} valid layout(s)");
+
+                // 4) record
+                foreach (var layout in layoutsThisScenario)
+                {
+                    allResults.Add(new ModuleArrangementResult
+                    {
+                        PlacedModules = layout,
+                        OrientationStr = bits,
+                        ModuleInstances = new List<ModuleInstance>(baseInstances)
+                    });
+                }
+            }
+
+            // 5) dedupe identical
+            var unique = allResults
+                .GroupBy(a => string.Join("|",
+                    a.PlacedModules.Select(pm =>
+                        $"{pm.Origin.X:F2},{pm.Origin.Y:F2}," +
+                        $"{pm.ModuleInstance.EffectiveHorizontal:F2}," +
+                        $"{pm.ModuleInstance.EffectiveVertical:F2}")))
+                .Select(g => g.First())
+                .ToList();
+
+            // 6) score & pick best by ASPL (lowest) then density (highest)
+            var scored = unique
+                .Select(a => new {
+                    Arr = a,
+                    ASPL = ComputeASPL(a),
+                    Density = ComputeDensity(a)
+                })
+                .ToList();
+
+            var best = scored
+                .OrderBy(x => x.ASPL)
+                .ThenByDescending(x => x.Density)
+                .First()
+                .Arr;
+
+            // return *only* the single best arrangement
+            return new List<ModuleArrangementResult> { best };
+        }
+
+
+
+        // Helper to generate all permutations of a list
+        private IEnumerable<List<T>> Permute<T>(List<T> list)
+        {
+            if (list.Count == 1)
+                yield return new List<T>(list);
+            else
+            {
+                for (int i = 0; i < list.Count; i++)
+                {
+                    // pick element i
+                    T elem = list[i];
+                    var remainder = new List<T>(list);
+                    remainder.RemoveAt(i);
+
+                    foreach (var perm in Permute(remainder))
+                    {
+                        var result = new List<T> { elem };
+                        result.AddRange(perm);
+                        yield return result;
+                    }
+                }
+            }
+        }
+
+
+        private void CollectLayouts(List<ModuleInstance> insts, List<List<PlacedModule>> layouts)
+        {
+            var placed = new List<PlacedModule>();
+            var first = insts[0];
+
+            // compute its bottom-left so its top-edge touches cropBox.Max.Y
+            double x0 = _cropBox.Min.X;
+            double y0 = _cropBox.Max.Y - first.EffectiveVertical;
+
+            // NEW: reject if it wouldn’t lie entirely inside the boundary
+            double availW = _cropBox.Max.X - _cropBox.Min.X;
+            double availH = _cropBox.Max.Y - _cropBox.Min.Y;
+            if (first.EffectiveHorizontal > availW || first.EffectiveVertical > availH)
+            {
+                // no layout possible with this orientation
+                return;
+            }
+
+            placed.Add(new PlacedModule { ModuleInstance = first, Origin = new XYZ(x0, y0, 0) });
+            PlaceNextAll(insts, placed, 1, layouts);
+        }
+
+        private void PlaceNextAll(List<ModuleInstance> insts, List<PlacedModule> placed, int idx, List<List<PlacedModule>> layouts)
+        {
+            if (idx >= insts.Count)
+            {
+                layouts.Add(placed.Select(pm => new PlacedModule
+                {
+                    ModuleInstance = pm.ModuleInstance,
+                    Origin = pm.Origin
+                }).ToList());
+                return;
+            }
+            var cur = insts[idx];
+            var boundary = _cropBox;
+            foreach (var pm in placed.ToList())
+            {
+                var baseX = pm.Origin.X;
+                var baseY = pm.Origin.Y;
+                double w1 = pm.ModuleInstance.EffectiveHorizontal;
+                double h1 = pm.ModuleInstance.EffectiveVertical;
+                double w2 = cur.EffectiveHorizontal;
+                double h2 = cur.EffectiveVertical;
+                var candidates = new List<XYZ> {
+                    new XYZ(baseX + w1, baseY, 0),
+                    new XYZ(baseX - w2, baseY, 0),
+                    new XYZ(baseX, baseY + h1, 0),
+                    new XYZ(baseX, baseY - h2, 0)
+                };
+                foreach (var o in candidates)
+                {
+                    if (o.X < boundary.Min.X || o.Y < boundary.Min.Y) continue;
+                    if (o.X + w2 > boundary.Max.X || o.Y + h2 > boundary.Max.Y) continue;
+                    var rect2 = Tuple.Create(o, w2, h2);
+                    if (IsOverlapping(rect2, placed)) continue;
+                    if (!SharesSide(rect2, placed)) continue;
+                    placed.Add(new PlacedModule { ModuleInstance = cur, Origin = o });
+                    PlaceNextAll(insts, placed, idx + 1, layouts);
+                    placed.RemoveAt(placed.Count - 1);
+                }
+            }
+        }
+
+        private bool IsOverlapping(Tuple<XYZ, double, double> rect, List<PlacedModule> placed)
+        {
+            double x0 = rect.Item1.X, y0 = rect.Item1.Y;
+            double w = rect.Item2, h = rect.Item3;
+            foreach (var pm in placed)
+            {
+                double x1 = pm.Origin.X, y1 = pm.Origin.Y;
+                double w1 = pm.ModuleInstance.EffectiveHorizontal;
+                double h1 = pm.ModuleInstance.EffectiveVertical;
+                if (x0 < x1 + w1 && x0 + w > x1 && y0 < y1 + h1 && y0 + h > y1)
+                    return true;
+            }
+            return false;
+        }
+
+        private bool SharesSide(Tuple<XYZ, double, double> rect, List<PlacedModule> placed)
+        {
+            double x0 = rect.Item1.X, y0 = rect.Item1.Y;
+            double w = rect.Item2, h = rect.Item3;
+            foreach (var pm in placed)
+            {
+                double x1 = pm.Origin.X, y1 = pm.Origin.Y;
+                double w1 = pm.ModuleInstance.EffectiveHorizontal;
+                double h1 = pm.ModuleInstance.EffectiveVertical;
+                if (Math.Abs(x0 + w - x1) < 1e-6 || Math.Abs(x1 + w1 - x0) < 1e-6)
+                {
+                    if (y0 < y1 + h1 && y0 + h > y1) return true;
+                }
+                if (Math.Abs(y0 + h - y1) < 1e-6 || Math.Abs(y1 + h1 - y0) < 1e-6)
+                {
+                    if (x0 < x1 + w1 && x0 + w > x1) return true;
+                }
+            }
+            return false;
         }
 
 
 
 
-        public List<List<XYZ[]>> CreateAllSquareLikeArrangements(Document doc, string selectedCombination, List<ModuleType> moduleTypes)
+        /// <summary>
+        /// Shows which orientation scenarios (bit‐strings) produced the final unique arrangements,
+        /// and how many unique arrangements there are in total.
+        /// 0 means “not rotated”  Horizontal(along land width) = module length  Vertical(along land length) = module width
+        /// 1 means “rotated” Horizontal = module width Vertical = module length
+        /// </summary>
+        public void DisplayScenarioSummary(List<ModuleArrangementResult> uniqueArrangements)
         {
-            // Parse combination and collect modules.
-            Dictionary<int, int> typeCounts = ParseCombination(selectedCombination);
-            List<ModuleType> modulesToPlace = new List<ModuleType>();
-            foreach (var kvp in typeCounts)
-            {
-                int moduleTypeIndex = kvp.Key;
-                int count = kvp.Value;
-                ModuleType modType = moduleTypes[moduleTypeIndex];
-                for (int i = 0; i < count; i++)
-                    modulesToPlace.Add(modType);
-            }
-            // Place bigger modules first.
-            modulesToPlace = modulesToPlace.OrderByDescending(mod => mod.Length * mod.Width).ToList();
+            int totalComb = ScenarioLogs.Count;
+            int uniqueCount = uniqueArrangements.Count;
+            var lines = new List<string>();
 
-            double landWidth = GlobalData.landWidth;
-            double landHeight = GlobalData.landHeight;
-            List<List<XYZ[]>> solutions = new List<List<XYZ[]>>();
-            HashSet<string> uniqueSignatures = new HashSet<string>();
-            List<XYZ[]> currentArrangement = new List<XYZ[]>();
+            lines.Add($"Out of {totalComb} combos, found {uniqueCount} unique arrangements.");
+            lines.Add("");
+            //lines.Add("Legend: 0 = Normal (length→horiz), 1 = Rotated (width→horiz)");
+            //lines.Add(new string('-', 60));
 
-            // Create a unique signature for each arrangement.
-            string GetArrangementSignature(List<XYZ[]> arrangement)
+            //for (int i = 0; i < uniqueArrangements.Count; i++)
+            //{
+            //    var arr = uniqueArrangements[i];
+            //    // Reverse the bits so they line up with ModuleInstances[0]..[n-1]
+            //    string bits = arr.OrientationStr;
+            //    string displayBits = new string(bits.Reverse().ToArray());
+
+            //    lines.Add($"Arrangement #{i + 1}: Bits {displayBits}");
+            //    lines.Add($"{"Bit",3}  {"ModuleType",-12}  {"Ori"}");
+            //    lines.Add($"{"---",3}  {"------------",-12}  {"---"}");
+
+            //    for (int j = 0; j < arr.ModuleInstances.Count; j++)
+            //    {
+            //        var mi = arr.ModuleInstances[j];
+            //        var ori = mi.IsRotated ? "Rotated" : "Normal";
+            //        var mt = $"Type{mi.Module.ID}";
+            //        lines.Add($"{j + 1,3}  {mt,-12}  {ori}");
+            //    }
+            //    lines.Add("");
+            //}
+
+            TaskDialog.Show("Unique Arrangements Summary", string.Join("\n", lines));
+        }
+
+
+
+        /// <summary>
+        /// After GetValidArrangements, call this to show how many unique layouts you have.
+        /// </summary>
+        public void DisplayUniqueCount(List<ModuleArrangementResult> uniqueArrangements)
+        {
+            TaskDialog.Show(
+                "Unique Arrangements",
+                $"Found {uniqueArrangements.Count} unique valid arrangement" +
+                (uniqueArrangements.Count == 1 ? "" : "s") + "."
+            );
+        }
+
+
+
+
+        /// <summary>
+        /// Draws the modules for a given arrangement on the active Revit view.
+        /// Each module is drawn as a red rectangle. This method returns a list of the ElementIds
+        /// of the drawn detail curves, so they can later be removed.
+        /// </summary>
+        public List<ElementId> DrawArrangement(Document doc, ModuleArrangementResult arrangement)
+        {
+            List<ElementId> drawnElementIds = new List<ElementId>();
+
+            // Prepare a red line override
+            OverrideGraphicSettings ogs = new OverrideGraphicSettings()
+                .SetProjectionLineColor(new Autodesk.Revit.DB.Color(255, 0, 0));
+
+            using (Transaction t = new Transaction(doc, "Draw Modules"))
             {
-                List<string> rectSignatures = new List<string>();
-                foreach (XYZ[] rect in arrangement)
+                t.Start();
+                View view = doc.ActiveView;
+
+                foreach (PlacedModule pm in arrangement.PlacedModules)
                 {
-                    string sig = string.Format("{0:F4},{1:F4};{2:F4},{3:F4};{4:F4},{5:F4};{6:F4},{7:F4}",
-                        rect[0].X, rect[0].Y,
-                        rect[1].X, rect[1].Y,
-                        rect[2].X, rect[2].Y,
-                        rect[3].X, rect[3].Y);
-                    rectSignatures.Add(sig);
-                }
-                rectSignatures.Sort();
-                return string.Join("|", rectSignatures);
-            }
+                    double w = pm.ModuleInstance.EffectiveHorizontal;
+                    double h = pm.ModuleInstance.EffectiveVertical;
 
-            // Recursive method to place modules.
-            void PlaceModule(int index, double offsetX, double offsetY, double currentRowHeight)
-            {
-                if (index == modulesToPlace.Count)
-                {
-                    if (offsetY + currentRowHeight <= landHeight)
+                    // Compute corners
+                    XYZ p0 = new XYZ(pm.Origin.X, pm.Origin.Y, 0);
+                    XYZ p1 = new XYZ(pm.Origin.X + w, pm.Origin.Y, 0);
+                    XYZ p2 = new XYZ(pm.Origin.X + w, pm.Origin.Y + h, 0);
+                    XYZ p3 = new XYZ(pm.Origin.X, pm.Origin.Y + h, 0);
+
+                    // Draw each edge and override its color
+                    var lines = new[] {
+                Line.CreateBound(p0, p1),
+                Line.CreateBound(p1, p2),
+                Line.CreateBound(p2, p3),
+                Line.CreateBound(p3, p0)
+            };
+
+                    foreach (var ln in lines)
                     {
-                        var arrangementCopy = currentArrangement
-                            .Select(rect => rect.Select(pt => new XYZ(pt.X, pt.Y, pt.Z)).ToArray())
-                            .ToList();
-                        CenterFinalOutputInViewBox(arrangementCopy, doc.ActiveView.CropBox);
-                        string signature = GetArrangementSignature(arrangementCopy);
-                        if (!uniqueSignatures.Contains(signature))
-                        {
-                            uniqueSignatures.Add(signature);
-                            solutions.Add(arrangementCopy);
-                        }
+                        // create curve
+                        DetailCurve dc = doc.Create.NewDetailCurve(view, ln);
+                        drawnElementIds.Add(dc.Id);
+
+                        // apply red override
+                        view.SetElementOverrides(dc.Id, ogs);
                     }
-                    return;
                 }
 
-                ModuleType mod = modulesToPlace[index];
-                double[] dimsX = { mod.Length, mod.Width };
-                double[] dimsY = { mod.Width, mod.Length };
+                t.Commit();
+            }
 
-                // Try to place the module in the current row in both orientations.
-                for (int orientation = 0; orientation < 2; orientation++)
+            return drawnElementIds;
+        }
+
+
+        #region Helper Methods
+        // Parses a combination string such as "2 x Module_Type 1 + 1 x Module_Type 3 = ..." into a dictionary.
+        private Dictionary<int, int> ParseCombinationString(string combo)
+        {
+            Dictionary<int, int> counts = new Dictionary<int, int>();
+            Regex regex = new Regex(@"(\d+)\s*x\s*Module_Type\s*(\d+)", RegexOptions.IgnoreCase);
+            MatchCollection matches = regex.Matches(combo);
+            foreach (Match match in matches)
+            {
+                int count = int.Parse(match.Groups[1].Value);
+                int typeIndex = int.Parse(match.Groups[2].Value) - 1;
+                counts[typeIndex] = count;
+            }
+            return counts;
+        }
+
+
+        /// <summary>
+        /// After you pick one arrangement, call this to draw **and** capture every grid cell.
+        /// </summary>
+        public List<ElementId> DrawModuleGrids(Document doc, ModuleArrangementResult arrangement, out List<double> cellAreas)
+        {
+            var gridIds = new List<ElementId>();
+            cellAreas = new List<double>();
+            arrangement.GridCells.Clear();
+
+            var view = doc.ActiveView;
+            double tol = doc.Application.ShortCurveTolerance;
+
+            using (var t = new Transaction(doc, "Draw Module Grids"))
+            {
+                t.Start();
+
+                int globalIndex = 0;
+                for (int m = 0; m < arrangement.PlacedModules.Count; m++)
                 {
-                    double chosenX = dimsX[orientation];
-                    double chosenY = dimsY[orientation];
-                    bool fitsHorizontally = (offsetX + chosenX <= landWidth);
-                    // Allow different module heights by taking the max of currentRowHeight and chosenY.
-                    bool fitsVertically = (offsetY + Math.Max(currentRowHeight, chosenY) <= landHeight);
+                    var pm = arrangement.PlacedModules[m];
+                    double w = pm.ModuleInstance.EffectiveHorizontal;
+                    double h = pm.ModuleInstance.EffectiveVertical;
 
-                    if (fitsHorizontally && fitsVertically)
+                    double cellSize = pm.ModuleInstance.Module.Width / 3.0;
+                    double cellArea = cellSize * cellSize;
+
+                    int nCols = (int)Math.Floor(w / cellSize);
+                    int nRows = (int)Math.Floor(h / cellSize);
+
+                    double originX = pm.Origin.X;
+                    double originY = pm.Origin.Y;
+
+                    for (int i = 0; i < nCols; i++)
                     {
-                        // Create rectangle at current row.
-                        XYZ p1 = new XYZ(offsetX, offsetY, 0);
-                        XYZ p2 = new XYZ(offsetX + chosenX, offsetY, 0);
-                        XYZ p3 = new XYZ(offsetX + chosenX, offsetY + chosenY, 0);
-                        XYZ p4 = new XYZ(offsetX, offsetY + chosenY, 0);
-                        currentArrangement.Add(new XYZ[] { p1, p2, p3, p4 });
-
-                        double newOffsetX = offsetX + chosenX;
-                        double newCurrentRowHeight = Math.Max(currentRowHeight, chosenY);
-                        PlaceModule(index + 1, newOffsetX, offsetY, newCurrentRowHeight);
-                        currentArrangement.RemoveAt(currentArrangement.Count - 1);
-                    }
-                }
-
-                // If current row isn't empty, try starting a new row.
-                if (offsetX > 0)
-                {
-                    double newOffsetY = offsetY + currentRowHeight;
-                    if (newOffsetY < landHeight)
-                    {
-                        for (int orientation = 0; orientation < 2; orientation++)
+                        for (int j = 0; j < nRows; j++)
                         {
-                            double chosenX = dimsX[orientation];
-                            double chosenY = dimsY[orientation];
-                            bool fitsHorizontallyNew = (chosenX <= landWidth);
-                            bool fitsVerticallyNew = (newOffsetY + chosenY <= landHeight);
+                            double x0 = originX + i * cellSize;
+                            double y0 = originY + j * cellSize;
+                            double x1 = x0 + cellSize;
+                            double y1 = y0 + cellSize;
 
-                            if (fitsHorizontallyNew && fitsVerticallyNew)
+                            var corners = new[] {
+                        new XYZ(x0, y0, 0),
+                        new XYZ(x1, y0, 0),
+                        new XYZ(x1, y1, 0),
+                        new XYZ(x0, y1, 0)
+                    };
+
+                            // Build closed CurveLoop
+                            var loop = new CurveLoop();
+                            for (int e = 0; e < 4; e++)
                             {
-                                // Place module at new row starting at x = 0.
-                                XYZ p1 = new XYZ(0, newOffsetY, 0);
-                                XYZ p2 = new XYZ(chosenX, newOffsetY, 0);
-                                XYZ p3 = new XYZ(chosenX, newOffsetY + chosenY, 0);
-                                XYZ p4 = new XYZ(0, newOffsetY + chosenY, 0);
-                                currentArrangement.Add(new XYZ[] { p1, p2, p3, p4 });
-                                PlaceModule(index + 1, chosenX, newOffsetY, chosenY);
-                                currentArrangement.RemoveAt(currentArrangement.Count - 1);
+                                var edge = Line.CreateBound(corners[e], corners[(e + 1) % 4]);
+                                if (edge.Length < tol) continue;
+                                loop.Append(edge);
+                            }
+
+                            // Record the cell with its Loop
+                            var cell = new ModuleGridCell
+                            {
+                                ModuleIndex = m,
+                                Col = i,
+                                Row = j,
+                                OriginX = x0,
+                                OriginY = y0,
+                                Size = cellSize,
+                                GlobalIndex = globalIndex,
+                                Loop = loop
+                            };
+                            arrangement.GridCells.Add(cell);
+                            cellAreas.Add(cellArea);
+                            globalIndex++;
+
+                            // Optional: draw outline from the loop
+                            foreach (Curve c in loop)
+                            {
+                                var dc = doc.Create.NewDetailCurve(view, c);
+                                view.SetElementOverrides(dc.Id,
+                                    new OverrideGraphicSettings()
+                                        .SetProjectionLineColor(new Color(0, 0, 255)));
+                                gridIds.Add(dc.Id);
                             }
                         }
                     }
                 }
+
+                t.Commit();
             }
 
-            PlaceModule(0, 0.0, 0.0, 0.0);
-            return solutions;
+            return gridIds;
         }
 
 
 
 
-
-
-        // <summary>
-        /// Returns a list of perimeter edges (Lines) that represent the merged boundary
-        /// around all placed modules.
-        /// </summary>
-        public List<Line> GetPerimeterOutline()
+        // Recursively partitions the list of module instances into rows.
+        // Each row's total effective horizontal dimensions (sum) must not exceed availableRowWidth,
+        // and the total height (sum of the max effective vertical in each row) must not exceed availableTotalHeight.
+        private void PartitionIntoRows(List<ModuleInstance> modules, int startIndex,
+            double availableRowWidth, double availableTotalHeight,
+            List<List<ModuleInstance>> currentPartition,
+            List<List<List<ModuleInstance>>> results)
         {
-            // 1. Gather all edges as Segment objects
-            List<Segment> allEdges = new List<Segment>();
-            foreach (XYZ[] rect in _placedRectangles)
+            if (startIndex >= modules.Count)
             {
-                // Each rect has p1, p2, p3, p4 in some order
-                XYZ p1 = rect[0];
-                XYZ p2 = rect[1];
-                XYZ p3 = rect[2];
-                XYZ p4 = rect[3];
-
-                allEdges.Add(new Segment(p1, p2));
-                allEdges.Add(new Segment(p2, p3));
-                allEdges.Add(new Segment(p3, p4));
-                allEdges.Add(new Segment(p4, p1));
+                double totalHeight = currentPartition.Sum(row => row.Max(m => m.EffectiveVertical));
+                if (totalHeight <= availableTotalHeight)
+                    results.Add(currentPartition.Select(row => new List<ModuleInstance>(row)).ToList());
+                return;
             }
 
-            // 2. Merge/clean edges (removes overlaps, duplicates, etc.)
-            List<Segment> cleanedSegments = SubtractOverlaps(allEdges);
-
-            // 3. Convert them into Revit Line objects
-            List<Line> perimeterLines = new List<Line>();
-            foreach (Segment seg in cleanedSegments)
+            for (int i = startIndex + 1; i <= modules.Count; i++)
             {
-                double length = (seg.End - seg.Start).GetLength();
-                if (length > 1e-9) // skip tiny segments
-                {
-                    perimeterLines.Add(Line.CreateBound(seg.Start, seg.End));
-                }
-            }
+                List<ModuleInstance> row = modules.GetRange(startIndex, i - startIndex);
+                double rowWidth = row.Sum(m => m.EffectiveHorizontal);
+                if (rowWidth > availableRowWidth)
+                    break;
 
-            return perimeterLines;
+                double rowHeight = row.Max(m => m.EffectiveVertical);
+                double currentTotalHeight = currentPartition.Sum(r => r.Max(m => m.EffectiveVertical));
+                if (currentTotalHeight + rowHeight > availableTotalHeight)
+                    break;
+
+                currentPartition.Add(row);
+                PartitionIntoRows(modules, i, availableRowWidth, availableTotalHeight, currentPartition, results);
+                currentPartition.RemoveAt(currentPartition.Count - 1);
+            }
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -222,431 +603,394 @@ namespace PanelizedAndModularFinal
 
 
         /// <summary>
-        /// Centers the layout (placedRectangles) within the provided view box.
+        /// From a set of arrangements, keep one per unique outer‐perimeter shape,
+        /// and output for each the *convex‐hull* corner list (only the extreme corners).
         /// </summary>
-        private void CenterFinalOutputInViewBox(List<XYZ[]> placedRectangles, BoundingBoxXYZ viewBox)
+        public static List<ModuleArrangementResult> FilterUniqueByPerimeter(
+            IEnumerable<ModuleArrangementResult> arrs,
+            out List<List<XYZ>> cornersList)
         {
-            // Calculate view center using the crop box boundaries
-            XYZ viewCenter = new XYZ((viewBox.Min.X + viewBox.Max.X) / 2.0,
-                                     (viewBox.Min.Y + viewBox.Max.Y) / 2.0, 0);
-            // Compute current layout center
-            XYZ layoutCenter = ComputeFinalOutputCenter(placedRectangles);
-            // Determine offset
-            XYZ offset = viewCenter - layoutCenter;
+            const double tol = 1e-6;
+            var uniqueMap = new Dictionary<string, ModuleArrangementResult>();
+            var cornersMap = new Dictionary<string, List<XYZ>>();
 
-            // Apply the offset to each rectangle's corners
-            for (int i = 0; i < placedRectangles.Count; i++)
+            foreach (var arr in arrs)
             {
-                for (int j = 0; j < placedRectangles[i].Length; j++)
+                // 1) count & cancel interior edges
+                var edgeCounts = new Dictionary<string, int>();
+                foreach (var pm in arr.PlacedModules)
                 {
-                    placedRectangles[i][j] = placedRectangles[i][j] + offset;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Computes the center of the bounding rectangle around all placed module rectangles.
-        /// </summary>
-        private XYZ ComputeFinalOutputCenter(List<XYZ[]> placedRectangles)
-        {
-            double overallMinX = double.MaxValue;
-            double overallMinY = double.MaxValue;
-            double overallMaxX = double.MinValue;
-            double overallMaxY = double.MinValue;
-
-            foreach (XYZ[] rect in placedRectangles)
-            {
-                double minX = Math.Min(rect[0].X, rect[2].X);
-                double minY = Math.Min(rect[0].Y, rect[2].Y);
-                double maxX = Math.Max(rect[0].X, rect[2].X);
-                double maxY = Math.Max(rect[0].Y, rect[2].Y);
-
-                overallMinX = Math.Min(overallMinX, minX);
-                overallMinY = Math.Min(overallMinY, minY);
-                overallMaxX = Math.Max(overallMaxX, maxX);
-                overallMaxY = Math.Max(overallMaxY, maxY);
-            }
-
-            double centerX = (overallMinX + overallMaxX) / 2;
-            double centerY = (overallMinY + overallMaxY) / 2;
-            return new XYZ(centerX, centerY, 0);
-        }
-
-  
-        private List<ElementId> CreateGridCellsInsideModules(Document doc, List<XYZ[]> placedRectangles)
-        {
-            List<ElementId> gridElementIds = new List<ElementId>();
-            double shortTol = doc.Application.ShortCurveTolerance;
-            OverrideGraphicSettings ogs = new OverrideGraphicSettings();
-            ogs.SetProjectionLineColor(new Autodesk.Revit.DB.Color(0, 0, 255));
-            Plane plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, XYZ.Zero);
-            SketchPlane sketch = SketchPlane.Create(doc, plane);
-
-            // Process each module separately
-            foreach (XYZ[] rect in placedRectangles)
-            {
-                // Determine module boundaries.
-                double minX = Math.Min(rect[0].X, rect[2].X);
-                double minY = Math.Min(rect[0].Y, rect[2].Y);
-                double maxX = Math.Max(rect[0].X, rect[2].X);
-                double maxY = Math.Max(rect[0].Y, rect[2].Y);
-                double width = maxX - minX;
-                double height = maxY - minY;
-
-                // Use the smaller dimension to define a square cell size.
-                double cellSize = Math.Min(width, height) / 3.0;
-
-                // Compute the number of columns and rows needed to cover the entire rectangle.
-                int nCols = (int)Math.Round(width / cellSize);
-                int nRows = (int)Math.Round(height / cellSize);
-
-                for (int i = 0; i < nCols; i++)
-                {
-                    for (int j = 0; j < nRows; j++)
-                    {
-                        double cellMinX = minX + i * cellSize;
-                        double cellMinY = minY + j * cellSize;
-                        double cellMaxX = cellMinX + cellSize;
-                        double cellMaxY = cellMinY + cellSize;
-
-                        // Create cell geometry
-                        XYZ p1 = new XYZ(cellMinX, cellMinY, 0);
-                        XYZ p2 = new XYZ(cellMaxX, cellMinY, 0);
-                        XYZ p3 = new XYZ(cellMaxX, cellMaxY, 0);
-                        XYZ p4 = new XYZ(cellMinX, cellMaxY, 0);
-
-                        List<Line> edges = new List<Line>
-                {
-                    Line.CreateBound(p1, p2),
-                    Line.CreateBound(p2, p3),
-                    Line.CreateBound(p3, p4),
-                    Line.CreateBound(p4, p1)
-                };
-
-                        foreach (Line edge in edges)
-                        {
-                            if (edge.Length < shortTol) continue;
-                            DetailCurve dc = doc.Create.NewDetailCurve(doc.ActiveView, edge);
-                            doc.ActiveView.SetElementOverrides(dc.Id, ogs);
-                            gridElementIds.Add(dc.Id);
-                        }
-                    }
-                }
-            }
-            return gridElementIds;
-        }
-
-
-
-
-      
-
-        private void CreateModuleSolid(Document doc, XYZ p1, XYZ p2, XYZ p3, XYZ p4, double height)
-        {
-            List<Curve> edges = new List<Curve>
-            {
-                Line.CreateBound(p1, p2),
-                Line.CreateBound(p2, p3),
-                Line.CreateBound(p3, p4),
-                Line.CreateBound(p4, p1)
+                    double x0 = pm.Origin.X, y0 = pm.Origin.Y;
+                    double w = pm.ModuleInstance.EffectiveHorizontal;
+                    double h = pm.ModuleInstance.EffectiveVertical;
+                    var segs = new[]{
+                Tuple.Create(x0,     y0,     x0 + w, y0),
+                Tuple.Create(x0,     y0 + h, x0 + w, y0 + h),
+                Tuple.Create(x0,     y0,     x0,     y0 + h),
+                Tuple.Create(x0 + w, y0,     x0 + w, y0 + h)
             };
-            CurveLoop loop = new CurveLoop();
-            foreach (Curve c in edges)
-                loop.Append(c);
-
-            Solid solid = GeometryCreationUtilities.CreateExtrusionGeometry(
-                new List<CurveLoop> { loop },
-                XYZ.BasisZ,
-                height);
-
-            DirectShape ds = DirectShape.CreateElement(doc, new ElementId(BuiltInCategory.OST_GenericModel));
-            ds.ApplicationId = "ModuleArrangement";
-            ds.ApplicationDataId = Guid.NewGuid().ToString();
-            ds.SetShape(new List<GeometryObject> { solid });
-        }
-
-        private Dictionary<int, int> ParseCombination(string combo)
-        {
-            Dictionary<int, int> result = new Dictionary<int, int>();
-            string[] parts = combo.Split('=');
-            string modulesPart = parts[0];
-
-            var pattern = new Regex(@"(\d+)\s*x\s*Module_Type\s*(\d+)");
-            var matches = pattern.Matches(modulesPart);
-
-            foreach (Match match in matches)
-            {
-                int count = int.Parse(match.Groups[1].Value);
-                int modIndex = int.Parse(match.Groups[2].Value) - 1;
-                if (!result.ContainsKey(modIndex))
-                    result[modIndex] = 0;
-                result[modIndex] += count;
-            }
-            return result;
-        }
-
-
-
-
-        private List<Segment> SubtractOverlaps(List<Segment> allEdges)
-        {
-            List<Segment> result = new List<Segment>(allEdges);
-            for (int i = 0; i < result.Count; i++)
-            {
-                for (int j = i + 1; j < result.Count; j++)
-                {
-                    Segment s1 = result[i];
-                    Segment s2 = result[j];
-
-                    bool s1Horizontal = Math.Abs(s1.Start.Y - s1.End.Y) < 1e-9;
-                    bool s2Horizontal = Math.Abs(s2.Start.Y - s2.End.Y) < 1e-9;
-                    if (s1Horizontal != s2Horizontal)
-                        continue;
-
-                    if (s1Horizontal)
+                    foreach (var s in segs)
                     {
-                        if (Math.Abs(s1.Start.Y - s2.Start.Y) > 1e-9) continue;
-
-                        double s1Start = s1.Start.X;
-                        double s1End = s1.End.X;
-                        double s2Start = s2.Start.X;
-                        double s2End = s2.End.X;
-                        if (s1End < s2Start || s2End < s1Start) continue;
-
-                        result[i] = SubtractOverlap1D(s1, s2);
-                        result[j] = SubtractOverlap1D(s2, s1);
-                    }
-                    else
-                    {
-                        if (Math.Abs(s1.Start.X - s2.Start.X) > 1e-9) continue;
-
-                        double s1Start = s1.Start.Y;
-                        double s1End = s1.End.Y;
-                        double s2Start = s2.Start.Y;
-                        double s2End = s2.End.Y;
-                        if (s1End < s2Start || s2End < s1Start) continue;
-
-                        result[i] = SubtractOverlap1D(s1, s2);
-                        result[j] = SubtractOverlap1D(s2, s1);
+                        string fwd = $"{s.Item1:F6},{s.Item2:F6},{s.Item3:F6},{s.Item4:F6}";
+                        string rev = $"{s.Item3:F6},{s.Item4:F6},{s.Item1:F6},{s.Item2:F6}";
+                        if (edgeCounts.TryGetValue(rev, out var c) && c > 0)
+                            edgeCounts[rev] = c - 1;
+                        else
+                            edgeCounts[fwd] = edgeCounts.GetValueOrDefault(fwd) + 1;
                     }
                 }
+
+                // 2) gather only outer‐boundary segment endpoints
+                var pts = new List<XYZ>();
+                foreach (var kv in edgeCounts.Where(kvp => kvp.Value > 0))
+                {
+                    var p = kv.Key.Split(',');
+                    double x1 = double.Parse(p[0]), y1 = double.Parse(p[1]);
+                    double x2 = double.Parse(p[2]), y2 = double.Parse(p[3]);
+                    pts.Add(new XYZ(x1, y1, 0));
+                    pts.Add(new XYZ(x2, y2, 0));
+                }
+
+                // 3) convex hull (Monotone Chain)
+                var hull = ConvexHull2D(pts, tol);
+
+                // 4) canonical key for dedupe
+                var key = string.Join("|",
+                    hull.Select(pt => $"{pt.X:F3},{pt.Y:F3}")
+                );
+
+                if (!uniqueMap.ContainsKey(key))
+                {
+                    uniqueMap[key] = arr;
+                    cornersMap[key] = hull;
+                }
             }
-            return result.Where(s => GetLength(s) > 1e-9).ToList();
+
+            cornersList = cornersMap.Values.ToList();
+            return uniqueMap.Values.ToList();
         }
 
-        private Segment SubtractOverlap1D(Segment s1, Segment s2)
+        // Monotone‐chain convex hull in XY
+        static List<XYZ> ConvexHull2D(List<XYZ> pts, double tol)
         {
-            bool horizontal = Math.Abs(s1.Start.Y - s1.End.Y) < 1e-9;
-            if (horizontal)
+            var points = pts
+                .Distinct(new XYZComparer(tol))
+                .OrderBy(p => p.X).ThenBy(p => p.Y)
+                .ToList();
+            if (points.Count < 3) return new List<XYZ>(points);
+
+            List<XYZ> lower = new(), upper = new();
+            foreach (var p in points)
             {
-                double y = s1.Start.Y;
-                double s1Start = s1.Start.X;
-                double s1End = s1.End.X;
-                double s2Start = s2.Start.X;
-                double s2End = s2.End.X;
+                while (lower.Count >= 2 &&
+                       Cross(lower[lower.Count - 2], lower[^1], p) <= tol)
+                    lower.RemoveAt(lower.Count - 1);
+                lower.Add(p);
+            }
+            for (int i = points.Count - 1; i >= 0; i--)
+            {
+                var p = points[i];
+                while (upper.Count >= 2 &&
+                       Cross(upper[upper.Count - 2], upper[^1], p) <= tol)
+                    upper.RemoveAt(upper.Count - 1);
+                upper.Add(p);
+            }
 
-                double overlapStart = Math.Max(s1Start, s2Start);
-                double overlapEnd = Math.Min(s1End, s2End);
+            lower.RemoveAt(lower.Count - 1);
+            upper.RemoveAt(upper.Count - 1);
+            lower.AddRange(upper);
+            return lower;
+        }
 
-                if (overlapEnd <= overlapStart) return s1;
-                else if (overlapStart <= s1Start && overlapEnd >= s1End)
-                    return new Segment(new XYZ(s1Start, y, 0), new XYZ(s1Start, y, 0));
-                else if (overlapStart <= s1Start && overlapEnd < s1End)
-                    return new Segment(new XYZ(overlapEnd, y, 0), new XYZ(s1End, y, 0));
-                else if (overlapStart > s1Start && overlapEnd >= s1End)
-                    return new Segment(new XYZ(s1Start, y, 0), new XYZ(overlapStart, y, 0));
-                else
-                    return new Segment(new XYZ(s1Start, y, 0), new XYZ(overlapStart, y, 0));
+        static double Cross(XYZ a, XYZ b, XYZ c)
+            => (b.X - a.X) * (c.Y - a.Y)
+             - (b.Y - a.Y) * (c.X - a.X);
+
+        class XYZComparer : IEqualityComparer<XYZ>
+        {
+            double _tol;
+            public XYZComparer(double tol) => _tol = tol;
+            public bool Equals(XYZ a, XYZ b)
+                => Math.Abs(a.X - b.X) < _tol && Math.Abs(a.Y - b.Y) < _tol;
+            public int GetHashCode(XYZ a)
+                => a.X.GetHashCode() ^ a.Y.GetHashCode();
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // Converts an integer to a binary string with a fixed number of bits.
+        private string ToBinaryString(int value, int bits)
+        {
+            return Convert.ToString(value, 2).PadLeft(bits, '0');
+        }
+
+
+
+        /// <summary>
+        /// Compute the centroid of a layout’s outer‐boundary.
+        /// </summary>
+        public XYZ OverallCenter(ModuleArrangementResult arr)
+        {
+            const double tol = 1e-6;
+            // 1) Count & cancel interior edges
+            var edgeCounts = new Dictionary<string, int>();
+            foreach (var pm in arr.PlacedModules)
+            {
+                double x0 = pm.Origin.X, y0 = pm.Origin.Y;
+                double w = pm.ModuleInstance.EffectiveHorizontal;
+                double h = pm.ModuleInstance.EffectiveVertical;
+                var segs = new[]{
+            Tuple.Create(x0,     y0,     x0 + w, y0),
+            Tuple.Create(x0,     y0 + h, x0 + w, y0 + h),
+            Tuple.Create(x0,     y0,     x0,     y0 + h),
+            Tuple.Create(x0 + w, y0,     x0 + w, y0 + h)
+        };
+                foreach (var s in segs)
+                {
+                    string fwd = $"{s.Item1:F6},{s.Item2:F6},{s.Item3:F6},{s.Item4:F6}";
+                    string rev = $"{s.Item3:F6},{s.Item4:F6},{s.Item1:F6},{s.Item2:F6}";
+                    if (edgeCounts.TryGetValue(rev, out var c) && c > 0)
+                        edgeCounts[rev] = c - 1;
+                    else
+                        edgeCounts[fwd] = edgeCounts.GetValueOrDefault(fwd) + 1;
+                }
+            }
+
+            // 2) Gather only the remaining (outer) endpoints
+            var pts = new List<XYZ>();
+            foreach (var kv in edgeCounts.Where(k => k.Value > 0))
+            {
+                var p = kv.Key.Split(',');
+                double x1 = double.Parse(p[0]), y1 = double.Parse(p[1]);
+                double x2 = double.Parse(p[2]), y2 = double.Parse(p[3]);
+                pts.Add(new XYZ(x1, y1, 0));
+                pts.Add(new XYZ(x2, y2, 0));
+            }
+
+            // 3) Compute convex hull of those points
+            var hull = ConvexHull2D(pts, tol);
+
+            // 4) Compute polygon centroid (standard formula)
+            double area = 0, cx = 0, cy = 0;
+            int n = hull.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var p0 = hull[i];
+                var p1 = hull[(i + 1) % n];
+                double cross = p0.X * p1.Y - p1.X * p0.Y;
+                area += cross;
+                cx += (p0.X + p1.X) * cross;
+                cy += (p0.Y + p1.Y) * cross;
+            }
+            area *= 0.5;
+            if (Math.Abs(area) < tol)
+            {
+                // fallback: average of hull points
+                cx = hull.Sum(p => p.X) / n;
+                cy = hull.Sum(p => p.Y) / n;
             }
             else
             {
-                double x = s1.Start.X;
-                double s1Start = s1.Start.Y;
-                double s1End = s1.End.Y;
-                double s2Start = s2.Start.Y;
-                double s2End = s2.End.Y;
-
-                double overlapStart = Math.Max(s1Start, s2Start);
-                double overlapEnd = Math.Min(s1End, s2End);
-
-                if (overlapEnd <= overlapStart) return s1;
-                else if (overlapStart <= s1Start && overlapEnd >= s1End)
-                    return new Segment(new XYZ(x, s1Start, 0), new XYZ(x, s1Start, 0));
-                else if (overlapStart <= s1Start && overlapEnd < s1End)
-                    return new Segment(new XYZ(x, overlapEnd, 0), new XYZ(x, s1End, 0));
-                else if (overlapStart > s1Start && overlapEnd >= s1End)
-                    return new Segment(new XYZ(x, s1Start, 0), new XYZ(x, overlapStart, 0));
-                else
-                    return new Segment(new XYZ(x, s1Start, 0), new XYZ(x, overlapStart, 0));
+                cx /= (6 * area);
+                cy /= (6 * area);
             }
+
+            return new XYZ(cx, cy, 0);
         }
 
 
 
-        public List<ElementId> DisplayModuleCombination(Document doc, string selectedCombination, List<ModuleType> moduleTypes)
+
+
+
+        /// <summary>
+        /// Returns the geometric center of the land (crop box).
+        /// </summary>
+        public XYZ GetLandCenter()
         {
-            List<ElementId> previewElementIds = new List<ElementId>();
-
-            // --- Step 1: Parse Combination and Collect Modules ---
-            Dictionary<int, int> typeCounts = ParseCombination(selectedCombination);
-            List<ModuleType> modulesToPlace = new List<ModuleType>();
-            double landWidth = GlobalData.landWidth;
-            double landHeight = GlobalData.landHeight;
-            foreach (var kvp in typeCounts)
-            {
-                int moduleTypeIndex = kvp.Key;
-                int count = kvp.Value;
-                ModuleType modType = moduleTypes[moduleTypeIndex];
-                for (int i = 0; i < count; i++)
-                    modulesToPlace.Add(modType);
-            }
-
-            // --- Step 2: Determine Module Placement ---
-            double offsetX = 0.0, offsetY = 0.0, currentRowHeight = 0.0;
-            List<XYZ[]> placedRectangles = new List<XYZ[]>();
-            foreach (var mod in modulesToPlace)
-            {
-                double dimX1 = mod.Length, dimY1 = mod.Width;
-                double dimX2 = mod.Width, dimY2 = mod.Length;
-                bool placed = false;
-                double chosenX = 0, chosenY = 0;
-
-                bool FitsInRow(double testX, double testY)
-                {
-                    if (offsetX + testX > landWidth) return false;
-                    if (currentRowHeight > 0 && Math.Abs(testY - currentRowHeight) > 1e-9) return false;
-                    if (offsetY + testY > landHeight) return false;
-                    return true;
-                }
-
-                // Default orientation
-                if (!placed && FitsInRow(dimX1, dimY1))
-                {
-                    chosenX = dimX1; chosenY = dimY1; placed = true;
-                }
-                // Rotated orientation
-                if (!placed && FitsInRow(dimX2, dimY2))
-                {
-                    chosenX = dimX2; chosenY = dimY2; placed = true;
-                }
-                // New row if needed
-                if (!placed)
-                {
-                    offsetY += currentRowHeight;
-                    offsetX = 0.0;
-                    currentRowHeight = 0.0;
-                    if (FitsInRow(dimX1, dimY1))
-                    {
-                        chosenX = dimX1; chosenY = dimY1; placed = true;
-                    }
-                    else if (FitsInRow(dimX2, dimY2))
-                    {
-                        chosenX = dimX2; chosenY = dimY2; placed = true;
-                    }
-                    else
-                        throw new Exception("Module doesn't fit in new row.");
-                }
-
-                // Record rectangle corners.
-                XYZ p1 = new XYZ(offsetX, offsetY, 0);
-                XYZ p2 = new XYZ(offsetX + chosenX, offsetY, 0);
-                XYZ p3 = new XYZ(offsetX + chosenX, offsetY + chosenY, 0);
-                XYZ p4 = new XYZ(offsetX, offsetY + chosenY, 0);
-                placedRectangles.Add(new XYZ[] { p1, p2, p3, p4 });
-
-                offsetX += chosenX;
-                if (Math.Abs(currentRowHeight) < 1e-9)
-                    currentRowHeight = chosenY;
-            }
-
-            // --- Step 3: Center the Layout ---
-            CenterFinalOutputInViewBox(placedRectangles, doc.ActiveView.CropBox);
-
-            // --- Step 4: Create Module Solids for Preview and Store their IDs ---
-            using (Transaction trans = new Transaction(doc, "Display Module Arrangement"))
-            {
-                trans.Start();
-                foreach (var rect in placedRectangles)
-                {
-                    DirectShape ds = CreateModuleSolidAndReturn(doc, rect[0], rect[1], rect[2], rect[3], 1.0);
-                    previewElementIds.Add(ds.Id);
-                }
-                trans.Commit();
-            }
-            OverallCenter = ComputeFinalOutputCenter(placedRectangles);
-            return previewElementIds;
+            double cx = (_cropBox.Min.X + _cropBox.Max.X) * 0.5;
+            double cy = (_cropBox.Min.Y + _cropBox.Max.Y) * 0.5;
+            return new XYZ(cx, cy, 0);
         }
 
-        private DirectShape CreateModuleSolidAndReturn(Document doc, XYZ p1, XYZ p2, XYZ p3, XYZ p4, double height)
+    
+        /// <summary>
+        /// Attempts to translate every placed module in <paramref name="arr"/> so that its
+        /// bounding‐box is centered in the land.  If *any* module would end up outside
+        /// the cropBox, the arrangement is left unchanged.
+        /// </summary>
+        public void CenterArrangement(ModuleArrangementResult arr)
         {
-            List<Curve> edges = new List<Curve>
-    {
-        Line.CreateBound(p1, p2),
-        Line.CreateBound(p2, p3),
-        Line.CreateBound(p3, p4),
-        Line.CreateBound(p4, p1)
-    };
+            // Land bounds
+            double landMinX = _cropBox.Min.X, landMaxX = _cropBox.Max.X;
+            double landMinY = _cropBox.Min.Y, landMaxY = _cropBox.Max.Y;
 
-            CurveLoop loop = new CurveLoop();
-            foreach (Curve c in edges)
-                loop.Append(c);
+            // 1) Compute current layout bounds
+            double minX = arr.PlacedModules.Min(pm => pm.Origin.X);
+            double minY = arr.PlacedModules.Min(pm => pm.Origin.Y);
+            double maxX = arr.PlacedModules.Max(pm => pm.Origin.X + pm.ModuleInstance.EffectiveHorizontal);
+            double maxY = arr.PlacedModules.Max(pm => pm.Origin.Y + pm.ModuleInstance.EffectiveVertical);
 
-            Solid solid = GeometryCreationUtilities.CreateExtrusionGeometry(
-                new List<CurveLoop> { loop },
-                XYZ.BasisZ,
-                height);
+            // 2) Find layout center vs. land center
+            var layoutCenter = new XYZ((minX + maxX) * 0.5, (minY + maxY) * 0.5, 0);
+            var landCenter = GetLandCenter();
+            double dx = landCenter.X - layoutCenter.X;
+            double dy = landCenter.Y - layoutCenter.Y;
 
-            DirectShape ds = DirectShape.CreateElement(doc, new ElementId(BuiltInCategory.OST_GenericModel));
-            ds.ApplicationId = "ModuleArrangement";
-            ds.ApplicationDataId = Guid.NewGuid().ToString();
-            ds.SetShape(new List<GeometryObject> { solid });
-
-            // --- Set module shape color to red ---
-            OverrideGraphicSettings ogs = new OverrideGraphicSettings();
-            ogs.SetProjectionLineColor(new Autodesk.Revit.DB.Color(255, 0, 0)); // red
-            doc.ActiveView.SetElementOverrides(ds.Id, ogs);
-
-            return ds;
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        private double GetLength(Segment s)
-        {
-            return Math.Abs(s.Start.X - s.End.X) < 1e-9
-                ? Math.Abs(s.End.Y - s.Start.Y)
-                : Math.Abs(s.End.X - s.Start.X);
-        }
-
-        private struct Segment
-        {
-            public XYZ Start;
-            public XYZ End;
-            public Segment(XYZ s, XYZ e)
+            // 3) Test fit: would every module remain inside?
+            foreach (var pm in arr.PlacedModules)
             {
-                if (Math.Abs(s.X - e.X) < 1e-9)
+                double newX = pm.Origin.X + dx;
+                double newY = pm.Origin.Y + dy;
+                double w = pm.ModuleInstance.EffectiveHorizontal;
+                double h = pm.ModuleInstance.EffectiveVertical;
+
+                if (newX < landMinX || newX + w > landMaxX ||
+                    newY < landMinY || newY + h > landMaxY)
                 {
-                    if (s.Y > e.Y) { var tmp = s; s = e; e = tmp; }
+                    // one or more modules would stick out → abort centering
+                    return;
                 }
-                else
-                {
-                    if (s.X > e.X) { var tmp = s; s = e; e = tmp; }
-                }
-                Start = s;
-                End = e;
+            }
+
+            // 4) Safe to apply: shift every module
+            foreach (var pm in arr.PlacedModules)
+            {
+                pm.Origin = new XYZ(pm.Origin.X + dx, pm.Origin.Y + dy, pm.Origin.Z);
             }
         }
+
+
+
+
+
+
+
+
+        #endregion
     }
+
+
+
+
+
+
+    public static class ArrangementEvaluator
+    {
+        const double tol = 1e-6;
+
+        // 1) Compute total shared‐edge length
+        public static double CalculateAttachmentLength(ModuleArrangementResult arr)
+        {
+            double al = 0;
+            var mods = arr.PlacedModules;
+            for (int i = 0; i < mods.Count; i++)
+            {
+                var a = mods[i];
+                double x0 = a.Origin.X, y0 = a.Origin.Y;
+                double w0 = a.ModuleInstance.EffectiveHorizontal;
+                double h0 = a.ModuleInstance.EffectiveVertical;
+                for (int j = i + 1; j < mods.Count; j++)
+                {
+                    var b = mods[j];
+                    double x1 = b.Origin.X, y1 = b.Origin.Y;
+                    double w1 = b.ModuleInstance.EffectiveHorizontal;
+                    double h1 = b.ModuleInstance.EffectiveVertical;
+
+                    // vertical contact?
+                    if (Math.Abs(x0 + w0 - x1) < tol || Math.Abs(x1 + w1 - x0) < tol)
+                    {
+                        double yOverlap = Math.Max(0,
+                            Math.Min(y0 + h0, y1 + h1) - Math.Max(y0, y1));
+                        al += yOverlap;
+                    }
+
+                    // horizontal contact?
+                    if (Math.Abs(y0 + h0 - y1) < tol || Math.Abs(y1 + h1 - y0) < tol)
+                    {
+                        double xOverlap = Math.Max(0,
+                            Math.Min(x0 + w0, x1 + w1) - Math.Max(x0, x1));
+                        al += xOverlap;
+                    }
+                }
+            }
+            return al;
+        }
+
+        // 2) Union perimeter = sum(individual perimeters) − 2×AL
+        public static double CalculatePerimeter(ModuleArrangementResult arr)
+        {
+            double sumPerim = arr.PlacedModules
+                .Sum(pm => 2 * (pm.ModuleInstance.EffectiveHorizontal + pm.ModuleInstance.EffectiveVertical));
+            double al = CalculateAttachmentLength(arr);
+            return sumPerim - 2 * al;
+        }
+
+
+    }
+
+    /// <summary>
+    /// Represents one grid cell inside a placed module,
+    /// so you can later check coverage, color it, etc.
+    /// </summary>
+    public class ModuleGridCell
+    {
+        //—— existing fields ——
+        public int ModuleIndex { get; set; }
+        public int Row { get; set; }
+        public int Col { get; set; }
+        public double OriginX { get; set; }
+        public double OriginY { get; set; }
+        public double Size { get; set; }
+        public int GlobalIndex { get; set; }
+
+
+        public CurveLoop Loop { get; set; }
+    }
+
+    /// <summary>
+    /// One module instance with orientation.
+    /// </summary>
+    public class ModuleInstance
+    {
+        public ModuleType Module { get; set; }
+        public bool IsRotated { get; set; }
+        public double EffectiveHorizontal => IsRotated ? Module.Width : Module.Length;
+        public double EffectiveVertical => IsRotated ? Module.Length : Module.Width;
+    }
+
+    /// <summary>
+    /// One placed module (with position).
+    /// </summary>
+    public class PlacedModule
+    {
+        public ModuleInstance ModuleInstance { get; set; }
+        public XYZ Origin { get; set; }  // bottom-left corner in model coords
+    }
+
+    /// <summary>
+    /// The result of one valid arrangement:
+    ///  - which modules went where,
+    ///  - their orientation string,
+    ///  - and now the list of grid cells.
+    /// </summary>
+    public class ModuleArrangementResult
+    {
+        public List<PlacedModule> PlacedModules { get; set; }
+        public string OrientationStr { get; set; }
+        public List<ModuleInstance> ModuleInstances { get; set; }
+        public List<ModuleGridCell> GridCells { get; set; } = new List<ModuleGridCell>();
+    }
+
+
 }
