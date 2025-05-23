@@ -312,15 +312,22 @@ namespace PanelizedAndModularFinal
                                                 optional.Add((i, j));
                                                  }
 
-                                        // 4) Enumerate every subset of those optional edges
-                                        var allCandidates = new List<(List<SpaceNode> layout, int[,] candidateAdj)>();
+                                        // ── 4) Enumerate *all* valid adjacency‐sets (no fixed limit)
+                                        //    required = your “must‐touch” edges
+                                        //    optional = connectivity‐only edges the user clicked
                                         int M = optional.Count;
+                                        var validAdjSets = new List<int[,]>();
+
                                         for (int mask = 0; mask < (1 << M); mask++)
                                         {
-                                            // build one candidate adjacency
+                                            // 4a) build candidate adjacency
                                             var candAdj = new int[n, n];
+
+                                            // 4b) required edges (hard‐adjacency)
                                             foreach (var (i, j) in required)
                                                 candAdj[i, j] = candAdj[j, i] = 1;
+
+                                            // 4c) optional edges per this subset
                                             for (int b = 0; b < M; b++)
                                             {
                                                 if ((mask & (1 << b)) != 0)
@@ -330,44 +337,55 @@ namespace PanelizedAndModularFinal
                                                 }
                                             }
 
-                                            // 5) Filter by your connectivity‐reachability + connectivity
-                                            if (!IsCandidateValid(candAdj, connectivityMatrix)) continue;
+                                            // 4d) filter by connectivity (O(n³))
+                                            if (IsCandidateValid(candAdj, connectivityMatrix))
+                                                validAdjSets.Add(candAdj);
+                                        }
 
+                                        var allCandidates = new List<(List<SpaceNode> layout, int[,] candidateAdj)>();
 
-                                            // 6) Run FD layout & cleanup
+                                        foreach (var candAdj in validAdjSets)
+                                        {
+                                            // 5) clone your original nodes
                                             var clone = CloneSpaces(spaces);
+
+                                            // 6) initial force-directed layout
                                             ApplyForceDirectedLayout(clone, candAdj, weightedAdjMatrix, viewBox);
-                                            ResolveCollisions(clone);
+
+                                            // 7) now *enforce* exact tangency on all hard edges
+                                            //    and knock out any overlaps + re-center a few times
+                                            for (int pass = 0; pass < 8; pass++)
+                                            {
+                                                EnforceAllDistanceConstraints(clone, candAdj, viewBox);
+                                                SnapPreferredAdjacencyCircles(clone, candAdj, viewBox);
+                                                ResolveCollisions(clone);
+                                                ResolveBoundaryViolations(clone, viewBox);
+                                                CenterLayout(clone, viewBox);
+                                            }
+
+                                            // 8) just in case a final cleanup is needed
+                                            ResolveNonAdjacentCollisions(clone, candAdj);
                                             ResolveBoundaryViolations(clone, viewBox);
                                             CenterLayout(clone, viewBox);
 
                                             allCandidates.Add((clone, candAdj));
                                         }
 
-                                        // —– PREVIEW ALL CANDIDATE GRAPHS —–
-                                        var sb = new System.Text.StringBuilder();
-                                        for (int graphIndex = 0; graphIndex < allCandidates.Count; graphIndex++)
-                                        {
-                                            var candAdj = allCandidates[graphIndex].candidateAdj;
-                                            var edgeList = new List<string>();
-                                            int dim = candAdj.GetLength(0);
-                                            for (int a = 0; a < dim; a++)
-                                                for (int b = a + 1; b < dim; b++)
-                                                    if (candAdj[a, b] == 1)
-                                                        edgeList.Add($"{spaces[a].Name}–{spaces[b].Name}");
-
-                                            sb
-                                              .Append($"Graph {graphIndex + 1}: ")
-                                              .AppendLine(edgeList.Count > 0
-                                                  ? string.Join(", ", edgeList)
-                                                  : "⟨no edges⟩");
-                                        }
-
-                                        // Show it
-                                        TaskDialog.Show("Candidate Graphs", sb.ToString());
-
                                         TaskDialog.Show("Layouts Generated",
-                                            $"Based on your adjacency + connectivity, {allCandidates.Count} valid graphs were found.");
+                                        $"Based on your adjacency + connectivity, {allCandidates.Count} valid graphs were found.");
+
+                                        // gather the layouts and connectivity matrices
+                                        var layouts = allCandidates.Select(t => t.layout).ToList();
+                                        var connectivities = allCandidates.Select(t => t.candidateAdj).ToList();
+
+                                        // show our new WPF window that draws each graph
+                                        var previewWin = new CandidateGraphsWindow(layouts, connectivities);
+                                        new WindowInteropHelper(previewWin)
+                                        {
+                                            Owner = Process.GetCurrentProcess().MainWindowHandle
+                                        };
+                                        if (previewWin.ShowDialog() != true)
+                                            return Result.Cancelled;
 
                                         // ── 5) Evaluate each by ASPL & density ──
                                         var evals = allCandidates

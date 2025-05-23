@@ -2,6 +2,9 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup />
   <ItemGroup>
+    <Compile Update="CandidateGraphsWindow.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="ChosenLayoutPreviewWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -43,6 +46,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Page Update="CandidateGraphsWindow.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Update="ChosenLayoutPreviewWindow.xaml">
       <SubType>Designer</SubType>
     </Page>

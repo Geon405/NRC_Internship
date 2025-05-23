@@ -293,17 +293,9 @@ namespace PanelizedAndModularFinal
                     if (!didAssign)
                         break; // no further assignments possible
                 }
-
                 tx.Commit();
             }
-
             return regionIds;
         }
-
-
-
-
     }
-
-
 }
