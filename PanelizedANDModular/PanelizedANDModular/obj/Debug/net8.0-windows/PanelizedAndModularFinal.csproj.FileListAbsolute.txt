@@ -604,3 +604,7 @@ C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedA
 C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\bin\Debug\net8.0-windows\clipper.dll
 C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\ArrangementSelectionWindow.baml
 C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\ArrangementSelectionWindow.g.cs
+C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\ChosenLayoutPreviewWindow.baml
+C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\ChosenLayoutPreviewWindow.g.cs
+C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\CandidateGraphsWindow.baml
+C:\Users\martinchan\source\repos\CRR1\PanelizedAndModularFinal - Copy\PanelizedAndModularFinal\obj\Debug\net8.0-windows\CandidateGraphsWindow.g.cs

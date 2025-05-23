@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PanelizedANDModular")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b3fab7f6d29ab3e711a4695de4e2f073079c4e26")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+95a47bedf836835f97e81625011cc1651a64645c")]
 [assembly: System.Reflection.AssemblyProductAttribute("PanelizedANDModular")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PanelizedANDModular")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

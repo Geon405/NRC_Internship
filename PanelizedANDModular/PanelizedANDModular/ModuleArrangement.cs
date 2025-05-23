@@ -864,6 +864,8 @@ namespace PanelizedAndModularFinal
         public double Size { get; set; }
         public int GlobalIndex { get; set; }
 
+        public List<ElementId> RegionIds { get; } = new List<ElementId>();
+
 
         public CurveLoop Loop { get; set; }
     }
