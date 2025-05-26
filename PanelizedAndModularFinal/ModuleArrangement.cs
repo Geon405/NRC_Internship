@@ -30,98 +30,6 @@ namespace PanelizedAndModularFinal
             _cropBox = cropBox;
         }
 
-        private static double ComputeASPL(ModuleArrangementResult arr)
-        {
-            var mods = arr.PlacedModules;
-            int n = mods.Count;
-            // build an adjacency‐list for “touching” modules
-            var adj = new List<int>[n];
-            for (int i = 0; i < n; i++) adj[i] = new List<int>();
-
-            const double tol = 1e-6;
-            for (int i = 0; i < n; i++)
-            {
-                for (int j = i + 1; j < n; j++)
-                {
-                    if (SharesSideBetween(mods[i], mods[j], tol))
-                    {
-                        adj[i].Add(j);
-                        adj[j].Add(i);
-                    }
-                }
-            }
-
-            // BFS from each node → sum distances
-            double total = 0;
-            for (int s = 0; s < n; s++)
-            {
-                var dist = Enumerable.Repeat(-1, n).ToArray();
-                var q = new Queue<int>();
-                dist[s] = 0; q.Enqueue(s);
-
-                while (q.Count > 0)
-                {
-                    int u = q.Dequeue();
-                    foreach (int v in adj[u])
-                    {
-                        if (dist[v] < 0)
-                        {
-                            dist[v] = dist[u] + 1;
-                            q.Enqueue(v);
-                        }
-                    }
-                }
-                // accumulate
-                for (int t = 0; t < n; t++)
-                    if (t != s && dist[t] >= 0)
-                        total += dist[t];
-            }
-
-            // normalize
-            return total / (n * (n - 1));
-        }
-
-        // ─── helper #2: density ───────────────────────────────────
-        private static double ComputeDensity(ModuleArrangementResult arr)
-        {
-            var mods = arr.PlacedModules;
-            int n = mods.Count, m = 0;
-            const double tol = 1e-6;
-            for (int i = 0; i < n; i++)
-            {
-                for (int j = i + 1; j < n; j++)
-                {
-                    if (SharesSideBetween(mods[i], mods[j], tol))
-                        m++;
-                }
-            }
-            return (2.0 * m) / (n * (n - 1));
-        }
-
-        // ─── helper #3: do two modules share a side? ───────────────
-        private static bool SharesSideBetween(
-            PlacedModule A, PlacedModule B, double tol)
-        {
-            double x0 = A.Origin.X, y0 = A.Origin.Y,
-                   w0 = A.ModuleInstance.EffectiveHorizontal,
-                   h0 = A.ModuleInstance.EffectiveVertical;
-            double x1 = B.Origin.X, y1 = B.Origin.Y,
-                   w1 = B.ModuleInstance.EffectiveHorizontal,
-                   h1 = B.ModuleInstance.EffectiveVertical;
-
-            // vertical side check
-            if ((Math.Abs(x0 + w0 - x1) < tol || Math.Abs(x1 + w1 - x0) < tol)
-                && (y0 < y1 + h1 && y0 + h0 > y1))
-                return true;
-
-            // horizontal side check
-            if ((Math.Abs(y0 + h0 - y1) < tol || Math.Abs(y1 + h1 - y0) < tol)
-                && (x0 < x1 + w1 && x0 + w0 > x1))
-                return true;
-
-            return false;
-        }
-
         public List<ModuleArrangementResult> GetValidArrangements()
         {
             // 1) Unroll counts → flat list
@@ -188,23 +96,7 @@ namespace PanelizedAndModularFinal
                 .Select(g => g.First())
                 .ToList();
 
-            // 6) score & pick best by ASPL (lowest) then density (highest)
-            var scored = unique
-                .Select(a => new {
-                    Arr = a,
-                    ASPL = ComputeASPL(a),
-                    Density = ComputeDensity(a)
-                })
-                .ToList();
-
-            var best = scored
-                .OrderBy(x => x.ASPL)
-                .ThenByDescending(x => x.Density)
-                .First()
-                .Arr;
-
-            // return *only* the single best arrangement
-            return new List<ModuleArrangementResult> { best };
+            return unique;
         }
 
 
@@ -939,6 +831,24 @@ namespace PanelizedAndModularFinal
 
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     /// <summary>
     /// Represents one grid cell inside a placed module,
     /// so you can later check coverage, color it, etc.
@@ -953,6 +863,8 @@ namespace PanelizedAndModularFinal
         public double OriginY { get; set; }
         public double Size { get; set; }
         public int GlobalIndex { get; set; }
+
+        public List<ElementId> RegionIds { get; } = new List<ElementId>();
 
 
         public CurveLoop Loop { get; set; }

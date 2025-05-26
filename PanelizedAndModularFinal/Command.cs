@@ -15,10 +15,10 @@ using PanelizedAndModularFinal;
 using System.Diagnostics;
 using System.Windows.Interop;
 using static PanelizedAndModularFinal.GridTrimmer;
-using System.Linq;               // for OrderBy/ThenBy/First
-using System.Diagnostics;        // for Process.GetCurrentProcess()
-using System.Windows.Interop;    // for WindowInteropHelper
-using PanelizedAndModularFinal;  // for SpaceNode, GraphEvaluator, etc.
+using Autodesk.Revit.DB.Mechanical;
+using System.Text;
+using System.Security.Cryptography.Pkcs;
+using static PanelizedAndModularFinal.CellAssigner;
 #endregion
 
 public static class GlobalData
@@ -46,8 +46,6 @@ namespace PanelizedAndModularFinal
     [Transaction(TransactionMode.Manual)]
     public class Command : IExternalCommand
     {
-        private static readonly Random _rng = new Random(1234567);
-
 
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
@@ -57,7 +55,6 @@ namespace PanelizedAndModularFinal
             UIDocument uidoc = uiapp.ActiveUIDocument;
 
             Document doc = uidoc.Document;
-
 
             try
             {
@@ -174,23 +171,56 @@ namespace PanelizedAndModularFinal
                             }
 
                             // Create room nodes (spaces) from user adjustments
-                            List<SpaceNode> spaces = new List<SpaceNode>();
-                            //Random random = new Random();
+                            var spaces = new List<SpaceNode>();
+                            var rand = new Random();
 
-                            foreach (var inst in secondWindow.Instances)
+                            // 1) group by type
+                            var groups = secondWindow.Instances
+                                .GroupBy(inst => inst.RoomType);
+
+                            foreach (var grp in groups)
                             {
-                                double area = inst.Area < 10.0 ? 25.0 : inst.Area;
-                                View activeView1 = doc.ActiveView;
-                                BoundingBoxXYZ viewBox1 = activeView1.CropBoxActive && activeView1.CropBox != null
-                                    ? activeView1.CropBox
-                                    : activeView1.get_BoundingBox(null);
-                                double layoutWidth1 = viewBox1.Max.X - viewBox1.Min.X;
-                                double layoutHeight1 = viewBox1.Max.Y - viewBox1.Min.Y;
-                                XYZ position = new XYZ(
-                                    viewBox1.Min.X + _rng.NextDouble() * layoutWidth1,
-                                    viewBox1.Min.Y + _rng.NextDouble() * layoutHeight1,
-                                    0); var node = new SpaceNode(inst.Name, inst.RoomType, area, position, inst.WpfColor);
-                                spaces.Add(node);
+                                int count = grp.Count();
+                                int idx = 0;
+
+                                foreach (var inst in grp)
+                                {
+                                    // area and random position as before
+                                    double area = inst.Area < 10.0 ? 25.0 : inst.Area;
+                                    var view = doc.ActiveView;
+                                    var box = (view.CropBoxActive && view.CropBox != null)
+                                                ? view.CropBox
+                                                : view.get_BoundingBox(null);
+                                    double w = box.Max.X - box.Min.X;
+                                    double h = box.Max.Y - box.Min.Y;
+                                    var pos = new XYZ(
+                                        box.Min.X + rand.NextDouble() * w,
+                                        box.Min.Y + rand.NextDouble() * h,
+                                        0);
+
+                                    // 2) compute a lightness factor in [0.5…1.0]
+                                    double factor = 1.0;
+                                    if (count > 1)
+                                        factor = 0.5 + 0.5 * (idx / (double)(count - 1));
+
+                                    // 3) apply it to the WPF color
+                                    var baseC = inst.WpfColor;
+                                    byte r = (byte)Math.Min(255, baseC.R * factor);
+                                    byte g = (byte)Math.Min(255, baseC.G * factor);
+                                    byte b = (byte)Math.Min(255, baseC.B * factor);
+                                    var shade = System.Windows.Media.Color.FromRgb(r, g, b);
+
+                                    // 4) create the node with the shaded color
+                                    spaces.Add(new SpaceNode(
+                                        inst.Name,
+                                        inst.RoomType,
+                                        area,
+                                        pos,
+                                        shade
+                                    ));
+
+                                    idx++;
+                                }
                             }
 
                             activeView = doc.ActiveView;
@@ -285,9 +315,9 @@ namespace PanelizedAndModularFinal
 
                                         // 1) Copy the *raw* user clicks for optional‐edge enumeration
                                         var rawConn = new int[n, n];
-                                           for (int i = 0; i < n; i++)
-                                                 for (int j = 0; j < n; j++)
-                                            rawConn[i, j] = connectivityMatrix[i, j];
+                                        for (int i = 0; i < n; i++)
+                                            for (int j = 0; j < n; j++)
+                                                rawConn[i, j] = connectivityMatrix[i, j];
 
                                         // 2) Symmetrize + transitive‐close on connectivityMatrix in place
                                         for (int i = 0; i < n; i++)
@@ -303,47 +333,37 @@ namespace PanelizedAndModularFinal
                                         // 3) Build required vs optional edge lists
                                         var required = new List<(int i, int j)>();
                                         var optional = new List<(int i, int j)>();
-                                           for (int i = 0; i < n; i++)
-                                                 for (int j = i + 1; j < n; j++)
-                                                 {
-                                                   if (adjacencyMatrix[i, j] == 1)
-                                                required.Add((i, j));
-                                                   else if (rawConn[i, j] == 1)      // <-- only those user actually allowed
-                                                optional.Add((i, j));
-                                                 }
-
-                                        // ── 4) Enumerate *all* valid adjacency‐sets (no fixed limit)
-                                        //    required = your “must‐touch” edges
-                                        //    optional = connectivity‐only edges the user clicked
-                                        int M = optional.Count;
-                                        var validAdjSets = new List<int[,]>();
-
-                                        for (int mask = 0; mask < (1 << M); mask++)
-                                        {
-                                            // 4a) build candidate adjacency
-                                            var candAdj = new int[n, n];
-
-                                            // 4b) required edges (hard‐adjacency)
-                                            foreach (var (i, j) in required)
-                                                candAdj[i, j] = candAdj[j, i] = 1;
-
-                                            // 4c) optional edges per this subset
-                                            for (int b = 0; b < M; b++)
+                                        for (int i = 0; i < n; i++)
+                                            for (int j = i + 1; j < n; j++)
                                             {
-                                                if ((mask & (1 << b)) != 0)
-                                                {
-                                                    var (i, j) = optional[b];
-                                                    candAdj[i, j] = candAdj[j, i] = 1;
-                                                }
+                                                if (adjacencyMatrix[i, j] == 1)
+                                                    required.Add((i, j));
+                                                else if (rawConn[i, j] == 1)
+                                                    optional.Add((i, j));
                                             }
 
-                                            // 4d) filter by connectivity (O(n³))
-                                            if (IsCandidateValid(candAdj, connectivityMatrix))
-                                                validAdjSets.Add(candAdj);
+                                        int M = optional.Count;
+                                        List<int[,]> validAdjSets;
+
+                                        const int MAX_ENUMERATE = 16;    // 2^16 = 65K, adjust up or down to taste
+                                        if (M <= MAX_ENUMERATE)
+                                        {
+                                            // exact enumeration for small M
+                                            validAdjSets = GenerateValidAdjSets(n, required, optional, connectivityMatrix);
+                                        }
+                                        else
+                                        {
+                                            // fallback for large M: one greedy connected graph
+                                            var greedy = BuildGreedyAdjacency(n, required, optional, weightedAdjMatrix);
+                                            validAdjSets = new List<int[,]> { greedy };
+                                            TaskDialog.Show(
+                                              "Note",
+                                              $"Skipped full enumeration of {M} optional edges; using one greedy graph instead."
+                                            );
                                         }
 
+                                        // ── 2) now your existing loop over validAdjSets remains unchanged ──
                                         var allCandidates = new List<(List<SpaceNode> layout, int[,] candidateAdj)>();
-
                                         foreach (var candAdj in validAdjSets)
                                         {
                                             // 5) clone your original nodes
@@ -389,7 +409,8 @@ namespace PanelizedAndModularFinal
 
                                         // ── 5) Evaluate each by ASPL & density ──
                                         var evals = allCandidates
-                                          .Select(t => {
+                                          .Select(t =>
+                                          {
                                               double aspl = GraphEvaluator.CalculateASPL(t.layout, t.candidateAdj);
                                               double gd = GraphEvaluator.CalculateDensity(t.layout, t.candidateAdj);
                                               return (t.layout, t.candidateAdj, aspl, gd);
@@ -407,7 +428,8 @@ namespace PanelizedAndModularFinal
 
                                         // ── 6) Compute P(G) and pick the best ──
                                         var bestEntry = evals
-                                          .Select(e => {
+                                          .Select(e =>
+                                          {
                                               double normASPL = (e.aspl - asplMin) / (asplMax - asplMin);
                                               double normGD = (e.gd - gdMin) / (gdMax - gdMin);
                                               double score = w1 * normASPL + w2 * normGD;
@@ -564,13 +586,13 @@ namespace PanelizedAndModularFinal
                                             }
 
                                             var corners = new List<XYZ>
-                                                {
-                                                    new XYZ(updatedCrop.Min.X, updatedCrop.Min.Y, 0),
-                                                    new XYZ(updatedCrop.Max.X, updatedCrop.Min.Y, 0),
-                                                    new XYZ(updatedCrop.Max.X, updatedCrop.Max.Y, 0),
-                                                    new XYZ(updatedCrop.Min.X, updatedCrop.Max.Y, 0),
-                                                    new XYZ(updatedCrop.Min.X, updatedCrop.Min.Y, 0),
-                                                };
+                                            {
+                                                new XYZ(updatedCrop.Min.X, updatedCrop.Min.Y, 0),
+                                                new XYZ(updatedCrop.Max.X, updatedCrop.Min.Y, 0),
+                                                new XYZ(updatedCrop.Max.X, updatedCrop.Max.Y, 0),
+                                                new XYZ(updatedCrop.Min.X, updatedCrop.Max.Y, 0),
+                                                new XYZ(updatedCrop.Min.X, updatedCrop.Min.Y, 0),
+                                            };
 
                                             using (var tx2 = new Transaction(doc, "Draw Land Boundary"))
                                             {
@@ -598,7 +620,6 @@ namespace PanelizedAndModularFinal
                                                 continue; // LOOP TO LET USER PICK AGAIN
                                             }
 
-
                                             var bestByAL = allArrangements
                                              .Select(a => new { a, AL = ArrangementEvaluator.CalculateAttachmentLength(a) })
                                              .GroupBy(x => x.AL)
@@ -622,6 +643,11 @@ namespace PanelizedAndModularFinal
                                             //  arrangement.DisplayScenarioSummary(uniqueArrangements);
                                             arrangement.DisplayUniqueCount(uniqueArrangements);
 
+                                            ////////////////////////////DISPLAY ALL ARANGEMENTS////////////////////////////
+                                            ////////////////////////////DISPLAY ALL ARANGEMENTS////////////////////////////
+                                            ///
+                                            //
+
                                             var pickWin = new ArrangementSelectionWindow(uniqueArrangements);
                                             var helper = new WindowInteropHelper(pickWin);
                                             helper.Owner = Process.GetCurrentProcess().MainWindowHandle;
@@ -641,6 +667,7 @@ namespace PanelizedAndModularFinal
 
                                             arrangementCreated = true;
                                         }
+
                                         // --- Step 2: Re-Output Saved Layout (Connection Lines and Room Circles) ---
                                         List<SpaceNode> savedSpaces = GlobalData.SavedSpaces;
                                         using (Transaction tx = new Transaction(doc, "Output Saved Layout"))
@@ -700,8 +727,8 @@ namespace PanelizedAndModularFinal
 
                                         var fullGridIds = new List<ElementId>();
 
-                                        // 1. Draw perfectly‐fitting 3×3 colored, semi‐transparent grid inside each saved space’s square
-                                        using (var trans = new Transaction(doc, "Draw Perfect 3x3 Grids"))
+                                        // 1. Draw perfectly‑fitting colored, semi‑transparent square inside each saved space’s square
+                                        using (var trans = new Transaction(doc, "Draw Perfect Squares"))
                                         {
                                             trans.Start();
 
@@ -733,72 +760,49 @@ namespace PanelizedAndModularFinal
                                                 double minX = cx - radius;
                                                 double minY = cy - radius;
 
-                                                // 2) Each square is broken into exactly 3×3 cells
-                                                int nCols = 3;
-                                                int nRows = 3;
-                                                double cellSize = side / 3.0;    // fits perfectly
-
-                                                // 3) Prepare sketch plane at bottom‐left corner
+                                                // 2) Prepare sketch plane at bottom‑left corner
                                                 var plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, new XYZ(minX, minY, z));
-                                                var sp = SketchPlane.Create(doc, plane);
+                                                SketchPlane.Create(doc, plane);
 
-                                                // 4) Build one OverrideGraphicSettings for this space
+                                                // 3) Build override settings
                                                 var ogs = new OverrideGraphicSettings()
-                                                    // fill color & transparency
-                                                    .SetSurfaceForegroundPatternColor(new Autodesk.Revit.DB.Color(
-                                                        space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
-                                                    .SetSurfaceBackgroundPatternColor(new Autodesk.Revit.DB.Color(
-                                                        space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
+                                                    .SetSurfaceForegroundPatternColor(new Autodesk.Revit.DB.Color(space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
+                                                    .SetSurfaceBackgroundPatternColor(new Autodesk.Revit.DB.Color(space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
                                                     .SetSurfaceForegroundPatternId(fillPattern.Id)
                                                     .SetSurfaceBackgroundPatternId(fillPattern.Id)
-                                                    .SetSurfaceTransparency(50)  // 50% see‐through
-                                                                                 // outline color & weight
-                                                    .SetProjectionLineColor(new Autodesk.Revit.DB.Color(
-                                                        space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
-                                                    .SetProjectionLineWeight(5);
+                                                    .SetSurfaceTransparency(50)
+                                                    .SetProjectionLineWeight(OverrideGraphicSettings.InvalidPenNumber);
 
-                                                // 5) Tile and draw each of the 3×3 cells
-                                                for (int i = 0; i < nCols; i++)
-                                                {
-                                                    for (int j = 0; j < nRows; j++)
-                                                    {
-                                                        double x0 = minX + i * cellSize;
-                                                        double y0 = minY + j * cellSize;
-                                                        double x1 = x0 + cellSize;
-                                                        double y1 = y0 + cellSize;
+                                                // 4) Draw one big square
+                                                double x0 = minX;
+                                                double y0 = minY;
+                                                double x1 = minX + side;
+                                                double y1 = minY + side;
 
-                                                        // build a CurveLoop of 4 edges
-                                                        var loop = new CurveLoop();
-                                                        loop.Append(Line.CreateBound(new XYZ(x0, y0, z), new XYZ(x1, y0, z)));
-                                                        loop.Append(Line.CreateBound(new XYZ(x1, y0, z), new XYZ(x1, y1, z)));
-                                                        loop.Append(Line.CreateBound(new XYZ(x1, y1, z), new XYZ(x0, y1, z)));
-                                                        loop.Append(Line.CreateBound(new XYZ(x0, y1, z), new XYZ(x0, y0, z)));
+                                                var outerLoop = new CurveLoop();
+                                                outerLoop.Append(Line.CreateBound(new XYZ(x0, y0, z), new XYZ(x1, y0, z)));
+                                                outerLoop.Append(Line.CreateBound(new XYZ(x1, y0, z), new XYZ(x1, y1, z)));
+                                                outerLoop.Append(Line.CreateBound(new XYZ(x1, y1, z), new XYZ(x0, y1, z)));
+                                                outerLoop.Append(Line.CreateBound(new XYZ(x0, y1, z), new XYZ(x0, y0, z)));
 
-                                                        // create filled region using regionType
-                                                        var region = FilledRegion.Create(
-                                                            doc,
-                                                            regionType.Id,
-                                                            view.Id,
-                                                            new List<CurveLoop> { loop }
-                                                        );
+                                                var region = FilledRegion.Create(
+                                                    doc,
+                                                    regionType.Id,
+                                                    view.Id,
+                                                    new List<CurveLoop> { outerLoop }
+                                                );
 
+                                                fullGridIds.Add(region.Id);
+                                                view.SetElementOverrides(region.Id, ogs);
 
-
-                                                        fullGridIds.Add(region.Id);
-                                                        view.SetElementOverrides(region.Id, ogs);
-
-
-                                                        // apply semi‐transparent color & outline
-                                                        view.SetElementOverrides(region.Id, ogs);
-
-                                                        // record each cell’s area if desired
-                                                        space.SquareArea = cellSize * cellSize;
-                                                    }
-                                                }
+                                                // record the area of the full square
+                                                space.SquareArea = side * side;
                                             }
 
                                             trans.Commit();
                                         }
+
+
 
                                         // 2) Let the user see it, then remove
                                         TaskDialog.Show(
@@ -816,45 +820,22 @@ namespace PanelizedAndModularFinal
                                             }
                                         }
 
-
-
-
-
-
-
                                         //////////////////////////////////////////////////////////////////////////////////
                                         //TRIMMING STEP !!!!
                                         /////////////////////////////////////////////////////////////////////////////////
                                         ///
 
-
-
-
-
-
                                         var gridTrimmer = new GridTrimmer();
                                         List<GridTrimmer.TrimResult> trims;
                                         var trimmedIds = gridTrimmer.DrawTrimmedGrids(
                                             doc,
-                                            chosen,                      //  chosen ModuleArrangementResult
+                                            chosen,                      // chosen module grid cells
                                             GlobalData.SavedSpaces,
                                             out trims
                                         );
 
                                         // 4) Show both the trimmed cells and the per‐space totals
                                         var lines = new List<string>();
-
-                                        // 4a) List each trimmed cell
-                                        lines.Add("Trimmed Cells:");
-                                        foreach (var t in trims)
-                                        {
-                                            lines.Add(
-                                              $"  {t.Space.Name} – cell #{t.CellIndex + 1}: " +
-                                              $"{t.TrimmedArea:F2} sq units trimmed"
-                                            );
-                                        }
-
-
 
 
                                         // 4b) Blank separator
@@ -867,8 +848,6 @@ namespace PanelizedAndModularFinal
                                             double trimmed = space.SquareTrimmedArea;
                                             lines.Add($"  {space.Name}: {trimmed:F2} sq units");
                                             grandTotal += trimmed;
-
-
                                         }
 
                                         // 4d) Grand total
@@ -881,117 +860,87 @@ namespace PanelizedAndModularFinal
                                             string.Join("\n", lines)
                                         );
 
+                                        /////////////////////////////////////////////////////////////////////////
+                                        //ASSIGNMENT OF CELLS STEP BELOW////////////////////////////////////////
+                                        ////////////////////////////////////////////////////////////////////////
+                                        // grab one solid drafting pattern
+                                        var fillPattern2 = new FilteredElementCollector(doc)
+                                          .OfClass(typeof(FillPatternElement))
+                                          .Cast<FillPatternElement>()
+                                          .First(fp =>
+                                              fp.GetFillPattern().IsSolidFill &&
+                                              fp.GetFillPattern().Target == FillPatternTarget.Drafting
+                                          );
 
-                                        // Optional: let the user review then clear the trimmed regions before assignment
-                                        TaskDialog.Show("Trim Complete", "The trimmed squares are drawn. Click OK to assign cells.");
-                                        using (var tx = new Transaction(doc, "Clear Trimmed Regions"))
+                                        var view2 = doc.ActiveView;
+
+                                        using (var tx = new Transaction(doc, "Recolor Trimmed Regions"))
                                         {
                                             tx.Start();
-                                            doc.Delete(trimmedIds);
+
+                                            // only include trims whose RegionId is valid (> 0)
+                                            var validTrims = trims
+                                                .Where(t => t.RegionId.IntegerValue > 0)
+                                                .GroupBy(t => t.Space);
+
+                                            foreach (var group in validTrims)
+                                            {
+                                                var space = group.Key;
+                                                var ogs = new OverrideGraphicSettings()
+                                                    .SetSurfaceForegroundPatternColor(new Autodesk.Revit.DB.Color(
+                                                        space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
+                                                    .SetSurfaceBackgroundPatternColor(new Autodesk.Revit.DB.Color(
+                                                        space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
+                                                    .SetSurfaceForegroundPatternId(fillPattern2.Id)
+                                                    .SetSurfaceBackgroundPatternId(fillPattern2.Id)
+                                                    .SetSurfaceTransparency(0)  // fully opaque
+                                                    .SetProjectionLineColor(new Autodesk.Revit.DB.Color(
+                                                        space.WpfColor.R, space.WpfColor.G, space.WpfColor.B))
+                                                    .SetProjectionLineWeight(1);
+
+                                                foreach (var trim in group)
+                                                {
+                                                    view2.SetElementOverrides(trim.RegionId, ogs);
+                                                }
+                                            }
+
                                             tx.Commit();
                                         }
 
 
-
-                                        // 1) Draw your module grid cells as before
                                         var moduleCells = chosen.GridCells;
 
-                                        // 2) Phase 1: fill each space’s unique cells
+
                                         var filler = new CellAssigner(doc, doc.ActiveView);
-                                        foreach (var space in GlobalData.SavedSpaces)
-                                        {
-                                            FillResult result1 = filler.FillOverlappingCells(moduleCells, space);
 
-                                            TaskDialog.Show(
-                                                $"Filled “{space.Name}”",
-                                                $"Cells colored: {result1.RegionIds.Count}\n" +
-                                                $"Total overlap area: {result1.TotalOverlapArea:F2} ft²\n" +
-                                                $"Extra allocated: {result1.TotalExtraArea:F2} ft²\n" +
-                                                $"Remaining trimmed area: {space.SquareTrimmedArea:F2} ft²"
-                                            );
-                                        }
 
-                                        // 3) Phase 2: handle any cells shared by ≥2 spaces
-                                        List<ElementId> contestedRegions = filler.ResolveContestedCells(moduleCells);
+                                        // var random10 = filler.ClearSingleRoomPartialCells(moduleCells);
 
-                                        // (optional) report how many contested cells you ultimately colored
-                                        TaskDialog.Show(
-                                            "Contested Cells Resolved",
-                                            $"Cells filled in Phase 2: {contestedRegions.Count}"
+                                        //PHASE 0 /////////////////////////////////////////////
+
+                                        var phase0 = filler.Phase0ResolveMultiOverlaps(
+                                        moduleCells,
+                                        trims,
+                                        fillPattern2
                                         );
 
+                                        TaskDialog.Show(
+                                            "Phase 0 Complete",
+                                            $"Trimmed + Phase 0 overlays are displayed together. Click OK to continue."
+                                        );
 
+                                        //PHASE 1////////////////////////////////////////////////////
 
+                                        var phase1 = filler.Phase1ResolveSingleOverlap(moduleCells);
 
+                                        //PHASE 2/////////////////////////////////////////////////////
+                                        List<ElementId> phase2 = filler.Phase2ResolveContestedCells(moduleCells);
 
+                                        //PHASE 3/////////////////////////////////////////////////////
 
+                                        var phase3Regions = filler.Phase3ResolveBasedOnPhase2(moduleCells);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                                        //// 7) Run the CellAssigner
-                                        //var assigner = new CellAssigner1(
-                                        //    moduleCells,
-                                        //    cellAreas.ToArray(),
-                                        //    trims,
-                                        //    GlobalData.SavedSpaces
-                                        //);
-
-
-
-
-
-                                        //assigner.DrawAllAssignments(doc);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                                        /////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                        //SPACE PRIORITY/////////////////////////////////////////////////////////////////////////////////////////
-                                        /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-                                        //// Now, open the space priority window to let the user assign raw priority values.
-
-                                        //SpacePriorityWindow priorityWindow = new SpacePriorityWindow(GlobalData.SavedSpaces);
-                                        //bool? priorityResult = priorityWindow.ShowDialog();
-
-                                        //if (priorityResult != true)
-                                        //{
-                                        //    TaskDialog.Show("Canceled", "User canceled at the priority window.");
-                                        //    return Result.Cancelled;
-                                        //}
-
-                                        //// At this point, each SpaceNode's Priority property has been normalized.
-                                        //// You can now access these values for subsequent operations.
-
+                                        //        List<ElementId> phase3 = filler.phase3(moduleCells);
 
                                         return Result.Succeeded;
                                     }
@@ -1002,7 +951,6 @@ namespace PanelizedAndModularFinal
                     }
                 }
             }
-
             catch (Exception ex)
             {
                 message = ex.Message;
@@ -1195,6 +1143,84 @@ namespace PanelizedAndModularFinal
         }
 
         /// <summary>
+        /// Recursively generate every superset of required+subset(optional)
+        /// that still satisfies connectivity, pruning entire branches early.
+        /// </summary>
+        private List<int[,]> GenerateValidAdjSets(
+            int n,
+            List<(int i, int j)> required,
+            List<(int i, int j)> optional,
+            int[,] connectivity)
+        {
+            var valid = new List<int[,]>();
+            var cand = new int[n, n];
+
+            // seed in all required edges
+            foreach (var (i, j) in required)
+                cand[i, j] = cand[j, i] = 1;
+
+            void Recurse(int k)
+            {
+                // prune: even if we added *all* remaining optional edges,
+                // would connectivity still fail? if so, stop exploring.
+                if (!IsCandidateValid(
+                        UnionWithRemaining(cand, optional, k),
+                        connectivity))
+                    return;
+
+                // if we've decided on every optional edge, do final check
+                if (k == optional.Count)
+                {
+                    if (IsCandidateValid(cand, connectivity))
+                        valid.Add(CloneMatrix(cand));
+                    return;
+                }
+
+                // 1) skip optional[k]
+                Recurse(k + 1);
+
+                // 2) include optional[k]
+                var (i, j) = optional[k];
+                cand[i, j] = cand[j, i] = 1;
+                Recurse(k + 1);
+                cand[i, j] = cand[j, i] = 0;
+            }
+
+            Recurse(0);
+            return valid;
+        }
+
+        /// <summary>
+        /// Build a temporary matrix of cand plus *all* optional edges from index 'start' onward.
+        /// Used only for the pruning test.
+        /// </summary>
+        private int[,] UnionWithRemaining(
+            int[,] cand,
+            List<(int i, int j)> optional,
+            int start)
+        {
+            int n = cand.GetLength(0);
+            var sup = CloneMatrix(cand);
+            for (int t = start; t < optional.Count; t++)
+            {
+                var (i, j) = optional[t];
+                sup[i, j] = sup[j, i] = 1;
+            }
+            return sup;
+        }
+
+        /// <summary>
+        /// Deep‐copy a square int‐matrix.
+        /// </summary>
+        private int[,] CloneMatrix(int[,] src)
+        {
+            int n = src.GetLength(0);
+            var dst = new int[n, n];
+            Array.Copy(src, dst, src.Length);
+            return dst;
+        }
+
+        /// <summary>
         /// Only resolves overlaps for circle‐pairs that are *not* in the hardAdj must-touch graph.
         /// </summary>
         private void ResolveNonAdjacentCollisions(
@@ -1266,6 +1292,48 @@ namespace PanelizedAndModularFinal
                 }
             } while (hasOverlap);
         }
+
+        // new Step 1 replacement – builds *one* connected adjacency graph in O(E log E + α(n))
+        private int[,] BuildGreedyAdjacency(
+            int n,
+            List<(int i, int j)> required,
+            List<(int i, int j)> optional,
+            double?[,] weights  // if you have weights; otherwise drop the sort
+        )
+        {
+            var parent = new int[n];
+            for (int i = 0; i < n; i++) parent[i] = i;
+            int Find(int x) => parent[x] == x ? x : parent[x] = Find(parent[x]);
+            void Union(int a, int b) => parent[Find(a)] = Find(b);
+
+            // 1) Seed in required edges
+            foreach (var (i, j) in required)
+                Union(i, j);
+
+            // 2) Sort optional edges by descending weight (or any priority)
+            var ordered = optional
+                .OrderByDescending(e => weights[e.i, e.j].GetValueOrDefault(0.0))
+                .ToList();
+
+            // 3) Add edges until graph is connected
+            int components = Enumerable.Range(0, n).Select(Find).Distinct().Count();
+            var adj = new int[n, n];
+            foreach (var (i, j) in required) adj[i, j] = adj[j, i] = 1;
+
+            foreach (var (i, j) in ordered)
+            {
+                if (components == 1) break;
+                if (Find(i) != Find(j))
+                {
+                    Union(i, j);
+                    adj[i, j] = adj[j, i] = 1;
+                    components--;
+                }
+            }
+
+            return adj;
+        }
+
 
         private void ResolveBoundaryViolations(List<SpaceNode> spaces, BoundingBoxXYZ viewBox)
         {
@@ -1349,7 +1417,6 @@ namespace PanelizedAndModularFinal
             }
         }
 
-
         /// <summary>
         /// Rotates the given 2D vector (ignoring the Z component) by the given angle (in radians).
         /// </summary>
@@ -1362,47 +1429,9 @@ namespace PanelizedAndModularFinal
             return new XYZ(x, y, vector.Z);
         }
 
-
-
         private double GetCircleRadius(double area)
         {
             return Math.Sqrt(area / Math.PI);
-        }
-
-        private void SnapConnectedCircles(List<SpaceNode> spaces, int[,] connectivityMatrix, BoundingBoxXYZ viewBox)
-        {
-            const double tol = 1e-3;
-            bool adjusted = true;
-            int iter = 0, maxIter = 20;   // increase iterations
-            while (adjusted && iter++ < maxIter)
-            {
-                adjusted = false;
-                for (int i = 0; i < spaces.Count; i++)
-                {
-                    for (int j = i + 1; j < spaces.Count; j++)
-                    {
-                        if (connectivityMatrix[i, j] == 1)
-                        {
-                            double rI = GetCircleRadius(spaces[i].Area);
-                            double rJ = GetCircleRadius(spaces[j].Area);
-                            double desired = rI + rJ;
-                            var delta = spaces[j].Position - spaces[i].Position;
-                            double dist = delta.GetLength();
-                            if (dist > desired + tol)
-                            {
-                                double move = (dist - desired) / 2.0;
-                                var dir = delta.Normalize();
-                                spaces[i].Position += dir * move;
-                                spaces[j].Position -= dir * move;
-                                // **clamp** both back into the view
-                                spaces[i].Position = ClampToViewBox(spaces[i].Position, rI, viewBox);
-                                spaces[j].Position = ClampToViewBox(spaces[j].Position, rJ, viewBox);
-                                adjusted = true;
-                            }
-                        }
-                    }
-                }
-            }
         }
 
         private void SnapPreferredAdjacencyCircles(
@@ -1483,7 +1512,6 @@ namespace PanelizedAndModularFinal
                     }
         }
 
-
         private void CenterLayoutOnOverallBoundary(List<SpaceNode> spaces, XYZ overallBoundaryCenter)
         {
             XYZ layoutMin = new XYZ(double.MaxValue, double.MaxValue, 0);
@@ -1505,7 +1533,6 @@ namespace PanelizedAndModularFinal
             }
 
         }
-
 
         private List<SpaceNode> CloneSpaces(List<SpaceNode> originalSpaces)
         {
@@ -1605,9 +1632,6 @@ namespace PanelizedAndModularFinal
             }
             return true;
         }
-
-
-
 
         /// <summary>
         /// Slides clusters together until the tangency graph is one connected component.
