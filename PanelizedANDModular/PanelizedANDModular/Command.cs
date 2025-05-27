@@ -223,11 +223,6 @@ namespace PanelizedAndModularFinal
                                 }
                             }
 
-
-
-
-
-
                             activeView = doc.ActiveView;
                             BoundingBoxXYZ viewBox = activeView.CropBoxActive && activeView.CropBox != null
                                 ? activeView.CropBox
@@ -241,18 +236,6 @@ namespace PanelizedAndModularFinal
                             GlobalData.TotalRoomArea = totalRoomArea;
                             while (true)
                             {
-
-
-
-
-
-
-
-
-
-
-
-
 
                                 // --- Step 1: Adjacency, Connectivity, and Edge Weights ---
                                 PreferredAdjacencyWindow adjacencyWindow = new PreferredAdjacencyWindow(spaces);
@@ -355,42 +338,32 @@ namespace PanelizedAndModularFinal
                                             {
                                                 if (adjacencyMatrix[i, j] == 1)
                                                     required.Add((i, j));
-                                                else if (rawConn[i, j] == 1)      // <-- only those user actually allowed
+                                                else if (rawConn[i, j] == 1)
                                                     optional.Add((i, j));
                                             }
 
-                                        // ── 4) Enumerate *all* valid adjacency‐sets (no fixed limit)
-                                        //    required = your “must‐touch” edges
-                                        //    optional = connectivity‐only edges the user clicked
                                         int M = optional.Count;
-                                        var validAdjSets = new List<int[,]>();
+                                        List<int[,]> validAdjSets;
 
-                                        for (int mask = 0; mask < (1 << M); mask++)
+                                        const int MAX_ENUMERATE = 16;    // 2^16 = 65K, adjust up or down to taste
+                                        if (M <= MAX_ENUMERATE)
                                         {
-                                            // 4a) build candidate adjacency
-                                            var candAdj = new int[n, n];
-
-                                            // 4b) required edges (hard‐adjacency)
-                                            foreach (var (i, j) in required)
-                                                candAdj[i, j] = candAdj[j, i] = 1;
-
-                                            // 4c) optional edges per this subset
-                                            for (int b = 0; b < M; b++)
-                                            {
-                                                if ((mask & (1 << b)) != 0)
-                                                {
-                                                    var (i, j) = optional[b];
-                                                    candAdj[i, j] = candAdj[j, i] = 1;
-                                                }
-                                            }
-
-                                            // 4d) filter by connectivity (O(n³))
-                                            if (IsCandidateValid(candAdj, connectivityMatrix))
-                                                validAdjSets.Add(candAdj);
+                                            // exact enumeration for small M
+                                            validAdjSets = GenerateValidAdjSets(n, required, optional, connectivityMatrix);
+                                        }
+                                        else
+                                        {
+                                            // fallback for large M: one greedy connected graph
+                                            var greedy = BuildGreedyAdjacency(n, required, optional, weightedAdjMatrix);
+                                            validAdjSets = new List<int[,]> { greedy };
+                                            TaskDialog.Show(
+                                              "Note",
+                                              $"Skipped full enumeration of {M} optional edges; using one greedy graph instead."
+                                            );
                                         }
 
+                                        // ── 2) now your existing loop over validAdjSets remains unchanged ──
                                         var allCandidates = new List<(List<SpaceNode> layout, int[,] candidateAdj)>();
-
                                         foreach (var candAdj in validAdjSets)
                                         {
                                             // 5) clone your original nodes
@@ -561,54 +534,6 @@ namespace PanelizedAndModularFinal
                                         }
                                         GlobalData.Step1Elements.Clear();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                                         // --- Step 2: Module Input and New Output ---
                                         //STEP 2 STEP 2 STEP 2
                                         ModuleInputWindow inputWindow = new ModuleInputWindow();
@@ -661,13 +586,13 @@ namespace PanelizedAndModularFinal
                                             }
 
                                             var corners = new List<XYZ>
-    {
-        new XYZ(updatedCrop.Min.X, updatedCrop.Min.Y, 0),
-        new XYZ(updatedCrop.Max.X, updatedCrop.Min.Y, 0),
-        new XYZ(updatedCrop.Max.X, updatedCrop.Max.Y, 0),
-        new XYZ(updatedCrop.Min.X, updatedCrop.Max.Y, 0),
-        new XYZ(updatedCrop.Min.X, updatedCrop.Min.Y, 0),
-    };
+                                            {
+                                                new XYZ(updatedCrop.Min.X, updatedCrop.Min.Y, 0),
+                                                new XYZ(updatedCrop.Max.X, updatedCrop.Min.Y, 0),
+                                                new XYZ(updatedCrop.Max.X, updatedCrop.Max.Y, 0),
+                                                new XYZ(updatedCrop.Min.X, updatedCrop.Max.Y, 0),
+                                                new XYZ(updatedCrop.Min.X, updatedCrop.Min.Y, 0),
+                                            };
 
                                             using (var tx2 = new Transaction(doc, "Draw Land Boundary"))
                                             {
@@ -695,13 +620,12 @@ namespace PanelizedAndModularFinal
                                                 continue; // LOOP TO LET USER PICK AGAIN
                                             }
 
-
                                             var bestByAL = allArrangements
-     .Select(a => new { a, AL = ArrangementEvaluator.CalculateAttachmentLength(a) })
-     .GroupBy(x => x.AL)
-     .OrderByDescending(g => g.Key)
-     .First()
-     .Select(x => x.a);
+                                             .Select(a => new { a, AL = ArrangementEvaluator.CalculateAttachmentLength(a) })
+                                             .GroupBy(x => x.AL)
+                                             .OrderByDescending(g => g.Key)
+                                             .First()
+                                             .Select(x => x.a);
 
                                             // 3) among those, filter to minimal perimeter
                                             var optimal = bestByAL
@@ -712,60 +636,12 @@ namespace PanelizedAndModularFinal
                                                 .Select(x => x.a)
                                                 .ToList();
 
-
-
-
-
-
                                             List<List<XYZ>> perimeterCorners;
                                             var uniqueArrangements = ModuleArrangement
                                                 .FilterUniqueByPerimeter(optimal, out perimeterCorners);
 
-
-
                                             //  arrangement.DisplayScenarioSummary(uniqueArrangements);
                                             arrangement.DisplayUniqueCount(uniqueArrangements);
-
-
-
-
-
-
-
-                                            ////////////////////////////DISPLAY ALL ARANGEMENTS////////////////////////////
-                                            ////////////////////////////DISPLAY ALL ARANGEMENTS////////////////////////////
-
-                                            //if (uniqueArrangements.Count > 0)
-                                            //{
-
-                                            //    for (int i = 0; i < uniqueArrangements.Count; i++)
-                                            //    {
-                                            //        var arr = uniqueArrangements[i];
-                                            //        int moduleCount1 = arr.PlacedModules.Count;
-
-                                            //        // Draw modules
-                                            //        List<ElementId> drawnIds1 = arrangement.DrawArrangement(doc, arr);
-
-                                            //        TaskDialog.Show(
-                                            //            "Unique Arrangement",
-                                            //            $"Arrangement {i + 1} of {uniqueArrangements.Count}\n" +
-                                            //            $"Modules placed: {moduleCount1}\n\n" +
-                                            //            "Click OK to see the next arrangement."
-                                            //        );
-
-                                            //        // Clear modules before next
-                                            //        using (var t = new Transaction(doc, "Clear Modules"))
-                                            //        {
-                                            //            t.Start();
-                                            //            doc.Delete(drawnIds1);
-                                            //            t.Commit();
-                                            //        }
-                                            //    }
-                                            //}
-                                            //else
-                                            //{
-                                            //    TaskDialog.Show("Arrangement Error", "No valid arrangements found. Please try another combination.");
-                                            //}
 
                                             ////////////////////////////DISPLAY ALL ARANGEMENTS////////////////////////////
                                             ////////////////////////////DISPLAY ALL ARANGEMENTS////////////////////////////
@@ -791,12 +667,6 @@ namespace PanelizedAndModularFinal
 
                                             arrangementCreated = true;
                                         }
-
-
-
-
-
-
 
                                         // --- Step 2: Re-Output Saved Layout (Connection Lines and Room Circles) ---
                                         List<SpaceNode> savedSpaces = GlobalData.SavedSpaces;
@@ -841,16 +711,9 @@ namespace PanelizedAndModularFinal
                                         }
                                         GlobalData.Step1Elements.Clear();
 
-
-
-
                                         // Overlay the square grid inside each module and get cell areas
                                         List<double> cellAreas;
                                         List<ElementId> gridLines = arrangement.DrawModuleGrids(doc, chosen, out cellAreas);
-
-
-
-
 
                                         // 8) Inform the user
                                         TaskDialog.Show(
@@ -861,9 +724,6 @@ namespace PanelizedAndModularFinal
 
 
 
-
-
-                                        /////////////////////////////////////////////////////////////////////
                                         //DISPLAY COLORED SQUARE////////////////////////////////////////////////////
                                         /////////////////////////////////////////////////////////////////
 
@@ -953,7 +813,7 @@ namespace PanelizedAndModularFinal
                                         // 2) Let the user see it, then remove
                                         TaskDialog.Show(
                                             "Step 1 Complete",
-                                            "The full 3×3 colored grids are displayed.\nClick OK to trim off excess."
+                                            "Click OK to trim off excess."
                                         );
 
                                         if (fullGridIds.Any())
@@ -1016,12 +876,12 @@ namespace PanelizedAndModularFinal
                                         ////////////////////////////////////////////////////////////////////////
                                         // grab one solid drafting pattern
                                         var fillPattern2 = new FilteredElementCollector(doc)
-      .OfClass(typeof(FillPatternElement))
-      .Cast<FillPatternElement>()
-      .First(fp =>
-          fp.GetFillPattern().IsSolidFill &&
-          fp.GetFillPattern().Target == FillPatternTarget.Drafting
-      );
+                                        .OfClass(typeof(FillPatternElement))
+                                        .Cast<FillPatternElement>()
+                                        .First(fp =>
+                                        fp.GetFillPattern().IsSolidFill &&
+                                        fp.GetFillPattern().Target == FillPatternTarget.Drafting
+                                        );
 
                                         var view2 = doc.ActiveView;
 
@@ -1062,6 +922,7 @@ namespace PanelizedAndModularFinal
                                         var moduleCells = chosen.GridCells;
 
 
+
                                         var filler = new CellAssigner(doc, doc.ActiveView);
 
 
@@ -1073,24 +934,24 @@ namespace PanelizedAndModularFinal
                                         //PHASE 0 /////////////////////////////////////////////
 
                                         var phase0 = filler.Phase0ResolveMultiOverlaps(
-moduleCells,
-trims,
-fillPattern2
-);
+                                        moduleCells,
+                                        trims,
+                                        fillPattern2
+                                        );
 
 
 
 
 
                                         TaskDialog.Show(
-                                            "Phase 0 Complete",
-                                            $"Trimmed + Phase 0 overlays are displayed together. Click OK to continue."
+                                            "Phase 0 Complete, layover phase",
+                                            $"Trimmed +  layover phase are displayed together. Click OK to continue."
                                         );
 
 
 
 
-                                        //     filler.ShowTrimmedAreas();
+                                    //    filler.ShowTrimmedAreas();
 
 
 
@@ -1100,7 +961,12 @@ fillPattern2
 
                                         var phase1 = filler.Phase1ResolveSingleOverlap(moduleCells);
 
-                                        //   filler.ShowTrimmedAreas();
+
+                                        TaskDialog.Show(
+                                        "Phase 1 Complete ",
+                                        $"Phase 1 complete, empty cells vs single room phase. Click OK to continue."
+                                        );
+                                  //      filler.ShowTrimmedAreas();
 
 
 
@@ -1110,11 +976,23 @@ fillPattern2
                                         //PHASE 2/////////////////////////////////////////////////////
                                         List<ElementId> phase2 = filler.Phase2ResolveContestedCells(moduleCells);
 
+                                        TaskDialog.Show(
+                                        "Phase 2 Complete ",
+                                        $"Phase 2 complete, contested cells. Click OK to continue."
+                                        );
+
+
+
+                                        filler.ReportPhase2CellAreas(moduleCells);
+
+                                //        filler.ShowTrimmedAreas();
 
                                         //PHASE 3/////////////////////////////////////////////////////
                                         //PHASE 3/////////////////////////////////////////////////////
                                         //PHASE 3/////////////////////////////////////////////////////
 
+
+                                        // filler.ReportRoomFilledAreas(moduleCells);
 
 
                                         var phase3Regions = filler.Phase3ResolveBasedOnPhase2(moduleCells);
@@ -1129,9 +1007,6 @@ fillPattern2
                             }
                         }
                     }
-                
-       
-                    
                 }
             }
             catch (Exception ex)
@@ -1141,10 +1016,6 @@ fillPattern2
                 return Result.Failed;
             }
         }
-
-
-
-
 
         ////////////////////////////////////////////////////////////////////////////////
         // Method: CreateCircleNode
@@ -1330,6 +1201,84 @@ fillPattern2
         }
 
         /// <summary>
+        /// Recursively generate every superset of required+subset(optional)
+        /// that still satisfies connectivity, pruning entire branches early.
+        /// </summary>
+        private List<int[,]> GenerateValidAdjSets(
+            int n,
+            List<(int i, int j)> required,
+            List<(int i, int j)> optional,
+            int[,] connectivity)
+        {
+            var valid = new List<int[,]>();
+            var cand = new int[n, n];
+
+            // seed in all required edges
+            foreach (var (i, j) in required)
+                cand[i, j] = cand[j, i] = 1;
+
+            void Recurse(int k)
+            {
+                // prune: even if we added *all* remaining optional edges,
+                // would connectivity still fail? if so, stop exploring.
+                if (!IsCandidateValid(
+                        UnionWithRemaining(cand, optional, k),
+                        connectivity))
+                    return;
+
+                // if we've decided on every optional edge, do final check
+                if (k == optional.Count)
+                {
+                    if (IsCandidateValid(cand, connectivity))
+                        valid.Add(CloneMatrix(cand));
+                    return;
+                }
+
+                // 1) skip optional[k]
+                Recurse(k + 1);
+
+                // 2) include optional[k]
+                var (i, j) = optional[k];
+                cand[i, j] = cand[j, i] = 1;
+                Recurse(k + 1);
+                cand[i, j] = cand[j, i] = 0;
+            }
+
+            Recurse(0);
+            return valid;
+        }
+
+        /// <summary>
+        /// Build a temporary matrix of cand plus *all* optional edges from index 'start' onward.
+        /// Used only for the pruning test.
+        /// </summary>
+        private int[,] UnionWithRemaining(
+            int[,] cand,
+            List<(int i, int j)> optional,
+            int start)
+        {
+            int n = cand.GetLength(0);
+            var sup = CloneMatrix(cand);
+            for (int t = start; t < optional.Count; t++)
+            {
+                var (i, j) = optional[t];
+                sup[i, j] = sup[j, i] = 1;
+            }
+            return sup;
+        }
+
+        /// <summary>
+        /// Deep‐copy a square int‐matrix.
+        /// </summary>
+        private int[,] CloneMatrix(int[,] src)
+        {
+            int n = src.GetLength(0);
+            var dst = new int[n, n];
+            Array.Copy(src, dst, src.Length);
+            return dst;
+        }
+
+        /// <summary>
         /// Only resolves overlaps for circle‐pairs that are *not* in the hardAdj must-touch graph.
         /// </summary>
         private void ResolveNonAdjacentCollisions(
@@ -1401,6 +1350,48 @@ fillPattern2
                 }
             } while (hasOverlap);
         }
+
+        // new Step 1 replacement – builds *one* connected adjacency graph in O(E log E + α(n))
+        private int[,] BuildGreedyAdjacency(
+            int n,
+            List<(int i, int j)> required,
+            List<(int i, int j)> optional,
+            double?[,] weights  // if you have weights; otherwise drop the sort
+        )
+        {
+            var parent = new int[n];
+            for (int i = 0; i < n; i++) parent[i] = i;
+            int Find(int x) => parent[x] == x ? x : parent[x] = Find(parent[x]);
+            void Union(int a, int b) => parent[Find(a)] = Find(b);
+
+            // 1) Seed in required edges
+            foreach (var (i, j) in required)
+                Union(i, j);
+
+            // 2) Sort optional edges by descending weight (or any priority)
+            var ordered = optional
+                .OrderByDescending(e => weights[e.i, e.j].GetValueOrDefault(0.0))
+                .ToList();
+
+            // 3) Add edges until graph is connected
+            int components = Enumerable.Range(0, n).Select(Find).Distinct().Count();
+            var adj = new int[n, n];
+            foreach (var (i, j) in required) adj[i, j] = adj[j, i] = 1;
+
+            foreach (var (i, j) in ordered)
+            {
+                if (components == 1) break;
+                if (Find(i) != Find(j))
+                {
+                    Union(i, j);
+                    adj[i, j] = adj[j, i] = 1;
+                    components--;
+                }
+            }
+
+            return adj;
+        }
+
 
         private void ResolveBoundaryViolations(List<SpaceNode> spaces, BoundingBoxXYZ viewBox)
         {
@@ -1484,7 +1475,6 @@ fillPattern2
             }
         }
 
-
         /// <summary>
         /// Rotates the given 2D vector (ignoring the Z component) by the given angle (in radians).
         /// </summary>
@@ -1497,47 +1487,9 @@ fillPattern2
             return new XYZ(x, y, vector.Z);
         }
 
-
-
         private double GetCircleRadius(double area)
         {
             return Math.Sqrt(area / Math.PI);
-        }
-
-        private void SnapConnectedCircles(List<SpaceNode> spaces, int[,] connectivityMatrix, BoundingBoxXYZ viewBox)
-        {
-            const double tol = 1e-3;
-            bool adjusted = true;
-            int iter = 0, maxIter = 20;   // increase iterations
-            while (adjusted && iter++ < maxIter)
-            {
-                adjusted = false;
-                for (int i = 0; i < spaces.Count; i++)
-                {
-                    for (int j = i + 1; j < spaces.Count; j++)
-                    {
-                        if (connectivityMatrix[i, j] == 1)
-                        {
-                            double rI = GetCircleRadius(spaces[i].Area);
-                            double rJ = GetCircleRadius(spaces[j].Area);
-                            double desired = rI + rJ;
-                            var delta = spaces[j].Position - spaces[i].Position;
-                            double dist = delta.GetLength();
-                            if (dist > desired + tol)
-                            {
-                                double move = (dist - desired) / 2.0;
-                                var dir = delta.Normalize();
-                                spaces[i].Position += dir * move;
-                                spaces[j].Position -= dir * move;
-                                // **clamp** both back into the view
-                                spaces[i].Position = ClampToViewBox(spaces[i].Position, rI, viewBox);
-                                spaces[j].Position = ClampToViewBox(spaces[j].Position, rJ, viewBox);
-                                adjusted = true;
-                            }
-                        }
-                    }
-                }
-            }
         }
 
         private void SnapPreferredAdjacencyCircles(
@@ -1618,7 +1570,6 @@ fillPattern2
                     }
         }
 
-
         private void CenterLayoutOnOverallBoundary(List<SpaceNode> spaces, XYZ overallBoundaryCenter)
         {
             XYZ layoutMin = new XYZ(double.MaxValue, double.MaxValue, 0);
@@ -1640,7 +1591,6 @@ fillPattern2
             }
 
         }
-
 
         private List<SpaceNode> CloneSpaces(List<SpaceNode> originalSpaces)
         {
@@ -1740,9 +1690,6 @@ fillPattern2
             }
             return true;
         }
-
-
-
 
         /// <summary>
         /// Slides clusters together until the tangency graph is one connected component.
@@ -1980,7 +1927,3 @@ fillPattern2
         }
     }
 }
-
-
-
-
