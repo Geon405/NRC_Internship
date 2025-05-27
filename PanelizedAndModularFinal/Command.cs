@@ -185,8 +185,11 @@ namespace PanelizedAndModularFinal
 
                                 foreach (var inst in grp)
                                 {
-                                    // area and random position as before
-                                    double area = inst.Area < 10.0 ? 25.0 : inst.Area;
+                                    // 1) convert user‐entered square ft² into an inscribed‐circle area
+                                    double squareArea = inst.Area < 10.0 ? 25.0 : inst.Area;
+                                    double circleArea = squareArea * (Math.PI / 4.0);
+
+                                    // pick a random spot as before
                                     var view = doc.ActiveView;
                                     var box = (view.CropBoxActive && view.CropBox != null)
                                                 ? view.CropBox
@@ -721,11 +724,17 @@ namespace PanelizedAndModularFinal
                                             $"Each cell area: {cellAreas.First():F2} sq units."
                                         );
 
-                                        /////////////////////////////////////////////////////////////////////
+
+
+
                                         //DISPLAY COLORED SQUARE////////////////////////////////////////////////////
                                         /////////////////////////////////////////////////////////////////
 
+
+
                                         var fullGridIds = new List<ElementId>();
+
+
 
                                         // 1. Draw perfectly‑fitting colored, semi‑transparent square inside each saved space’s square
                                         using (var trans = new Transaction(doc, "Draw Perfect Squares"))
@@ -807,7 +816,7 @@ namespace PanelizedAndModularFinal
                                         // 2) Let the user see it, then remove
                                         TaskDialog.Show(
                                             "Step 1 Complete",
-                                            "The full 3×3 colored grids are displayed.\nClick OK to trim off excess."
+                                            "Click OK to trim off excess."
                                         );
 
                                         if (fullGridIds.Any())
@@ -819,6 +828,7 @@ namespace PanelizedAndModularFinal
                                                 tx.Commit();
                                             }
                                         }
+
 
                                         //////////////////////////////////////////////////////////////////////////////////
                                         //TRIMMING STEP !!!!
@@ -834,6 +844,8 @@ namespace PanelizedAndModularFinal
                                             out trims
                                         );
 
+
+
                                         // 4) Show both the trimmed cells and the per‐space totals
                                         var lines = new List<string>();
 
@@ -848,6 +860,8 @@ namespace PanelizedAndModularFinal
                                             double trimmed = space.SquareTrimmedArea;
                                             lines.Add($"  {space.Name}: {trimmed:F2} sq units");
                                             grandTotal += trimmed;
+
+
                                         }
 
                                         // 4d) Grand total
@@ -865,12 +879,12 @@ namespace PanelizedAndModularFinal
                                         ////////////////////////////////////////////////////////////////////////
                                         // grab one solid drafting pattern
                                         var fillPattern2 = new FilteredElementCollector(doc)
-                                          .OfClass(typeof(FillPatternElement))
-                                          .Cast<FillPatternElement>()
-                                          .First(fp =>
-                                              fp.GetFillPattern().IsSolidFill &&
-                                              fp.GetFillPattern().Target == FillPatternTarget.Drafting
-                                          );
+                                        .OfClass(typeof(FillPatternElement))
+                                        .Cast<FillPatternElement>()
+                                        .First(fp =>
+                                        fp.GetFillPattern().IsSolidFill &&
+                                        fp.GetFillPattern().Target == FillPatternTarget.Drafting
+                                        );
 
                                         var view2 = doc.ActiveView;
 
@@ -911,11 +925,15 @@ namespace PanelizedAndModularFinal
                                         var moduleCells = chosen.GridCells;
 
 
+
                                         var filler = new CellAssigner(doc, doc.ActiveView);
 
 
                                         // var random10 = filler.ClearSingleRoomPartialCells(moduleCells);
 
+
+                                        //PHASE 0 /////////////////////////////////////////////
+                                        //PHASE 0 /////////////////////////////////////////////
                                         //PHASE 0 /////////////////////////////////////////////
 
                                         var phase0 = filler.Phase0ResolveMultiOverlaps(
@@ -924,21 +942,64 @@ namespace PanelizedAndModularFinal
                                         fillPattern2
                                         );
 
+
+
+
+
                                         TaskDialog.Show(
-                                            "Phase 0 Complete",
-                                            $"Trimmed + Phase 0 overlays are displayed together. Click OK to continue."
+                                            "Phase 0 Complete, layover phase",
+                                            $"Trimmed +  layover phase are displayed together. Click OK to continue."
                                         );
 
+
+
+
+                                    //    filler.ShowTrimmedAreas();
+
+
+
+                                        //PHASE 1/////////////////////////////////////////////////////
+                                        //PHASE 1/////////////////////////////////////////////////////
                                         //PHASE 1////////////////////////////////////////////////////
 
                                         var phase1 = filler.Phase1ResolveSingleOverlap(moduleCells);
 
+
+                                        TaskDialog.Show(
+                                        "Phase 1 Complete ",
+                                        $"Phase 1 complete, empty cells vs single room phase. Click OK to continue."
+                                        );
+                                  //      filler.ShowTrimmedAreas();
+
+
+
+
+                                        //PHASE 2/////////////////////////////////////////////////////
+                                        //PHASE 2/////////////////////////////////////////////////////
                                         //PHASE 2/////////////////////////////////////////////////////
                                         List<ElementId> phase2 = filler.Phase2ResolveContestedCells(moduleCells);
 
+                                        TaskDialog.Show(
+                                        "Phase 2 Complete ",
+                                        $"Phase 2 complete, contested cells. Click OK to continue."
+                                        );
+
+
+
+                                        filler.ReportPhase2CellAreas(moduleCells);
+
+                                //        filler.ShowTrimmedAreas();
+
+                                        //PHASE 3/////////////////////////////////////////////////////
+                                        //PHASE 3/////////////////////////////////////////////////////
                                         //PHASE 3/////////////////////////////////////////////////////
 
+
+                                        // filler.ReportRoomFilledAreas(moduleCells);
+
+
                                         var phase3Regions = filler.Phase3ResolveBasedOnPhase2(moduleCells);
+
 
                                         //        List<ElementId> phase3 = filler.phase3(moduleCells);
 

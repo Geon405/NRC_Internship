@@ -5,17 +5,28 @@
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- Area Info row -->
+            <!-- Area info -->
             <RowDefinition Height="*"/>
-            <!-- ListBox row -->
+            <!-- ListBox -->
             <RowDefinition Height="Auto"/>
-            <!-- Buttons row -->
+            <!-- OK button -->
         </Grid.RowDefinitions>
-        <Label x:Name="lblAreaInfo" Grid.Row="0" Content="Minimum Area: 0 ft², Maximum Area: 0 ft²" Margin="0,0,0,10"/>
-        <ListBox x:Name="lbCombinations" Grid.Row="1" Margin="0,0,0,10"/>
+
+        <Label x:Name="lblAreaInfo"
+           Grid.Row="0"
+           Content="Minimum Area: 0 ft², Maximum Area: 0 ft²"
+           Margin="0,0,0,10"/>
+
+        <ListBox x:Name="lbCombinations"
+             Grid.Row="1"
+             Margin="0,0,0,10"
+             FontFamily="Consolas"/>
+
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="Select" Click="btnSelect_Click" Margin="0,0,10,0"/>
-            <Button Content="Cancel" Click="btnCancel_Click"/>
+            <Button x:Name="OkButton"
+              Content="OK"
+              Width="80"
+              Click="OkButton_Click"/>
         </StackPanel>
     </Grid>
 </Window>
