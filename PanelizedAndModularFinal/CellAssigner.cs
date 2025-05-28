@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -48,7 +49,7 @@ namespace PanelizedAndModularFinal
         private readonly FilledRegionType _regionType;
         private readonly FillPatternElement _fillPattern;
 
-     
+
 
         public CellAssigner(Document doc, View view)
         {
@@ -199,7 +200,7 @@ namespace PanelizedAndModularFinal
 
 
 
-     
+
 
         // returns the full room square
         private UVRect FullRoomRect(SpaceNode sp)
@@ -222,7 +223,7 @@ namespace PanelizedAndModularFinal
 
 
 
-      
+
 
         /// <summary>
         /// PHASE 0: resolve every two-room overlap as a single patch,
@@ -230,7 +231,7 @@ namespace PanelizedAndModularFinal
         /// and each pair of rooms is processed exactly once.
         /// Tiny overlaps are "inflated" to avoid Revit curve tolerance errors
         /// by centering a minimal-size expansion and clamping to the cell boundary.
-        /// Any remaining invalid patches are skipped without crashing.
+        /// Patches or strips below tolerance are now skipped up‐front.
         /// </summary>
         public List<ElementId> Phase0ResolveMultiOverlaps(
             IList<ModuleGridCell> cells,
@@ -310,6 +311,10 @@ namespace PanelizedAndModularFinal
                             h = Math.Min(h, cell.OriginY + cell.Size - py);
                             var safePatch = new UVRect(px, py, w, h);
 
+                            // skip any rectangle still below tolerance
+                            if (safePatch.W <= tol || safePatch.H <= tol)
+                                continue;
+
                             try
                             {
                                 var reg = FilledRegion.Create(
@@ -348,6 +353,10 @@ namespace PanelizedAndModularFinal
                                 w = Math.Min(w, cell.OriginX + cell.Size - px);
                                 h = Math.Min(h, cell.OriginY + cell.Size - py);
                                 var safeStrip = new UVRect(px, py, w, h);
+
+                                // skip any strip still below tolerance
+                                if (safeStrip.W <= tol || safeStrip.H <= tol)
+                                    continue;
 
                                 try
                                 {
@@ -395,6 +404,7 @@ namespace PanelizedAndModularFinal
 
 
 
+
         ///////////////////////////////////////////////////////////////////////////PHASE 1 ///////////////////////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////////PHASE 1 ///////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////PHASE 1 ///////////////////////////////////////////////////////////////////////////
@@ -402,6 +412,19 @@ namespace PanelizedAndModularFinal
 
 
 
+
+        // helper to strip tiny edges
+        private CurveLoop CleanLoop(CurveLoop src, double tol)
+        {
+            // start with an empty list
+            var cleaned = CurveLoop.Create(new List<Curve>());
+
+            foreach (Curve c in src)
+                if (c.ApproximateLength >= tol)
+                    cleaned.Append(c);
+
+            return cleaned;
+        }
 
         public List<ElementId> Phase1ResolveSingleOverlap(List<ModuleGridCell> cells)
         {
@@ -419,8 +442,6 @@ namespace PanelizedAndModularFinal
 
                 foreach (var space in rooms)
                 {
-                   
-
                     // 2) identify partial cells
                     var partials = new List<(ModuleGridCell cell, double overlap)>();
                     foreach (var cell in cells)
@@ -434,8 +455,7 @@ namespace PanelizedAndModularFinal
                             var intr = ComputeIntersection(cell, sp);
                             if (!intr.HasValue) continue;
                             count++;
-                            if (sp == space)
-                                overlapArea = intr.Value.Area;
+                            if (sp == space) overlapArea = intr.Value.Area;
                             if (count > 1) break;
                         }
 
@@ -448,32 +468,40 @@ namespace PanelizedAndModularFinal
                     var skipped = new List<(ModuleGridCell cell, double overlap)>();
                     var filled = new HashSet<ModuleGridCell>();
 
-                    // 4) first pass: fill best overlaps
+                    // local function to try filling a cell
+                    void TryFill(ModuleGridCell cell, double overlap)
+                    {
+                        // build a cleaned loop
+                        var safeLoop = CleanLoop(cell.Loop, tol);
+                        if (!safeLoop.Any())            // nothing left after stripping
+                        {
+                            skipped.Add((cell, overlap));
+                            return;
+                        }
+
+                        // create region
+                        var reg = FilledRegion.Create(
+                            _doc, _regionType.Id, _view.Id,
+                            new List<CurveLoop> { safeLoop });
+                        _view.SetElementOverrides(reg.Id, MakeOGS(space).SetSurfaceTransparency(0));
+                        cell.RegionIds.Add(reg.Id);
+                        deletedOrAddedIds.Add(reg.Id);
+
+                        filled.Add(cell);
+                        double cellArea = cell.Size * cell.Size;
+                        double fillAmt = cellArea - overlap;
+                        space.SquareTrimmedArea -= fillAmt;
+                    }
+
+                    // 4) first pass
                     foreach (var (cell, overlap) in toProcess)
                     {
-                        double cellArea = cell.Size * cell.Size;
-                        double fillAmount = cellArea - overlap;
-
                         if (space.SquareTrimmedArea > 0 &&
                             (filled.Count == 0 || IsAdjacent(cell, filled)))
                         {
-                            
-
-                            var reg = FilledRegion.Create(
-                                _doc, _regionType.Id, _view.Id,
-                                new List<CurveLoop> { cell.Loop });
-                            _view.SetElementOverrides(
-                                reg.Id, MakeOGS(space).SetSurfaceTransparency(0));
-                            cell.RegionIds.Add(reg.Id);
-                            deletedOrAddedIds.Add(reg.Id);
-
-                            filled.Add(cell);
-                            space.SquareTrimmedArea -= fillAmount;
+                            TryFill(cell, overlap);
                         }
-                        else
-                        {
-                            skipped.Add((cell, overlap));
-                        }
+                        else skipped.Add((cell, overlap));
                     }
 
                     // 5) adjacency passes
@@ -483,24 +511,10 @@ namespace PanelizedAndModularFinal
                         didFill = false;
                         foreach (var entry in skipped.ToList())
                         {
-                            var cell = entry.cell;
-                            var overlap = entry.overlap;
-                            double cellArea = cell.Size * cell.Size;
-                            double fillAmount = cellArea - overlap;
-
-                            if (space.SquareTrimmedArea > 0 && IsAdjacent(cell, filled))
+                            if (space.SquareTrimmedArea > 0 &&
+                                IsAdjacent(entry.cell, filled))
                             {
-                               
-
-                                var reg = FilledRegion.Create(
-                                    _doc, _regionType.Id, _view.Id,
-                                    new List<CurveLoop> { cell.Loop });
-                                _view.SetElementOverrides(reg.Id, MakeOGS(space).SetSurfaceTransparency(0));
-                                cell.RegionIds.Add(reg.Id);
-                                deletedOrAddedIds.Add(reg.Id);
-
-                                filled.Add(cell);
-                                space.SquareTrimmedArea -= fillAmount;
+                                TryFill(entry.cell, entry.overlap);
                                 skipped.Remove(entry);
                                 didFill = true;
                                 break;
@@ -508,37 +522,19 @@ namespace PanelizedAndModularFinal
                         }
                     } while (didFill);
 
-                    // 6) final pass: fill or clear leftovers
+                    // 6) final pass
                     foreach (var entry in skipped.OrderByDescending(p => p.overlap))
                     {
-                        var cell = entry.cell;
-                        var overlap = entry.overlap;
-                        double cellArea = cell.Size * cell.Size;
-                        double fillAmount = cellArea - overlap;
-
                         if (space.SquareTrimmedArea > 0)
                         {
-                            
-
-                            var reg = FilledRegion.Create(
-                                _doc, _regionType.Id, _view.Id,
-                                new List<CurveLoop> { cell.Loop });
-                            _view.SetElementOverrides(reg.Id, MakeOGS(space).SetSurfaceTransparency(0));
-                            cell.RegionIds.Add(reg.Id);
-                            deletedOrAddedIds.Add(reg.Id);
-
-                            space.SquareTrimmedArea -= fillAmount;
+                            TryFill(entry.cell, entry.overlap);
                         }
                         else
                         {
-                            
-
-                            foreach (var id in cell.RegionIds)
-                            {
-                                deletedOrAddedIds.Add(id);
+                            // remove any old regions
+                            foreach (var id in entry.cell.RegionIds)
                                 _doc.Delete(id);
-                            }
-                            cell.RegionIds.Clear();
+                            entry.cell.RegionIds.Clear();
                         }
                     }
                 }
@@ -548,6 +544,7 @@ namespace PanelizedAndModularFinal
 
             return deletedOrAddedIds;
         }
+
 
 
 
@@ -867,6 +864,193 @@ namespace PanelizedAndModularFinal
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        /// <summary>
+        /// PHASE 2 (Revised): Resolve contested cells purely by trimmed‐area priority,
+        /// grouped by number of contenders (2 rooms first, then 3, etc.),
+        /// with new winner-determination rules.
+        /// </summary>
+        public List<ElementId> phase2newcode(List<ModuleGridCell> cells)
+        {
+            var regionIds = new List<ElementId>();
+            double tol = _doc.Application.ShortCurveTolerance;
+            var view = _view;
+
+            using (var tx = new Transaction(_doc, "Phase 2: Resolve Contested Cells"))
+            {
+                tx.Start();
+
+                // 1) Build raw overlap list for every cell
+                var rawOverlaps = cells.ToDictionary(
+                    cell => cell,
+                    cell => GlobalData.SavedSpaces
+                        .Select(sp => (space: sp, overlapArea: ComputeIntersection(cell, sp)?.Area ?? 0))
+                        .Where(o => o.overlapArea > tol)
+                        .ToList()
+                );
+
+                // 2) Filter contested: at least two spaces overlap,
+                //    ignoring a room only if its most recent fill fully covers the cell
+                var contested = new Dictionary<ModuleGridCell, List<(SpaceNode space, double overlapArea)>>();
+                foreach (var kv in rawOverlaps)
+                {
+                    var cell = kv.Key;
+                    var overlaps = kv.Value;
+
+                    // detect full-cell top fill
+                    var rect = new UVRect(cell.OriginX, cell.OriginY, cell.Size, cell.Size);
+                    var topFill = new FilteredElementCollector(_doc, view.Id)
+                        .OfClass(typeof(FilledRegion))
+                        .Cast<FilledRegion>()
+                        .Where(fr => {
+                            var bb = fr.get_BoundingBox(view);
+                            if (bb == null) return false;
+                            return Math.Abs(bb.Min.X - cell.OriginX) < tol
+                                && Math.Abs(bb.Min.Y - cell.OriginY) < tol
+                                && Math.Abs(bb.Max.X - (cell.OriginX + cell.Size)) < tol
+                                && Math.Abs(bb.Max.Y - (cell.OriginY + cell.Size)) < tol;
+                        })
+                        .OrderByDescending(fr => fr.Id.IntegerValue)
+                        .FirstOrDefault();
+
+                    SpaceNode ignoreRoom = null;
+                    if (topFill != null)
+                    {
+                        var col = view.GetElementOverrides(topFill.Id).ProjectionLineColor;
+                        ignoreRoom = GlobalData.SavedSpaces
+                            .FirstOrDefault(sp => sp.WpfColor.R == col.Red
+                                               && sp.WpfColor.G == col.Green
+                                               && sp.WpfColor.B == col.Blue);
+                    }
+
+                    var list = overlaps
+                        .Where(o => o.space != ignoreRoom)
+                        .ToList();
+
+                    if (list.Select(o => o.space).Distinct().Count() >= 2)
+                        contested[cell] = list;
+                }
+
+                // 3) Resolve by group size: 2, then 3, ...
+                var maxGroup = contested.Values
+                    .Max(v => v.Select(o => o.space).Distinct().Count());
+
+                for (int groupSize = 2; groupSize <= maxGroup; groupSize++)
+                {
+                    var groupCells = contested
+                        .Where(kv => kv.Value.Select(o => o.space).Distinct().Count() == groupSize)
+                        .ToDictionary(kv => kv.Key, kv => kv.Value);
+
+                    // Process until none in this group size
+                    while (groupCells.Any())
+                    {
+                        // sort rooms by descending budget
+                        var roomsSorted = GlobalData.SavedSpaces
+                            .OrderByDescending(sp => sp.SquareTrimmedArea)
+                            .ToList();
+
+                        foreach (var room in roomsSorted)
+                        {
+                            // pick cells this room contests
+                            var myCells = groupCells
+                                .Where(kv => kv.Value.Any(o => o.space == room))
+                                .ToList();
+
+                            // sort by this room's overlap descending
+                            foreach (var kv2 in myCells
+                                .OrderByDescending(kv2 => kv2.Value.First(o => o.space == room).overlapArea))
+                            {
+                                var cell = kv2.Key;
+                                var overlaps = kv2.Value;
+                                double cellArea = cell.Size * cell.Size;
+
+                                // determine winner
+                                // 1) check any >50% overlap
+                                var major = overlaps
+                                    .Where(o => o.overlapArea > 0.5 * cellArea)
+                                    .ToList();
+
+                                SpaceNode winner;
+                                if (major.Any())
+                                {
+                                    // room with >50% and positive budget
+                                    var positive = major
+                                        .FirstOrDefault(o => o.space.SquareTrimmedArea > 0);
+                                    if (positive.space != null)
+                                        winner = positive.space;
+                                    else
+                                        winner = major
+                                            .OrderByDescending(o => o.space.SquareTrimmedArea)
+                                            .First().space;
+                                }
+                                else
+                                {
+                                    // none >50%, pick highest budget
+                                    winner = overlaps
+                                        .OrderByDescending(o => o.space.SquareTrimmedArea)
+                                        .First().space;
+                                }
+
+                                // paint & budget
+                                var id = PaintCell(cell, winner);
+                                UpdateBudgets(winner, cell, overlaps, cellArea);
+                                regionIds.Add(id);
+
+                                // mark resolved
+                                contested.Remove(cell);
+                                groupCells.Remove(cell);
+                            }
+                        }
+                    }
+                }
+
+                tx.Commit();
+            }
+
+            return regionIds;
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ///////////////////////////////////////////////////////////////////////////PHASE 3 ///////////////////////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////////PHASE 3 ///////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////PHASE 3 ///////////////////////////////////////////////////////////////////////////
@@ -879,131 +1063,11 @@ namespace PanelizedAndModularFinal
 
 
         //adjacency weird here
-        //public List<ElementId> Phase3ResolveBasedOnPhase2(List<ModuleGridCell> cells)
-        //{
-        //    double tol = _doc.Application.ShortCurveTolerance;
-        //    var view = _view;
-        //    var newRegionIds = new List<ElementId>();
-        //    var cellLookup = cells.ToDictionary(c => (c.OriginX, c.OriginY));
-
-        //    // 1) Seed painted map exactly as before
-        //    var painted = new Dictionary<ModuleGridCell, SpaceNode>();
-        //    foreach (var cell in cells)
-        //    {
-        //        var rect = new UVRect(cell.OriginX, cell.OriginY, cell.Size, cell.Size);
-        //        var fr = new FilteredElementCollector(_doc, view.Id)
-        //            .OfClass(typeof(FilledRegion))
-        //            .Cast<FilledRegion>()
-        //            .FirstOrDefault(r => {
-        //                var bb = r.get_BoundingBox(view);
-        //                if (bb == null) return false;
-        //                var r2 = new UVRect(bb.Min.X, bb.Min.Y, bb.Max.X - bb.Min.X, bb.Max.Y - bb.Min.Y);
-        //                return r2.Intersect(rect).Area > tol;
-        //            });
-        //        if (fr == null) continue;
-        //        var col = view.GetElementOverrides(fr.Id).ProjectionLineColor;
-        //        var space = GlobalData.SavedSpaces
-        //            .FirstOrDefault(sp => sp.WpfColor.R == col.Red
-        //                               && sp.WpfColor.G == col.Green
-        //                               && sp.WpfColor.B == col.Blue);
-        //        if (space != null) painted[cell] = space;
-        //    }
-
-        //    var empties = new HashSet<ModuleGridCell>(cells.Where(c => !painted.ContainsKey(c)));
-        //    var deltas = new[] { (dx: 1, dy: 0), (-1, 0), (0, 1), (0, -1) };
-
-        //    using (var tx = new Transaction(_doc, "Phase 3: Fill Empties"))
-        //    {
-        //        tx.Start();
-        //        while (empties.Any())
-        //        {
-        //            // 2) compute metrics for every empty
-        //            var scored = empties
-        //                .Select(cell => {
-        //                    int neighborCount = 0;
-        //                    var rooms = new HashSet<SpaceNode>();
-
-        //                    foreach (var (dx, dy) in deltas)
-        //                    {
-        //                        var key = (cell.OriginX + dx * cell.Size,
-        //                                   cell.OriginY + dy * cell.Size);
-        //                        if (!cellLookup.TryGetValue(key, out var nbr))
-        //                            continue;
-
-        //                        // did nbr have *any* fill? if so, count it
-        //                        var nbrRect = new UVRect(key.Item1, key.Item2, cell.Size, cell.Size);
-        //                        var hits = new FilteredElementCollector(_doc, view.Id)
-        //                            .OfClass(typeof(FilledRegion))
-        //                            .Cast<FilledRegion>()
-        //                            .Where(fr => {
-        //                                var bb = fr.get_BoundingBox(view);
-        //                                if (bb == null) return false;
-        //                                var r2 = new UVRect(bb.Min.X, bb.Min.Y,
-        //                                                    bb.Max.X - bb.Min.X,
-        //                                                    bb.Max.Y - bb.Min.Y);
-        //                                return r2.Intersect(nbrRect).Area > tol;
-        //                            })
-        //                            .OrderByDescending(fr => fr.Id.IntegerValue)
-        //                            .ToList();
-
-        //                        if (hits.Any())
-        //                        {
-        //                            neighborCount++;
-        //                            var top = hits[0];
-        //                            var col = view.GetElementOverrides(top.Id).ProjectionLineColor;
-        //                            var room = GlobalData.SavedSpaces
-        //                                .FirstOrDefault(sp => sp.WpfColor.R == col.Red
-        //                                                   && sp.WpfColor.G == col.Green
-        //                                                   && sp.WpfColor.B == col.Blue);
-        //                            if (room != null) rooms.Add(room);
-        //                        }
-        //                    }
-
-        //                    return new
-        //                    {
-        //                        cell,
-        //                        neighborCount,
-        //                        distinctCount = rooms.Count,
-        //                        rooms
-        //                    };
-        //                })
-        //                // 3) highest neighborCount, then lowest distinctCount
-        //                .OrderByDescending(x => x.neighborCount)
-        //                .ThenBy(x => x.distinctCount)
-        //                .ToList();
-
-        //            var best = scored.First();
-
-        //            // 4) pick winner among its adjacent rooms by largest budget
-        //            SpaceNode winner = best.rooms
-        //                .OrderByDescending(r => r.SquareTrimmedArea)
-        //                .FirstOrDefault()
-        //                // fallback if somehow no neighbors
-        //                ?? GlobalData.SavedSpaces.OrderByDescending(sp => sp.SquareTrimmedArea).First();
-
-        //            // 5) paint + deduct
-        //            var region = FilledRegion.Create(
-        //                _doc, _regionType.Id, view.Id,
-        //                new List<CurveLoop> { best.cell.Loop }
-        //            );
-        //            _view.SetElementOverrides(region.Id,
-        //                MakeOGS(winner).SetSurfaceTransparency(0));
-        //            newRegionIds.Add(region.Id);
-
-        //            winner.SquareTrimmedArea -= best.cell.Size * best.cell.Size;
-        //            painted[best.cell] = winner;
-        //            empties.Remove(best.cell);
-        //        }
-        //        tx.Commit();
-        //    }
-
-        //    return newRegionIds;
-        //}
-
-
-
-
-
+        /// <summary>
+        /// PHASE 3: Fill every empty cell based on the Phase 2 drawing and assignments,
+        /// but only process cells with at least one adjacent painted neighbor.
+        /// Unconnected cells are skipped until they gain a neighbor.
+        /// </summary>
         public List<ElementId> Phase3ResolveBasedOnPhase2(List<ModuleGridCell> cells)
         {
             double tol = _doc.Application.ShortCurveTolerance;
@@ -1011,7 +1075,7 @@ namespace PanelizedAndModularFinal
             var newRegionIds = new List<ElementId>();
             var cellLookup = cells.ToDictionary(c => (c.OriginX, c.OriginY));
 
-            // 1) Seed painted map
+            // 1) Seed painted map from existing full-cell fills
             var painted = new Dictionary<ModuleGridCell, SpaceNode>();
             foreach (var cell in cells)
             {
@@ -1028,15 +1092,17 @@ namespace PanelizedAndModularFinal
                         return r2.Intersect(rect).Area > tol;
                     });
                 if (fr == null) continue;
-
                 var col = view.GetElementOverrides(fr.Id).ProjectionLineColor;
-                var space = GlobalData.SavedSpaces
-                    .FirstOrDefault(sp => sp.WpfColor.R == col.Red
-                                       && sp.WpfColor.G == col.Green
-                                       && sp.WpfColor.B == col.Blue);
-                if (space != null) painted[cell] = space;
+                var space = GlobalData.SavedSpaces.FirstOrDefault(sp =>
+                    sp.WpfColor.R == col.Red &&
+                    sp.WpfColor.G == col.Green &&
+                    sp.WpfColor.B == col.Blue
+                );
+                if (space != null)
+                    painted[cell] = space;
             }
 
+            // 2) Identify empties
             var empties = new HashSet<ModuleGridCell>(cells.Where(c => !painted.ContainsKey(c)));
             var deltas = new[] { (dx: 1, dy: 0), (-1, 0), (0, 1), (0, -1) };
 
@@ -1044,59 +1110,78 @@ namespace PanelizedAndModularFinal
             {
                 tx.Start();
 
-                // Pass 1: adjacency‐only
                 while (true)
                 {
-                    var scored = empties.Select(cell => {
-                        int neighborCount = 0;
-                        var rooms = new HashSet<SpaceNode>();
+                    // 3) Find all empties that currently have at least one painted neighbor
+                    var candidates = empties
+                        .Select(cell => {
+                            int neighborCount = 0;
+                            var rooms = new HashSet<SpaceNode>();
 
-                        foreach (var (dx, dy) in deltas)
-                        {
-                            var key = (cell.OriginX + dx * cell.Size,
-                                       cell.OriginY + dy * cell.Size);
-                            if (!cellLookup.TryGetValue(key, out var nbr)) continue;
+                            foreach (var (dx, dy) in deltas)
+                            {
+                                var key = (cell.OriginX + dx * cell.Size,
+                                           cell.OriginY + dy * cell.Size);
+                                if (!cellLookup.TryGetValue(key, out var nbr))
+                                    continue;
+                                if (painted.TryGetValue(nbr, out var room))
+                                {
+                                    neighborCount++;
+                                    rooms.Add(room);
+                                }
+                                else
+                                {
+                                    // fallback: check actual FilledRegion if not in-memory
+                                    var nbrRect = new UVRect(key.Item1, key.Item2, cell.Size, cell.Size);
+                                    var hits = new FilteredElementCollector(_doc, view.Id)
+                                        .OfClass(typeof(FilledRegion))
+                                        .Cast<FilledRegion>()
+                                        .Where(fr => {
+                                            var bb = fr.get_BoundingBox(view);
+                                            if (bb == null) return false;
+                                            var r2 = new UVRect(bb.Min.X, bb.Min.Y,
+                                                                bb.Max.X - bb.Min.X,
+                                                                bb.Max.Y - bb.Min.Y);
+                                            return r2.Intersect(nbrRect).Area > tol;
+                                        })
+                                        .OrderByDescending(fr => fr.Id.IntegerValue)
+                                        .ToList();
+                                    if (hits.Any())
+                                    {
+                                        neighborCount++;
+                                        var top = hits[0];
+                                        var col = view.GetElementOverrides(top.Id).ProjectionLineColor;
+                                        var room2 = GlobalData.SavedSpaces.FirstOrDefault(sp =>
+                                            sp.WpfColor.R == col.Red &&
+                                            sp.WpfColor.G == col.Green &&
+                                            sp.WpfColor.B == col.Blue
+                                        );
+                                        if (room2 != null)
+                                            rooms.Add(room2);
+                                    }
+                                }
+                            }
 
-                            var nbrRect = new UVRect(key.Item1, key.Item2, cell.Size, cell.Size);
-                            var hits = new FilteredElementCollector(_doc, view.Id)
-                                .OfClass(typeof(FilledRegion))
-                                .Cast<FilledRegion>()
-                                .Where(fr => {
-                                    var bb = fr.get_BoundingBox(view);
-                                    if (bb == null) return false;
-                                    var r2 = new UVRect(bb.Min.X, bb.Min.Y,
-                                                        bb.Max.X - bb.Min.X,
-                                                        bb.Max.Y - bb.Min.Y);
-                                    return r2.Intersect(nbrRect).Area > tol;
-                                })
-                                .OrderByDescending(fr => fr.Id.IntegerValue)
-                                .ToList();
+                            return new { cell, neighborCount, distinctCount = rooms.Count, rooms };
+                        })
+                        .Where(x => x.rooms.Any())       // only cells with ≥1 neighbor
+                        .OrderByDescending(x => x.neighborCount)
+                        .ThenBy(x => x.distinctCount)
+                        .ToList();
 
-                            if (!hits.Any()) continue;
-                            neighborCount++;
-                            var top = hits[0];
-                            var col = view.GetElementOverrides(top.Id).ProjectionLineColor;
-                            var room = GlobalData.SavedSpaces
-                                .FirstOrDefault(sp => sp.WpfColor.R == col.Red
-                                                   && sp.WpfColor.G == col.Green
-                                                   && sp.WpfColor.B == col.Blue);
-                            if (room != null) rooms.Add(room);
-                        }
+                    // if none have neighbors, stop and leave them for later
+                    if (!candidates.Any())
+                        break;
 
-                        return new { cell, neighborCount, rooms };
-                    })
-                    // only those with ≥1 neighbour
-                    .Where(x => x.neighborCount > 0)
-                    .OrderByDescending(x => x.neighborCount)
-                    .ToList();
+                    // 4) Pick best candidate
+                    var best = candidates.First();
 
-                    if (!scored.Any()) break;
-
-                    var best = scored[0];
+                    // 5) Choose winner among its adjacent rooms by largest budget
                     var winner = best.rooms
                         .OrderByDescending(r => r.SquareTrimmedArea)
                         .First();
 
+                    // 6) Paint cell and update budget
                     var region = FilledRegion.Create(
                         _doc, _regionType.Id, view.Id,
                         new List<CurveLoop> { best.cell.Loop }
@@ -1110,31 +1195,18 @@ namespace PanelizedAndModularFinal
                     empties.Remove(best.cell);
                 }
 
-                // Pass 2: isolated cells
-                foreach (var cell in empties.ToList())
-                {
-                    var winner = GlobalData.SavedSpaces
-                        .OrderByDescending(sp => sp.SquareTrimmedArea)
-                        .First();
-
-                    var region = FilledRegion.Create(
-                        _doc, _regionType.Id, view.Id,
-                        new List<CurveLoop> { cell.Loop }
-                    );
-                    _view.SetElementOverrides(region.Id,
-                        MakeOGS(winner).SetSurfaceTransparency(0));
-                    newRegionIds.Add(region.Id);
-
-                    winner.SquareTrimmedArea -= cell.Size * cell.Size;
-                    painted[cell] = winner;
-                    empties.Remove(cell);
-                }
-
                 tx.Commit();
             }
 
             return newRegionIds;
         }
+
+
+
+
+
+
+   
 
 
 
@@ -1328,16 +1400,280 @@ namespace PanelizedAndModularFinal
                 sp.SquareTrimmedArea = trimmedBudget;
             }
 
-            //// 3) Display results
-            //var sb = new System.Text.StringBuilder();
-            //sb.AppendLine("Phase 2: Filled and Remaining Areas");
-            //foreach (var sp in GlobalData.SavedSpaces.OrderByDescending(sp => sp.SquareTrimmedArea))
-            //{
-            //    double filledArea = areaByRoom[sp];
-            //    sb.AppendLine($" - {sp.Name}: Filled = {filledArea:F2}, Remaining Budget = {sp.SquareTrimmedArea:F2}");
-            //}
+            // 3) Display results
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("Phase 2: Filled and Remaining Areas");
+            foreach (var sp in GlobalData.SavedSpaces.OrderByDescending(sp => sp.SquareTrimmedArea))
+            {
+                double filledArea = areaByRoom[sp];
+                sb.AppendLine($" - {sp.Name}: Filled = {filledArea:F2}, Remaining Budget = {sp.SquareTrimmedArea:F2}");
+            }
 
-            //TaskDialog.Show("Phase 2 Areas Report", sb.ToString());
+            TaskDialog.Show("Phase 2 Areas Report", sb.ToString());
+        }
+    
+
+
+
+
+
+
+    
+
+
+
+        /// <summary>
+/// Validates minimum‐area requirements first.  
+/// If that passes, computes the size‐checker penalty as before;  
+/// otherwise shows a rejection dialog and bails out.
+/// </summary>
+public double ComputeSizeCheckerPenalty(out string message)
+{
+    // 0) Pre‐check the minimum room areas
+    if (!ValidateMinimumRoomAreas(out var errorMessages))
+    {
+        message = "Reject layout: size checker is wrong";
+        TaskDialog.Show("Layout Rejected", message);
+        return 0.0;
+    }
+
+    // 1) Compute the normal size‐checker penalty
+    double tol = _doc.Application.ShortCurveTolerance;
+    message = null;
+    double totalPenalty = 0.0;
+            
+
+            foreach (var sp in GlobalData.SavedSpaces)
+    {
+        double circleArea = sp.Area;
+        double squareArea = circleArea * 4.0 / Math.PI;
+        double trimmed = sp.SquareTrimmedArea;
+
+        // Reject if completely out
+        if (Math.Abs(trimmed - squareArea) < tol)
+        {
+            message = $"Reject layout because {sp.Name} is completely out of the graph";
+            TaskDialog.Show("Layout Rejected", message);
+                  
+        }
+
+        if (trimmed > 0)
+            totalPenalty += (squareArea - (squareArea - trimmed)) / squareArea;
+    }
+
+    
+
+    return totalPenalty;
+}
+
+
+
+
+        /// <summary>
+        /// Checks that each space meets its minimum required area.
+        /// Returns true if all pass; false otherwise (errorMessages contains details).
+        /// </summary>
+        public bool ValidateMinimumRoomAreas(out List<string> errorMessages)
+        {
+            errorMessages = new List<string>();
+            // flags for combined living/dining
+            bool hasLiving = GlobalData.SavedSpaces.Any(sp => sp.Name == "Living Room");
+            bool hasDining = GlobalData.SavedSpaces.Any(sp => sp.Name == "Dining");
+
+            // combined check
+            if (hasLiving && hasDining)
+            {
+                var lr = GlobalData.SavedSpaces.First(sp => sp.Name == "Living Room");
+                var dr = GlobalData.SavedSpaces.First(sp => sp.Name == "Dining");
+                double lrSquare = lr.Area * 4.0 / Math.PI;
+                double drSquare = dr.Area * 4.0 / Math.PI;
+                double lrActual = lrSquare - lr.SquareTrimmedArea;
+                double drActual = drSquare - dr.SquareTrimmedArea;
+                if (lrActual + drActual < 145.0)
+                {
+                    errorMessages.Add($"Combined Living Room and Dining: {lrActual + drActual:F2} ft² (Minimum required: 145 ft²)");
+                    return false;
+                }
+            }
+
+            // individual minima
+            foreach (var sp in GlobalData.SavedSpaces)
+            {
+                double circleArea = sp.Area;
+                double squareArea = circleArea * 4.0 / Math.PI;
+                double actual = squareArea - sp.SquareTrimmedArea;
+                double minReq = 0.0;
+
+                switch (sp.Name)
+                {
+                    case "Living Room":
+                        minReq = (hasLiving && hasDining) ? 0.0 : 118.0;
+                        break;
+                    case "Dining":
+                        minReq = (hasLiving && hasDining) ? 0.0 : 75.0;
+                        break;
+                    case "Dining Room": minReq = 35.0; break;
+                    case "Master Bedroom": minReq = 105.0; break;
+                    case "Second Bedroom": minReq = 75.0; break;
+                    case var s when s.StartsWith("Bedroom"): minReq = 45.0; break;
+                    case "Kitchen": minReq = 45.0; break;
+                    case "Bathroom": minReq = 36.0; break;
+                    case "Half Bathroom": minReq = 18.0; break;
+                }
+
+                if (minReq > 0 && actual < minReq)
+                {
+                    errorMessages.Add($"- {sp.Name}: {actual:F2} ft² (Minimum required: {minReq} ft²)");
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+
+
+
+
+
+
+        /// <summary>
+        /// Reports the number of exterior "corners" each room has,
+        /// displays the counts, and computes a corner-based penalty per space.
+        /// Penalty per space: 0 if corners ≤4; otherwise (corners - maxCorners)/corners.
+        /// Returns total penalty (sum of all space penalties).
+        /// </summary>
+        public double ComputeRoomCornerCountsAndPenalty(List<ModuleGridCell> cells)
+        {
+            double tol = _doc.Application.ShortCurveTolerance;
+            var view = _view;
+            var cellSize = cells.First().Size; // assume uniform grid cell size
+
+            // Helper to count exposed corners
+            int CountExposedCorners(bool hasNorth, bool hasEast, bool hasSouth, bool hasWest)
+            {
+                int corners = 0;
+                if (!hasNorth && !hasWest) corners++; // NW
+                if (!hasNorth && !hasEast) corners++; // NE
+                if (!hasSouth && !hasEast) corners++; // SE
+                if (!hasSouth && !hasWest) corners++; // SW
+                return corners;
+            }
+
+            // 1) Assign each cell to its room via most-recent fill color
+            var cellOwner = new Dictionary<ModuleGridCell, SpaceNode>();
+            foreach (var cell in cells)
+            {
+                var rect = new UVRect(cell.OriginX, cell.OriginY, cell.Size, cell.Size);
+                var fr = new FilteredElementCollector(_doc, view.Id)
+                    .OfClass(typeof(FilledRegion))
+                    .Cast<FilledRegion>()
+                    .Where(r => {
+                        var bb = r.get_BoundingBox(view);
+                        if (bb == null) return false;
+                        var regionRect = new UVRect(bb.Min.X, bb.Min.Y,
+                                                   bb.Max.X - bb.Min.X,
+                                                   bb.Max.Y - bb.Min.Y);
+                        return regionRect.Intersect(rect).Area > tol;
+                    })
+                    .OrderByDescending(r => r.Id.IntegerValue)
+                    .FirstOrDefault();
+                if (fr == null) continue;
+                var col = view.GetElementOverrides(fr.Id).ProjectionLineColor;
+                var owner = GlobalData.SavedSpaces.FirstOrDefault(sp =>
+                    sp.WpfColor.R == col.Red &&
+                    sp.WpfColor.G == col.Green &&
+                    sp.WpfColor.B == col.Blue);
+                if (owner != null)
+                    cellOwner[cell] = owner;
+            }
+
+            // 2) Group cells by room
+            var cellsByRoom = cellOwner
+                .GroupBy(kv => kv.Value)
+                .ToDictionary(g => g.Key, g => g.Select(kv => kv.Key).ToList());
+
+            // 3) For each room, count exterior corners
+            var cornerCounts = new Dictionary<SpaceNode, int>();
+            foreach (var kv in cellsByRoom)
+            {
+                var room = kv.Key;
+                var myCells = new HashSet<ModuleGridCell>(kv.Value);
+                int cornerSum = 0;
+                foreach (var cell in myCells)
+                {
+                    bool hasNorth = myCells.Any(c =>
+                        Math.Abs(c.OriginX - cell.OriginX) < tol &&
+                        Math.Abs(c.OriginY - (cell.OriginY + cellSize)) < tol);
+                    bool hasEast = myCells.Any(c =>
+                        Math.Abs(c.OriginX - (cell.OriginX + cellSize)) < tol &&
+                        Math.Abs(c.OriginY - cell.OriginY) < tol);
+                    bool hasSouth = myCells.Any(c =>
+                        Math.Abs(c.OriginX - cell.OriginX) < tol &&
+                        Math.Abs(c.OriginY - (cell.OriginY - cellSize)) < tol);
+                    bool hasWest = myCells.Any(c =>
+                        Math.Abs(c.OriginX - (cell.OriginX - cellSize)) < tol &&
+                        Math.Abs(c.OriginY - cell.OriginY) < tol);
+
+                    cornerSum += CountExposedCorners(hasNorth, hasEast, hasSouth, hasWest);
+                }
+                cornerCounts[room] = cornerSum;
+            }
+
+            // 4) Determine max corner count
+            int maxCorners = cornerCounts.Count > 0
+                ? cornerCounts.Values.Max()
+                : 0;
+
+            //// 5) Display corner counts
+            //var sb = new System.Text.StringBuilder();
+            //foreach (var kv in cornerCounts)
+            //    sb.AppendLine($"{kv.Key.Name}: {kv.Value} corners");
+            //TaskDialog.Show("Room Corner Counts", sb.ToString());
+
+            // 6) Compute penalties and sum
+            double totalPenalty = 0.0;
+            foreach (var kv in cornerCounts)
+            {
+                int corners = kv.Value;
+                double penalty = 0.0;
+                if (corners > 4)
+                    penalty = (corners - 4) / (double)corners;
+                totalPenalty += penalty;
+            }
+
+            return totalPenalty;
+        }
+
+
+
+
+
+
+
+        /// <summary>
+        /// Computes the overall layout score by combining size and corner penalties.
+        /// Applies weights w1=0.8 for size penalty and w2=0.2 for corner penalty.
+        /// Returns the combined penalty; shows rejection dialogs if checks fail.
+        /// </summary>
+        public double ComputeLayoutScore(List<ModuleGridCell> cells, out string message)
+        {
+            // 1) Size penalty (includes minimum-area rejection)
+            double sizePenalty = ComputeSizeCheckerPenalty(out message);
+            if (!string.IsNullOrEmpty(message) && sizePenalty == 0.0)
+            {
+                // Rejected by size checker
+                return double.PositiveInfinity;
+            }
+
+            // 2) Corner penalty
+            double cornerPenalty = ComputeRoomCornerCountsAndPenalty(cells);
+
+            // 3) Combine with weights w1=0.8, w2=0.2
+            const double w1 = 0.8;
+            const double w2 = 0.2;
+            double total = w1 * sizePenalty + w2 * cornerPenalty;
+            return total;
         }
     }
 
@@ -1345,5 +1681,7 @@ namespace PanelizedAndModularFinal
 
 
 }
+
+
 
 

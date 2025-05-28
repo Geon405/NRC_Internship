@@ -170,6 +170,61 @@ namespace PanelizedAndModularFinal
                                 return Result.Cancelled;
                             }
 
+                            //// Create room nodes (spaces) from user adjustments
+                            //var spaces = new List<SpaceNode>();
+                            //var rand = new Random();
+
+                            //// 1) group by type
+                            //var groups = secondWindow.Instances
+                            //    .GroupBy(inst => inst.RoomType);
+
+                            //foreach (var grp in groups)
+                            //{
+                            //    int count = grp.Count();
+                            //    int idx = 0;
+
+                            //    foreach (var inst in grp)
+                            //    {
+                            //        // 1) convert user‐entered square ft² into an inscribed‐circle area
+                            //        double squareArea = inst.Area < 10.0 ? 25.0 : inst.Area;
+                            //        double circleArea = squareArea * (Math.PI / 4.0);
+
+                            //        // pick a random spot as before
+                            //        var view = doc.ActiveView;
+                            //        var box = (view.CropBoxActive && view.CropBox != null)
+                            //                    ? view.CropBox
+                            //                    : view.get_BoundingBox(null);
+                            //        double w = box.Max.X - box.Min.X;
+                            //        double h = box.Max.Y - box.Min.Y;
+                            //        var pos = new XYZ(
+                            //            box.Min.X + rand.NextDouble() * w,
+                            //            box.Min.Y + rand.NextDouble() * h,
+                            //            0);
+
+                            //        // compute shade (unchanged)…
+                            //        double factor = count > 1
+                            //            ? 0.5 + 0.5 * (idx / (double)(count - 1))
+                            //            : 1.0;
+                            //        var baseC = inst.WpfColor;
+                            //        byte r = (byte)Math.Min(255, baseC.R * factor);
+                            //        byte g = (byte)Math.Min(255, baseC.G * factor);
+                            //        byte b = (byte)Math.Min(255, baseC.B * factor);
+                            //        var shade = System.Windows.Media.Color.FromRgb(r, g, b);
+
+                            //        // 2) use circleArea instead of inst.Area
+                            //        spaces.Add(new SpaceNode(
+                            //            inst.Name,
+                            //            inst.RoomType,
+                            //            circleArea,
+                            //            pos,
+                            //            shade
+                            //        ));
+
+                            //        idx++;
+                            //    }
+
+                            //}
+
                             // Create room nodes (spaces) from user adjustments
                             var spaces = new List<SpaceNode>();
                             var rand = new Random(12345);
@@ -994,7 +1049,7 @@ namespace PanelizedAndModularFinal
 
 
 
-                                    //    filler.ShowTrimmedAreas();
+                                        //    filler.ShowTrimmedAreas();
 
 
 
@@ -1009,7 +1064,7 @@ namespace PanelizedAndModularFinal
                                         "Phase 1 Complete ",
                                         $"Phase 1 complete, empty cells vs single room phase. Click OK to continue."
                                         );
-                                  //      filler.ShowTrimmedAreas();
+                                        //      filler.ShowTrimmedAreas();
 
 
 
@@ -1017,7 +1072,7 @@ namespace PanelizedAndModularFinal
                                         //PHASE 2/////////////////////////////////////////////////////
                                         //PHASE 2/////////////////////////////////////////////////////
                                         //PHASE 2/////////////////////////////////////////////////////
-                                        List<ElementId> phase2 = filler.Phase2ResolveContestedCells(moduleCells);
+                                        List<ElementId> phase2 = filler.phase2newcode(moduleCells);
 
                                         TaskDialog.Show(
                                         "Phase 2 Complete ",
@@ -1028,20 +1083,38 @@ namespace PanelizedAndModularFinal
 
                                         filler.ReportPhase2CellAreas(moduleCells);
 
-                                //        filler.ShowTrimmedAreas();
+                                        //        filler.ShowTrimmedAreas();
 
                                         //PHASE 3/////////////////////////////////////////////////////
                                         //PHASE 3/////////////////////////////////////////////////////
                                         //PHASE 3/////////////////////////////////////////////////////
 
 
-                                        // filler.ReportRoomFilledAreas(moduleCells);
+
+
+
+
 
 
                                         var phase3Regions = filler.Phase3ResolveBasedOnPhase2(moduleCells);
 
+                                        TaskDialog.Show(
+                                           "Phase 3 Complete ",
+                                           $"Phase 3 complete, neighbour assignment cells. Click OK to continue."
+                                           );
 
-                                        //        List<ElementId> phase3 = filler.phase3(moduleCells);
+
+                                        // filler.ShowTrimmedAreas();
+
+
+                                        string message3;
+                                        double layoutScore = filler.ComputeLayoutScore(moduleCells, out message3);
+
+                                        TaskDialog.Show(
+                                              "Final Layout Score",
+                                              $"Combined penalty (0.8·size + 0.2·corners): {layoutScore:F2}"
+                                          );
+
 
                                         return Result.Succeeded;
                                     }
