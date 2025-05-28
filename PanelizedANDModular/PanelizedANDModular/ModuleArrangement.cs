@@ -346,7 +346,8 @@ namespace PanelizedAndModularFinal
         private Dictionary<int, int> ParseCombinationString(string combo)
         {
             Dictionary<int, int> counts = new Dictionary<int, int>();
-            Regex regex = new Regex(@"(\d+)\s*x\s*Module_Type\s*(\d+)", RegexOptions.IgnoreCase);
+            // allow ASCII x or Unicode ×
+            Regex regex = new Regex(@"(\d+)\s*[x×]\s*Module_Type\s*(\d+)", RegexOptions.IgnoreCase);
             MatchCollection matches = regex.Matches(combo);
             foreach (Match match in matches)
             {
@@ -715,7 +716,7 @@ namespace PanelizedAndModularFinal
             return new XYZ(cx, cy, 0);
         }
 
-    
+
         /// <summary>
         /// Attempts to translate every placed module in <paramref name="arr"/> so that its
         /// bounding‐box is centered in the land.  If *any* module would end up outside

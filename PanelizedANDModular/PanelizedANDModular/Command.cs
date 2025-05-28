@@ -862,33 +862,33 @@ namespace PanelizedAndModularFinal
 
 
 
-                                        // 4) Show both the trimmed cells and the per‐space totals
-                                        var lines = new List<string>();
+                                        //// 4) Show both the trimmed cells and the per‐space totals
+                                        //var lines = new List<string>();
 
 
-                                        // 4b) Blank separator
-                                        lines.Add("");
-                                        // 4c) Totals per space
-                                        lines.Add("Total Trimmed per Space:");
-                                        double grandTotal = 0;
-                                        foreach (var space in GlobalData.SavedSpaces)
-                                        {
-                                            double trimmed = space.SquareTrimmedArea;
-                                            lines.Add($"  {space.Name}: {trimmed:F2} sq units");
-                                            grandTotal += trimmed;
+                                        //// 4b) Blank separator
+                                        //lines.Add("");
+                                        //// 4c) Totals per space
+                                        //lines.Add("Total Trimmed per Space:");
+                                        //double grandTotal = 0;
+                                        //foreach (var space in GlobalData.SavedSpaces)
+                                        //{
+                                        //    double trimmed = space.SquareTrimmedArea;
+                                        //    lines.Add($"  {space.Name}: {trimmed:F2} sq units");
+                                        //    grandTotal += trimmed;
 
 
-                                        }
+                                        //}
 
-                                        // 4d) Grand total
-                                        lines.Add("");
-                                        lines.Add($"Grand Total Trimmed: {grandTotal:F2} sq units");
+                                        //// 4d) Grand total
+                                        //lines.Add("");
+                                        //lines.Add($"Grand Total Trimmed: {grandTotal:F2} sq units");
 
-                                        // Finally display
-                                        TaskDialog.Show(
-                                            "Trim Results",
-                                            string.Join("\n", lines)
-                                        );
+                                        //// Finally display
+                                        //TaskDialog.Show(
+                                        //    "Trim Results",
+                                        //    string.Join("\n", lines)
+                                        //);
 
                                         /////////////////////////////////////////////////////////////////////////
                                         //ASSIGNMENT OF CELLS STEP BELOW////////////////////////////////////////

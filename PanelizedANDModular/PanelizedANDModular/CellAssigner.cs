@@ -1400,16 +1400,16 @@ namespace PanelizedAndModularFinal
                 sp.SquareTrimmedArea = trimmedBudget;
             }
 
-            // 3) Display results
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine("Phase 2: Filled and Remaining Areas");
-            foreach (var sp in GlobalData.SavedSpaces.OrderByDescending(sp => sp.SquareTrimmedArea))
-            {
-                double filledArea = areaByRoom[sp];
-                sb.AppendLine($" - {sp.Name}: Filled = {filledArea:F2}, Remaining Budget = {sp.SquareTrimmedArea:F2}");
-            }
+            //// 3) Display results
+            //var sb = new System.Text.StringBuilder();
+            //sb.AppendLine("Phase 2: Filled and Remaining Areas");
+            //foreach (var sp in GlobalData.SavedSpaces.OrderByDescending(sp => sp.SquareTrimmedArea))
+            //{
+            //    double filledArea = areaByRoom[sp];
+            //    sb.AppendLine($" - {sp.Name}: Filled = {filledArea:F2}, Remaining Budget = {sp.SquareTrimmedArea:F2}");
+            //}
 
-            TaskDialog.Show("Phase 2 Areas Report", sb.ToString());
+          //  TaskDialog.Show("Phase 2 Areas Report", sb.ToString());
         }
     
 
