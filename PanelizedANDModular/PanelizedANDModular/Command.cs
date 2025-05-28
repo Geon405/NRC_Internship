@@ -170,6 +170,12 @@ namespace PanelizedAndModularFinal
                                 return Result.Cancelled;
                             }
 
+
+
+
+
+
+
                             // Create room nodes (spaces) from user adjustments
                             var spaces = new List<SpaceNode>();
                             var rand = new Random();
@@ -185,8 +191,11 @@ namespace PanelizedAndModularFinal
 
                                 foreach (var inst in grp)
                                 {
-                                    // area and random position as before
-                                    double area = inst.Area < 10.0 ? 25.0 : inst.Area;
+                                    // 1) convert user‐entered square ft² into an inscribed‐circle area
+                                    double squareArea = inst.Area < 10.0 ? 25.0 : inst.Area;
+                                    double circleArea = squareArea * (Math.PI / 4.0);
+
+                                    // pick a random spot as before
                                     var view = doc.ActiveView;
                                     var box = (view.CropBoxActive && view.CropBox != null)
                                                 ? view.CropBox
@@ -198,30 +207,40 @@ namespace PanelizedAndModularFinal
                                         box.Min.Y + rand.NextDouble() * h,
                                         0);
 
-                                    // 2) compute a lightness factor in [0.5…1.0]
-                                    double factor = 1.0;
-                                    if (count > 1)
-                                        factor = 0.5 + 0.5 * (idx / (double)(count - 1));
-
-                                    // 3) apply it to the WPF color
+                                    // compute shade (unchanged)…
+                                    double factor = count > 1
+                                        ? 0.5 + 0.5 * (idx / (double)(count - 1))
+                                        : 1.0;
                                     var baseC = inst.WpfColor;
                                     byte r = (byte)Math.Min(255, baseC.R * factor);
                                     byte g = (byte)Math.Min(255, baseC.G * factor);
                                     byte b = (byte)Math.Min(255, baseC.B * factor);
                                     var shade = System.Windows.Media.Color.FromRgb(r, g, b);
 
-                                    // 4) create the node with the shaded color
+                                    // 2) use circleArea instead of inst.Area
                                     spaces.Add(new SpaceNode(
                                         inst.Name,
                                         inst.RoomType,
-                                        area,
+                                        circleArea,
                                         pos,
                                         shade
                                     ));
 
                                     idx++;
                                 }
+
                             }
+
+
+
+
+
+
+
+
+
+
+
 
                             activeView = doc.ActiveView;
                             BoundingBoxXYZ viewBox = activeView.CropBoxActive && activeView.CropBox != null
@@ -974,7 +993,7 @@ namespace PanelizedAndModularFinal
                                         //PHASE 2/////////////////////////////////////////////////////
                                         //PHASE 2/////////////////////////////////////////////////////
                                         //PHASE 2/////////////////////////////////////////////////////
-                                        List<ElementId> phase2 = filler.Phase2ResolveContestedCells(moduleCells);
+                                        List<ElementId> phase2 = filler.phase2newcode(moduleCells);
 
                                         TaskDialog.Show(
                                         "Phase 2 Complete ",
@@ -985,20 +1004,38 @@ namespace PanelizedAndModularFinal
 
                                         filler.ReportPhase2CellAreas(moduleCells);
 
-                                //        filler.ShowTrimmedAreas();
+                                        //        filler.ShowTrimmedAreas();
 
                                         //PHASE 3/////////////////////////////////////////////////////
                                         //PHASE 3/////////////////////////////////////////////////////
                                         //PHASE 3/////////////////////////////////////////////////////
 
 
-                                        // filler.ReportRoomFilledAreas(moduleCells);
+                                      
 
 
-                                        var phase3Regions = filler.Phase3ResolveBasedOnPhase2(moduleCells);
 
 
-                                        //        List<ElementId> phase3 = filler.phase3(moduleCells);
+
+                                     var phase3Regions = filler.Phase3ResolveBasedOnPhase2(moduleCells);
+                                       
+                                        TaskDialog.Show(
+   "Phase 3 Complete ",
+   $"Phase 3 complete, neighbour assignment cells. Click OK to continue."
+   );
+
+
+                                       // filler.ShowTrimmedAreas();
+
+
+                                        string message3;
+                                        double layoutScore = filler.ComputeLayoutScore(moduleCells, out message3);
+
+                                        TaskDialog.Show(
+      "Final Layout Score",
+      $"Combined penalty (0.8·size + 0.2·corners): {layoutScore:F2}"
+  );
+
 
                                         return Result.Succeeded;
                                     }

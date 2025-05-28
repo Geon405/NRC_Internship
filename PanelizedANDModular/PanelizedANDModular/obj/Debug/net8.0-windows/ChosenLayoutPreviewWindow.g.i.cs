@@ -60,7 +60,7 @@ namespace PanelizedAndModularFinal {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/PanelizedAndModularFinal;component/chosenlayoutpreviewwindow.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/PanelizedAndModularFinal;V1.0.0.0;component/chosenlayoutpreviewwindow.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\ChosenLayoutPreviewWindow.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

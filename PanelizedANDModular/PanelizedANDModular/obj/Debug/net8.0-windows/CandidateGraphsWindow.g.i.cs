@@ -60,7 +60,7 @@ namespace PanelizedAndModularFinal {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/PanelizedAndModularFinal;component/candidategraphswindow.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/PanelizedAndModularFinal;V1.0.0.0;component/candidategraphswindow.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\CandidateGraphsWindow.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);
