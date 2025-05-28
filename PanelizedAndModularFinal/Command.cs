@@ -172,7 +172,7 @@ namespace PanelizedAndModularFinal
 
                             // Create room nodes (spaces) from user adjustments
                             var spaces = new List<SpaceNode>();
-                            var rand = new Random();
+                            var rand = new Random(12345);
 
                             // 1) group by type
                             var groups = secondWindow.Instances
@@ -185,42 +185,47 @@ namespace PanelizedAndModularFinal
 
                                 foreach (var inst in grp)
                                 {
-                                    // 1) convert user‐entered square ft² into an inscribed‐circle area
+                                    // 1) convert user-entered square ft² into an inscribed-circle area
                                     double squareArea = inst.Area < 10.0 ? 25.0 : inst.Area;
                                     double circleArea = squareArea * (Math.PI / 4.0);
 
                                     // pick a random spot as before
                                     var view = doc.ActiveView;
                                     var box = (view.CropBoxActive && view.CropBox != null)
-                                                ? view.CropBox
-                                                : view.get_BoundingBox(null);
+                                               ? view.CropBox
+                                               : view.get_BoundingBox(null);
                                     double w = box.Max.X - box.Min.X;
                                     double h = box.Max.Y - box.Min.Y;
                                     var pos = new XYZ(
                                         box.Min.X + rand.NextDouble() * w,
                                         box.Min.Y + rand.NextDouble() * h,
-                                        0);
+                                        0
+                                    );
 
-                                    // 2) compute a lightness factor in [0.5…1.0]
-                                    double factor = 1.0;
-                                    if (count > 1)
-                                        factor = 0.5 + 0.5 * (idx / (double)(count - 1));
-
-                                    // 3) apply it to the WPF color
+                                    // compute shade exactly as you had it
+                                    double factor = count > 1
+                                        ? 0.5 + 0.5 * (idx / (double)(count - 1))
+                                        : 1.0;
                                     var baseC = inst.WpfColor;
                                     byte r = (byte)Math.Min(255, baseC.R * factor);
                                     byte g = (byte)Math.Min(255, baseC.G * factor);
                                     byte b = (byte)Math.Min(255, baseC.B * factor);
                                     var shade = System.Windows.Media.Color.FromRgb(r, g, b);
 
-                                    // 4) create the node with the shaded color
-                                    spaces.Add(new SpaceNode(
-                                        inst.Name,
-                                        inst.RoomType,
-                                        area,
-                                        pos,
-                                        shade
-                                    ));
+                                    // 2) Create the SpaceNode locally
+                                    var node = new SpaceNode(
+                                        inst.Name,        // your room’s name
+                                        inst.RoomType,    // the room type
+                                        circleArea,       // the inscribed‐circle area
+                                        pos,              // the random position
+                                        shade             // the computed color
+                                    );
+
+                                    // 3) Set its Radius so your "must‐touch" springs use the right rest length
+                                    node.Radius = Math.Sqrt(circleArea / Math.PI);
+
+                                    // 4) Finally add *one* copy into your list
+                                    spaces.Add(node);
 
                                     idx++;
                                 }
@@ -410,41 +415,78 @@ namespace PanelizedAndModularFinal
                                         if (previewWin.ShowDialog() != true)
                                             return Result.Cancelled;
 
-                                        // ── 5) Evaluate each by ASPL & density ──
-                                        var evals = allCandidates
-                                          .Select(t =>
+                                        // ── 5) Filter out any layouts that violate exact tangency ──
+                                        const double tangencyTol = 1e-3;
+                                        var validGraphs = allCandidates
+                                          .Where(pair =>
                                           {
-                                              double aspl = GraphEvaluator.CalculateASPL(t.layout, t.candidateAdj);
-                                              double gd = GraphEvaluator.CalculateDensity(t.layout, t.candidateAdj);
-                                              return (t.layout, t.candidateAdj, aspl, gd);
+                                              var layout = pair.layout;
+                                              var adj = pair.candidateAdj;
+                                              int n = layout.Count;
+
+                                              for (int i = 0; i < n; i++)
+                                              {
+                                                  for (int j = i + 1; j < n; j++)
+                                                  {
+                                                      if (adj[i, j] == 1)
+                                                      {
+                                                          // circles must be exactly tangent
+                                                          double required = Math.Sqrt(layout[i].Area / Math.PI)
+                                  + Math.Sqrt(layout[j].Area / Math.PI);
+                                                          double actual = (layout[i].Position - layout[j].Position).GetLength();
+                                                          if (Math.Abs(actual - required) > tangencyTol)
+                                                              return false;
+                                                      }
+                                                  }
+                                              }
+                                              return true;
+                                          })
+                                          .ToList();
+
+                                        if (!allCandidates.Any())
+                                        {
+                                            TaskDialog.Show("Layout Error",
+                                                "No valid candidate layouts survived your connectivity/adjacency filtering.");
+                                            return Result.Cancelled;
+                                        }
+
+
+                                        // ── 6) Evaluate only the truly‐tangent graphs ──
+                                        var evals = validGraphs
+                                          .Select(pair =>
+                                          {
+                                              var layout = pair.layout;
+                                              var adj = pair.candidateAdj;
+                                              double aspl = GraphEvaluator.CalculateASPL(layout, adj);
+                                              double gd = GraphEvaluator.CalculateDensity(layout, adj);
+                                              return (layout, adj, aspl, gd);
                                           })
                                           .ToList();
 
                                         // find min/max for normalization
-                                        double asplMin = evals.Min(e => e.aspl),
-                                               asplMax = evals.Max(e => e.aspl),
-                                               gdMin = evals.Min(e => e.gd),
-                                               gdMax = evals.Max(e => e.gd);
+                                        double asplMin = evals.Min(e => e.aspl), asplMax = evals.Max(e => e.aspl),
+                                               gdMin = evals.Min(e => e.gd), gdMax = evals.Max(e => e.gd);
 
                                         // weights for P(G)
-                                        const double w1 = 0.7, w2 = 0.3;
+                                        const double wAspl = 0.7, wGd = 0.3;
 
-                                        // ── 6) Compute P(G) and pick the best ──
+                                        // ── 7) Compute score P(G) and pick the best ──
                                         var bestEntry = evals
                                           .Select(e =>
                                           {
-                                              double normASPL = (e.aspl - asplMin) / (asplMax - asplMin);
-                                              double normGD = (e.gd - gdMin) / (gdMax - gdMin);
-                                              double score = w1 * normASPL + w2 * normGD;
-                                              return (e.layout, e.candidateAdj, score);
+                                              double normAspl = (e.aspl - asplMin) / (asplMax - asplMin);
+                                              double normGd = (e.gd - gdMin) / (gdMax - gdMin);
+                                              double score = wAspl * normAspl + wGd * normGd;
+                                              return (e.layout, e.adj, score);
                                           })
                                           .OrderBy(x => x.score)
                                           .First();
 
+                                        // unpack
                                         var best = bestEntry.layout;
-                                        var bestAdj = bestEntry.candidateAdj;
+                                        var bestAdj = bestEntry.adj;
 
-                                        // ── 7) Enforce exact tangency & clean-up on the best ──
+                                        // ── 8) Enforce exact tangency & clean‐up on that single winner ──
                                         for (int pass = 0; pass < 8; pass++)
                                         {
                                             EnforceAllDistanceConstraints(best, bestAdj, viewBox);
@@ -479,8 +521,6 @@ namespace PanelizedAndModularFinal
                                         new WindowInteropHelper(preview) { Owner = Process.GetCurrentProcess().MainWindowHandle };
                                         if (preview.ShowDialog() != true)
                                             return Result.Cancelled;
-
-                                        // … then draw in Revit …
 
                                         // 4) Draw the chosen layout
                                         GlobalData.SavedSpaces = best;
